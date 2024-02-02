@@ -1,0 +1,9 @@
+[submodule "core_app"]
+	path = core_app
+	url = git@git.mpi-cbg.de:scicomp/scidev_team/MassSpec.git
+[submodule "web_app/backend"]
+	path = web_app/backend
+	url = git@git.mpi-cbg.de:scicomp/scidev_team/LipidXteServer.git
+[submodule "web_app/frontend"]
+	path = web_app/frontend
+	url = git@git.mpi-cbg.de:scicomp/scidev_team/LipidXteWeb.git
