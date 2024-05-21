@@ -15,7 +15,7 @@ stages:          # List of stages for jobs, and their order of execution
   before_script:
     - apt-get update -qy
     - apt-get -y install build-essential
-    - apt-get -y install git mono
+    - apt-get -y install git mono-complete
     - pip install pytest-cov
     - python3 -V
     - pip install -r requirements.txt
