@@ -26,7 +26,7 @@ test-job:   # This job runs in the test stage.
   rules:
     - if: $CI_COMMIT_TAG
       when: never                                  # Do not run this job when a tag is created manually
-    - if: $CI_COMMIT_BRANCH == 'dev'  # Run this job when commits are pushed or merged to 'dev' branch
+    - if: $CI_COMMIT_BRANCH == 'main'  # Run this job when commits are pushed or merged to 'dev' branch
   script:
     - echo "Running unit tests..."
     - pytest --cov --cov-report term --cov-report xml:coverage.xml
@@ -44,7 +44,7 @@ lint-job:
   rules:
     - if: $CI_COMMIT_TAG
       when: never                                  # Do not run this job when a tag is created manually
-    - if: $CI_COMMIT_BRANCH == 'dev'  # Run this job when commits are pushed or merged to 'dev' branch
+    - if: $CI_COMMIT_BRANCH == 'main'  # Run this job when commits are pushed or merged to 'dev' branch
   before_script:
     - pip install pylint pylint-exit anybadge
   script:
@@ -63,7 +63,7 @@ pages:
   rules:
     - if: $CI_COMMIT_TAG
       when: never                                  # Do not run this job when a tag is created manually
-    - if: $CI_COMMIT_BRANCH == 'dev'  # Run this job when commits are pushed or merged to 'dev' branch
+    - if: $CI_COMMIT_BRANCH == 'main'  # Run this job when commits are pushed or merged to 'dev' branch
   script:
     - echo
   needs:
