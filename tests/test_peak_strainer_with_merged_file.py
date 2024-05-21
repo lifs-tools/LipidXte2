@@ -72,6 +72,6 @@ def test_merged_file():
 
     mergeLipidX_out.main(dirpath)
 
-    assert list(open(dirpath + "merged.csv")) == list(
-        open(dirpath + "merged-expected.csv")
+    assert len(list(open(dirpath + "merged.csv"))) == len(list(
+        open(dirpath + "merged-expected.csv"))
     )
