@@ -10,16 +10,12 @@ on all types of tandem mass spectrometers. Lipid identification does not rely on
 or simulated mass spectra but uses user-defined molecular fragment queries. It supports accurate, isotope-corrected
 quantification based on the identified MS1 or MS2 level fragments.
 
-## Downloading LipidXplorer
+## Python3 and Docker
 
-The latest (binary) release version of LipidXplorer is available from the [LIFS Portal](https://lifs.isas.de/lipidxplorer.html).
-You can obtain the source code for LipidXplorer from our [GitLab server](https://gitlab.isas.de/lifs/lipidxplorer) and release version archives from [here](https://gitlab.isas.de/lifs/lipidxplorer/-/releases).
+This version of source codes are converted for Python 3. We are trying to make it dockerized.
+Feel free to use it via Docker.
 
-## Running LipidXplorer on Windows
-
-For Windows, we provide a single executable for LipidXplorer for download from the [LIFS Portal](https://lifs.isas.de/lipidxplorer.html).
-Please download the zip-archive to a location of your choice and extract (unzip) the contents.
-Change to the unzipped LipidXplorer archive directory and simply double-click on `LipidXplorer.exe` to start it.
+## Usage of Docker
 
 ## Installation and Tutorials
 
@@ -28,44 +24,22 @@ These also cover the case of working with the source code.
 
 [The Wiki](https://lifs.isas.de/wiki/index.php) also offers an overview of the concepts behind LipidXplorer, as well as tutorial and reference materials.
 
-## Working with the LipidXplorer Source Code
-
-We recommend [PyCharm](https://www.jetbrains.com/pycharm/) for development of the LipidXplorer codebase and [Anaconda 3](https://www.anaconda.com/distribution/) to manage a stable, versioned Python environment.
-Any other Python IDE will also work just as well.
-Please see the `environment.yml` file in the project's source root folder for reference of an exported Anaconda environment. You can import it in your local Anaconda installation, call
-
-    conda env create -f environment.yml
-
-## Creating a Windows Executable
-
-We use `pyinstaller` (part of the Anaconda environment) to create a Python executable of LipidXplorer that can be easily run on Windows.
-To create the exe in the `LipidXplorer-1.2.8` folder, please run the following command:
-
-    pyinstaller --distpath="LipidXplorer-1.2.8" LipidXplorer.spec
-
-This will also create a zip archive of the `distpath` folder in the root directory of the project: `LipidXplorer-1.2.8.zip`.
-
-## Creating a Linux Executable
-
-The same instructions for creation of a standalone executable also apply under Linux. Please make sure, that you have a proper Anaconda environment
-installed and activated. Then run the following command:
-
-    pyinstaller --distpath="LipidXplorer-1.2.8" LipidXplorer.spec
-
-This will also create a zip archive of the `distpath` folder in the root directory of the project: `LipidXplorer-1.2.8.zip`.
-
 ## Versioning
 
 We use [Semantic Versioning](http://semver.org/) for versioning of the software.
 
 To browse available versions and releases, please see the [tags on this repository](https://gitlab.isas.de/lifs/lipidxplorer/tags).
 
+## Install for Development environment
+* Please install pre-commit package `pip install pre-commit`
+* Install pre-commit setup by `pre-commit install --install-hooks`
 ## Authors
 
 * **Ronny Herzog** - *Initial work*
 * **Jacobo Miranda Ackermann** - *Current Developer*
 * **Fadi Al Machot** - *Contributor*
 * **Nils Hoffmann** - *Contributor*
+* **HongKee Moon** - *Developer*
 
 ## License
 

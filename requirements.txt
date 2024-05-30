@@ -119,3 +119,4 @@ wrapt==1.11.2
 XSLTools==0.5
 zipp==0.6.0
 fisher-py==1.0.21
+pre-commit
