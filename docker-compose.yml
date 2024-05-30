@@ -1,0 +1,40 @@
+services:
+  lipidserver:
+    stdin_open: true
+    image: "scicomp/lipid-server"
+    build:
+      dockerfile: Dockerfile
+      tags:
+        - "scicomp/lipid-server"
+    restart: unless-stopped
+    # Development option
+    command: yarn dev
+    ports:
+      - "8090:8090"
+    # Production option
+#    command: pm2-runtime process.yml
+#    command: yarn start
+#    ports:
+#      - "8443:443"
+
+    volumes:
+      - ./docker-build/download:/app/download
+      - ./certs:/app/certs
+    environment:
+      # Logging
+      - CONSOLE_LOGGING_HANDLER_MIN_LEVEL=DEBUG
+      - CUSTOM_LOGGING
+      # Email server configuration
+      - EMAIL_HOST=host.docker.internal
+      - EMAIL_HOST_USER=
+      - EMAIL_HOST_PASSWORD=
+      - HOST_SERVER_DOMAIN_NAME=lipidxte.mpi-cbg.de
+    develop:
+      watch:
+        - action: sync
+          path: ./docker-build/lipidXte
+          target: /app/lipidXte
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: package.json
