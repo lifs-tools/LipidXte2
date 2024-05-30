@@ -1,17 +1,17 @@
-"""
-Created on 17.01.2018
+"""Created on 17.01.2018.
 
 @author: mirandaa
 @author: HongKee Moon
 """
+
 import sys
 import glob
 import os
 import folder2LXproject
 import mergeLipidX_out
 
-lipidXpath = r"../src/lximport.py"
-lipidXRun = r"../src/lxrun.py"
+lipidXpath = r"src/lximport.py"
+lipidXRun = r"src/lxrun.py"
 
 
 def main(class_name, dirpath):

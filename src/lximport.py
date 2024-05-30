@@ -1,8 +1,5 @@
-#!/usr/bin/python3
+#!/usr/local/bin/python3
 
-import os
-import sys
-import re
 from optparse import OptionParser
 import configparser
 
@@ -10,7 +7,7 @@ from lx.lxMain import startImport
 
 from lx.exceptions import LipidXException
 from lx.project import Project
-from lx.options import Options, optionsDict
+from lx.options import optionsDict
 
 # import logging
 
@@ -45,7 +42,7 @@ def lpdxImportCLI():
     ######################################################
     ###              collect the options               ###
 
-    confParse = configparser.ConfigParser()
+    configparser.ConfigParser()
 
     optParser = OptionParser(
         usage="\nlpdxCLI.py [options] [experiment/] [output.sc]\n"
@@ -297,7 +294,7 @@ def lpdxImportCLI():
     project = Project()
 
     # if the settings are comming from the project file
-    if not cliOptions.prj is None:
+    if cliOptions.prj is not None:
         # project = Project()
         project.load(cliOptions.prj)
         project.testOptions()
@@ -342,7 +339,7 @@ def lpdxImportCLI():
             print("option -m")
 
     for opt in cliOptions.__dict__.keys():
-        if not cliOptions.__dict__[opt] is None:
+        if cliOptions.__dict__[opt] is not None:
             project.options[opt] = cliOptions.__dict__[opt]
 
     project.formatOptions()

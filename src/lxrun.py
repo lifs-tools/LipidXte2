@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/local/bin/python3
 
 import os
 import re
@@ -206,7 +206,7 @@ def lpdxImportCLI():
             print(" -m.")
 
     # if the settings are comming from the project file
-    if not cliOptions.prj is None:
+    if cliOptions.prj is not None:
         project.load(cliOptions.prj)
         project.testOptions()
         # options = project.getOptions()
@@ -239,7 +239,7 @@ def lpdxImportCLI():
         project.options["resultFile"] = cliOptions.resultFile
 
     # if the settings are used from the *.ini file
-    if not cliOptions.ini is None:
+    if cliOptions.ini is not None:
         opts = Options()
         opts.initialize("%s" % cliOptions.ini)
         opts.setCurrentConfiguration(cliOptions.setting)
@@ -248,7 +248,7 @@ def lpdxImportCLI():
             project.options[opt] = opts.options[opt]
 
     # the settings come only from the command line (they overwrite existing options)
-    if not cliOptions.dumpMasterScan is None:
+    if cliOptions.dumpMasterScan is not None:
         project.options["dumpMasterScan"] = cliOptions.dumpMasterScan
         project.options["dumpMasterScanFile"] = (
             project.options["masterScan"].split(".")[0] + "-dump.csv"
@@ -265,14 +265,14 @@ def lpdxImportCLI():
                     for f in files:
                         if re.match(r"(.*\.mfql$)", f):
                             n = os.path.join(root, f)
-                            l = n.split(os.sep)
-                            dictMFQL[l[-1]] = n
+                            name = n.split(os.sep)
+                            dictMFQL[name[-1]] = n
             else:  # collect the queries from the string
-                l = mfql_file.split(os.sep)
-                dictMFQL[l[-1]] = mfql_file
+                f = mfql_file.split(os.sep)
+                dictMFQL[f[-1]] = mfql_file
 
     for opt in cliOptions.__dict__.keys():
-        if not cliOptions.__dict__[opt] is None:
+        if cliOptions.__dict__[opt] is not None:
             project.options[opt] = cliOptions.__dict__[opt]
 
     project.options["queries"] = dictMFQL

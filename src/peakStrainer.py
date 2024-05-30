@@ -1,10 +1,12 @@
 # encoding: utf-8
-"""
-Created on 29.03.2017
-PeakStrainer is a tool to reduce the size of an MS spectra,
+"""Created on 29.03.2017 PeakStrainer is a tool to reduce the size of an MS
+spectra,
+
 usage: peakStrainer spectra_file.raw
 @author: mirandaa
 """
+import fnmatch
+import re
 import sys
 import os
 import time
@@ -18,7 +20,19 @@ import collections
 log = logging.getLogger(os.path.basename(__file__))
 
 
-def main(file):
+def main(folder_path):
+    pattern = re.compile(fnmatch.translate(r"*.raw"), re.IGNORECASE)
+
+    raw_files = [
+        name for name in os.listdir(folder_path) if pattern.match(name)
+    ]
+
+    for file in raw_files:
+        print(folder_path + file)
+        process(folder_path + file)
+
+
+def process(file):
     log.setLevel(logging.INFO)
     if log.level == logging.DEBUG:
         log.addHandler(logging.StreamHandler())  # log to console
@@ -166,18 +180,8 @@ def ThermoRawfile2Scans(file_path, dropElbowIIT=True):
     # NOTE: for testing use ThermoRawfile2Scans_sample instead
     # https://github.com/ethz-institute-of-microbiology/fisher_py/blob/main/examples/raw_file_reader_example.py
     log.info("raw file: %s", file_path)
-    from fisher_py.raw_file_reader import RawFileReaderAdapter, RawFileAccess
-    from fisher_py.data.business import (
-        GenericDataTypes,
-        ChromatogramTraceSettings,
-        TraceType,
-        ChromatogramSignal,
-        SpectrumPacketType,
-        Scan,
-    )
-    from fisher_py.data.filter_enums import MsOrderType
-    from fisher_py.data import Device, ToleranceUnits
-    from fisher_py.mass_precision_estimator import PrecisionEstimate
+    from fisher_py.raw_file_reader import RawFileReaderAdapter
+    from fisher_py.data import Device
 
     rawfile = RawFileReaderAdapter.file_factory(file_path)
 
@@ -330,7 +334,7 @@ def filterScanBy_samples(scans, step_size=10):
 
 
 """
-merge peaks and coarse grained filtering 
+merge peaks and coarse grained filtering
 """
 
 
@@ -387,7 +391,7 @@ def preliminaryFilter(
     masses = peakData[0]
     log.debug("initial peak count %d", len(masses))
 
-    halfdec = (10 ** -decimal_places) / 2
+    halfdec = (10**-decimal_places) / 2
 
     # bins plus round up and round down to catch the edge cases of close to top or close to bottom of bin
     # eg  123.104 round = 123.10 up=123.11 down= 123.10
@@ -476,11 +480,11 @@ generate bins
 def generateBins_decimalPlaces(peakData, decimal_places=4):
     log.debug("generateBins_decimalPlaces, decimal_places %d", decimal_places)
     masses = peakData[0]
-    abunds = peakData[1]
-    resols = peakData[2]
+    peakData[1]
+    peakData[2]
     log.debug("generateBins_decimalPlaces, peak count %d", len(masses))
 
-    halfWidth = (10 ** -decimal_places) / 2
+    halfWidth = (10**-decimal_places) / 2
     bins_low = [round(mass - halfWidth, decimal_places) for mass in masses]
     bins_high = [round(mass + halfWidth, decimal_places) for mass in masses]
 
@@ -491,7 +495,7 @@ def generateBins_decimalPlaces(peakData, decimal_places=4):
 def generateBins_resolution(peakData, decimal_places=4):
     log.debug("generateBins_resolution, decimal_places %d", decimal_places)
     masses = peakData[0]
-    abunds = peakData[1]
+    peakData[1]
     resols = peakData[2]
     log.debug("generateBins_resolution, peak count %d", len(masses))
 
@@ -502,7 +506,7 @@ def generateBins_resolution(peakData, decimal_places=4):
         mass - ((mass / resol) / 2) for mass, resol in zip(masses, resols)
     ]
     # rounding to make bins larger
-    halfWidth = (10 ** -decimal_places) / 2
+    halfWidth = (10**-decimal_places) / 2
     bins_low = [round(mass - halfWidth, decimal_places) for mass in bins_low]
     bins_high = [round(mass + halfWidth, decimal_places) for mass in bins_high]
 
@@ -511,21 +515,21 @@ def generateBins_resolution(peakData, decimal_places=4):
 
 
 def peakWidth_at_hight(abunds, highth=0.95):
-    """ Note:
+    """Note:
     for future implementation
     assuming that the peak has a gausian curve,
     and that the resols is full width at half maximum, fwhm
     and given the equation in wikipedia for fwhm
-    
+
     the formula for the full width at an abritary height between [0,1]
-    
-    is width = 2 * sqrt(abund**2 * log(hight) / (-4*log(2))) 
-    
+
+    is width = 2 * sqrt(abund**2 * log(hight) / (-4*log(2)))
+
     """
 
     def widthAtHight(fwhm, normHight):
         return 2 * math.sqrt(
-            fwhm ** 2 * math.log(normHight) / (-4 * math.log(2))
+            fwhm**2 * math.log(normHight) / (-4 * math.log(2))
         )
 
     return [widthAtHight(abund, highth) for abund in abunds]
@@ -544,7 +548,7 @@ def generateBins_theoreticalResolution(peakData, decimal_places=4):
     from scipy.optimize import curve_fit
 
     def func(x, a, b):
-        return a * (x ** -b)
+        return a * (x**-b)
 
     sort_mass = sorted(zip(abunds, masses, resols))  # filter on intensity
     # 5408000.0, 2096000.0
@@ -566,7 +570,7 @@ def generateBins_theoreticalResolution(peakData, decimal_places=4):
         mass - ((mass / resol) / 2) for mass, resol in zip(masses, theoResols)
     ]
     # rounding to make bins larger
-    halfWidth = (10 ** -decimal_places) / 2
+    halfWidth = (10**-decimal_places) / 2
     bins_low = [round(mass - halfWidth, decimal_places) for mass in bins_low]
     bins_high = [round(mass + halfWidth, decimal_places) for mass in bins_high]
 
@@ -586,7 +590,7 @@ def generateBins_resolutionPowerFunc(
     log.debug("generateBins_resolutionPowerFunc, peak count %d", len(masses))
 
     def func(x, a, b):
-        return a * (x ** -b)
+        return a * (x**-b)
 
     popt = (a, minus_b)
 
@@ -601,7 +605,7 @@ def generateBins_resolutionPowerFunc(
         mass - ((mass / resol) / 2) for mass, resol in zip(masses, theoResols)
     ]
     # rounding to make bins larger
-    halfWidth = (10 ** -decimal_places) / 2
+    halfWidth = (10**-decimal_places) / 2
     bins_low = [round(mass - halfWidth, decimal_places) for mass in bins_low]
     bins_high = [round(mass + halfWidth, decimal_places) for mass in bins_high]
 
@@ -615,14 +619,14 @@ def generateBins_theoreticalIntensity(peakData, decimal_places=4):
     )
     masses = peakData[0]
     abunds = peakData[1]
-    resols = peakData[2]
+    peakData[2]
     log.debug("generateBins_theoreticalResolution, peak count %d", len(masses))
 
     log.info("curve fitting to generate theoreticalResolution")
     from scipy.optimize import curve_fit
 
     def func(x, a, b):
-        return a * (x ** -b)
+        return a * (x**-b)
 
     sort_mass = sorted(zip(masses, abunds))
 
@@ -646,7 +650,7 @@ def generateBins_theoreticalIntensity(peakData, decimal_places=4):
         mass - ((mass / resol) / 2) for mass, resol in zip(masses, theoResols)
     ]
     # rounding to make bins larger
-    halfWidth = (10 ** -decimal_places) / 2
+    halfWidth = (10**-decimal_places) / 2
     bins_low = [round(mass - halfWidth, decimal_places) for mass in bins_low]
     bins_high = [round(mass + halfWidth, decimal_places) for mass in bins_high]
 
@@ -705,8 +709,8 @@ def sortMassIn_FirstBin(peakData):
         "sortMassIn_FirstBin, no sorting , just the first bins that matches"
     )
     masses = peakData[0]
-    abunds = peakData[1]
-    resols = peakData[2]
+    peakData[1]
+    peakData[2]
     bins_low = peakData[3]
     bins_high = peakData[4]
 
@@ -753,8 +757,8 @@ def sortPeaksByBinWidth(peakData):
 def sortMassIn_NarrowestBin(peakData):
     log.debug("sortMassIn_NarrowestBin")
     masses = peakData[0]
-    abunds = peakData[1]
-    resols = peakData[2]
+    peakData[1]
+    peakData[2]
     bins_low = peakData[3]
     bins_high = peakData[4]
 
@@ -769,8 +773,8 @@ def sortMassIn_NarrowestBin(peakData):
     sorted_peakdata = sortPeaksByBinWidth(peakData)
 
     masses = sorted_peakdata[0]
-    abunds = sorted_peakdata[1]
-    resols = sorted_peakdata[2]
+    sorted_peakdata[1]
+    sorted_peakdata[2]
     bins_low = sorted_peakdata[3]
     bins_high = sorted_peakdata[4]
 
@@ -805,8 +809,8 @@ def sortMassIn_sortWindow(peakData, window=200):
     peakData_sorted = list(zip(*sorted(zip(*peakData))))
 
     masses = peakData_sorted[0]
-    abunds = peakData_sorted[1]
-    resols = peakData_sorted[2]
+    peakData_sorted[1]
+    peakData_sorted[2]
     bins_low = peakData_sorted[-2]
     bins_high = peakData_sorted[-1]
 
@@ -855,10 +859,10 @@ def sortMassIn_sortNarrowWindow(peakData, window=200):
     peakData_sorted = zip(*sorted(zip(*peakData)))
 
     masses = peakData_sorted[0]
-    abunds = peakData_sorted[1]
-    resols = peakData_sorted[2]
-    bins_low = peakData_sorted[3]
-    bins_high = peakData_sorted[4]
+    peakData_sorted[1]
+    peakData_sorted[2]
+    peakData_sorted[3]
+    peakData_sorted[4]
 
     bins = []
     for idx, mass in enumerate(masses):
@@ -924,12 +928,12 @@ def aggregateBinData(peakData):
     log.debug(
         "aggregateBinData count %d, count, sumZmass, sumAbund", len(peakData)
     )
-    masses = peakData[0]
-    abunds = peakData[1]
-    resols = peakData[2]
-    bins_low = peakData[3]
-    bins_high = peakData[4]
-    bins = peakData[5]
+    peakData[0]
+    peakData[1]
+    peakData[2]
+    peakData[3]
+    peakData[4]
+    peakData[5]
     binsData = dict()
 
     newRow = 0, 0.0, 0.0  #  count, sumZmass, sumAbund
@@ -987,7 +991,7 @@ def getMaxCount(binData, disregardBottom=0.10):
 def filterBins(
     binData, minRepetitionRate=0.70, decimal_places=4, disregardBottom=0.10
 ):
-    decimal = 10 ** -decimal_places
+    decimal = 10**-decimal_places
     log.debug(
         "filterBins count %d ,minRepetitionRate %f, decimal places %d, %f, desrigarding bottom %f percent",
         len(binData),
@@ -1045,12 +1049,12 @@ def bins2Peaks(binsData, peakData):
         "bins2Peaks get all the peaks with given bin, into simple list pair, mass and intentisty"
     )
     bins_filtered = binsData.keys()
-    masses = peakData[0]
-    abunds = peakData[1]
-    resols = peakData[2]
-    bins_low = peakData[3]
-    bins_high = peakData[4]
-    bins = peakData[5]
+    peakData[0]
+    peakData[1]
+    peakData[2]
+    peakData[3]
+    peakData[4]
+    peakData[5]
 
     filteredRowdata = [
         (row[0], row[1]) for row in zip(*peakData) if row[5] in bins_filtered
@@ -1070,10 +1074,9 @@ def reorder4lipidxplorer(filtered_bins):
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        print("A filename must be provided")
+        print("A folder name must be provided")
         raise SystemExit
 
-    filename = " ".join(sys.argv[1:])
+    dirpath = sys.argv[1]
 
-    for file in sys.argv[1:]:
-        main(file)
+    main(dirpath)
