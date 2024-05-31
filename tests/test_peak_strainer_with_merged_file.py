@@ -15,21 +15,6 @@ lipidXpath = r"python3 src/lximport.py"
 lipidXRun = r"python3 src/lxrun.py"
 
 
-def test_convert_ilis_rawfiles():
-    dirpath = r"/Users/moon/Projects/git-projects/LipidXte2/docker-build/download/2024-05-30T145412_911Z/"
-    peakStrainer.main(dirpath)
-    # rawfiles = glob.glob(dirpath + r"*.RAW")
-    # print(rawfiles)
-    # for rawfile in rawfiles:
-    #     print(rawfile)
-    #     peakStrainer.main(rawfile)
-    #     xmlfilename = rawfile[:-4] + ".mzXML"
-
-    # assert list(open(xmlfilename)) == list(
-    #     open(dirpath + r"expected/" + basename(xmlfilename))
-    # )
-
-
 @pytest.mark.dependency()
 def test_convert_rawfiles():
     dirpath = r"tests/resources/PC/"
