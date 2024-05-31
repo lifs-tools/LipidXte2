@@ -33,10 +33,10 @@ def test_convert_ilis_rawfiles():
 @pytest.mark.dependency()
 def test_convert_rawfiles():
     dirpath = r"tests/resources/PC/"
+    peakStrainer.main(dirpath)
     rawfiles = glob.glob(dirpath + r"*.raw")
     for rawfile in rawfiles:
         # print(rawfile)
-        peakStrainer.main(rawfile)
         xmlfilename = rawfile[:-4] + ".mzXML"
 
         assert list(open(xmlfilename)) == list(
