@@ -1,7 +1,4 @@
-# Declare builder using amd64 base image
-FROM --platform=linux/amd64 python:3.12.3-slim as builder-amd64
-# Declare builder using arm64 base image
-FROM --platform=linux/arm64 arm64v8/python:3.12.3-slim as builder-arm64
+FROM --platform=$TARGETPLATFORM python:3.12.3-slim as builder
 
 ARG TARGETARCH
 
@@ -9,7 +6,9 @@ ARG TARGETARCH
 ENV NODE_ENV production
 
 # Select builder stage based on TARGETARCH ARG
-FROM builder-${TARGETARCH}
+FROM builder
+
+ARG TARGETARCH
 
 RUN apt update && \
     apt install -y  \
@@ -68,7 +67,18 @@ RUN corepack enable
 RUN yarn set version stable
 RUN yarn
 
-#CMD ["yarn", "dev"]
+# Development mode
+CMD ["yarn", "dev"]
 
-# Exposing server port
-#EXPOSE 8090
+EXPOSE 8090
+
+# Production mode
+#CMD ["yarn", "start"]
+#
+## Exposing server port
+#EXPOSE 80
+#EXPOSE 443
+
+# Run this docker with root for using 443 port
+# docker build -t lipidserver:latest .
+# docker run -d -v /local/moon/LipidXteServer/certs:/app/certs -v /local/moon/LipidXteServer/download:/app/download -v /local/moon/LipidXteServer/web:/app/web -p 0.0.0.0:80:80 -p 0.0.0.0:443:443 lipidserver:latest
