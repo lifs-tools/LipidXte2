@@ -7,7 +7,7 @@ from lx.mfql.chemParser import parseElemSeq
 from lx.mfql.chemsc import ElementSequence, SCConstraint
 from lx.spectraContainer import SurveyEntry
 from lx.mfql.generateMasterScan import genMasterScan, saveMasterScan
-from lx.exceptions import SyntaxErrorException
+from lx.exceptions import SyntaxErrorException, LogicErrorException
 import time
 
 keywords = (
@@ -132,18 +132,15 @@ t_PERCENT = r"%"
 def t_comment(t):
     r"[ ]*\043[^\n]*"
     t.lexer.lineno += t.value.count("\n")
-    pass
 
 
 def t_WS(t):
     r"[ \t]+"
-    pass
 
 
 def t_WS_NL(t):
     r"(([ \t]*)\n)"
     t.lexer.lineno += t.value.count("\n")
-    pass
 
 
 # def t_NEWLINE(t):
@@ -293,11 +290,11 @@ def p_var_normal(p):
     """var : DEFINE ID IS object options SEMICOLON
     | DEFINE ID IS object options AS NEUTRALLOSS SEMICOLON"""
 
-    if len(p) == 7 and p[5] != None:
+    if len(p) == 7 and p[5] is not None:
         p[4].addOptions(p[5])
 
     elif len(p) == 9:
-        if p[5] != None:  # options are given
+        if p[5] is not None:  # options are given
             index = 0
 
             # accidantly the user could have added a CHG option,
@@ -347,7 +344,7 @@ def p_var_normal(p):
 def p_var_emptyVar(p):
     """var : DEFINE ID options SEMICOLON"""
 
-    if len(p) == 5 and p[3] != None:
+    if len(p) == 5 and p[3] is not None:
         o = TypeSFConstraint(elementSequence=ElementSequence())
         o.addOptions(p[3])
     else:
@@ -746,7 +743,7 @@ def p_marks(p):
             for i in list(
                 mfqlObj.dictDefinitionTable[mfqlObj.queryName].keys()
             ):
-                if not i in [x.name for x in p[1].list()]:
+                if i not in [x.name for x in p[1].list()]:
                     name = i.split(mfqlObj.namespaceConnector)
                     raise SyntaxErrorException(
                         "The variable '%s' in query '%s'has to be used in IDENTIFY"
@@ -853,7 +850,6 @@ def p_evalMarks(p):
         print("IDENTIFY the masses of interest ...", end=" ")
         mfqlObj.scan.evaluate()
         print("%.2f sec." % (time.perf_counter() - start_time))
-    pass
 
 
 def p_suchthat_single(p):
@@ -1124,8 +1120,6 @@ def p_expression_struct(p):
 
     # 	p[0].evaluate()
 
-    pass
-
 
 def p_expression_attribute(p):
     """expression : LPAREN expression RPAREN LBRACE ID RBRACE"""
@@ -1192,9 +1186,9 @@ def p_scan_object(p):
 
     if p[4]:
         for o in p[4]:
-            mfqlObj.dictDefinitionTable[mfqlObj.queryName][v].options[
-                o[0]
-            ] = o[1]
+            mfqlObj.dictDefinitionTable[mfqlObj.queryName][v].options[o[0]] = (
+                o[1]
+            )
 
     ### read massrange from sc-constraint ###
     if isinstance(
@@ -1242,8 +1236,8 @@ def p_scan_object(p):
 
     ### check for the tolerance settings ###
     if (
-        not "tolerance"
-        in mfqlObj.dictDefinitionTable[mfqlObj.queryName][v].options
+        "tolerance"
+        not in mfqlObj.dictDefinitionTable[mfqlObj.queryName][v].options
     ):
         if p[3] == "MS1+" or p[3] == "MS1-":
             mfqlObj.precursor = mfqlObj.dictDefinitionTable[mfqlObj.queryName][
@@ -1298,7 +1292,10 @@ def p_error(p):
         print("SYNTAX ERROR at EOF")
         raise SyntaxErrorException("SYNTAX ERROR at EOF")
     else:
-        # print "SYNTAX ERROR at '%s' in line %d of file '%s' " % (p.value, p.lineno, mfqlObj.queryName)
+        print(
+            "SYNTAX ERROR at '%s' in line %d of file '%s' "
+            % (p.value, p.lineno, mfqlObj.queryName)
+        )
         # detail = "Syntax error at '%s' in file '%s' in line '%d'" % (p.value, mfqlObj.filename, p.lexer.lineno)
         detail = "Syntax error at '%s' in file '%s'" % (
             p.value,
