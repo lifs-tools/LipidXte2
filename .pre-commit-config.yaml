@@ -11,7 +11,14 @@ repos:
     hooks:
       # Run the linter.
       - id: ruff
-        args: [ --fix ]
+        args: [ "--fix", "--select", "E4,E7,E9,F", "--ignore", "E402,F403,F405" ]
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 24.3.0
+    hooks:
+      - id: black
+        language_version: python3
+        args:
+          - "--preview"
   - repo: https://github.com/PyCQA/autoflake
     rev: v2.3.1
     hooks:

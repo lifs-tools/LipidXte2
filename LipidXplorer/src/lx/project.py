@@ -1,21 +1,26 @@
-import os, re
 import configparser
-from lx.options import Options
+import os
+import re
+
 from lx.exceptions import LipidXException
-from lx.mfql.runtimeStatic import TypeTolerance
-from copy import copy, deepcopy
+from lx.options import Options
 
 
 class Project(Options):
-    """The project class handels LX project values, i.e. all
-	values which are set in the GUI. They are stored in an *.ini
-	file with ConfigParser."""
+    """The project class handels LX project values, i.e. all values which are
+    set in the GUI.
+
+    They are stored in an *.ini file with ConfigParser.
+    """
 
     def __init__(self, options=None):
-        """ All options are defined here. There are two dictionaries:
-		options and options_formatted. The options dictionary stores the
-		orginal string values while the options_formatted dictionary
-		stores the values in the needed format."""
+        """All options are defined here.
+
+        There are two dictionaries:
+        options and options_formatted. The options dictionary stores the
+        orginal string values while the options_formatted dictionary
+        stores the values in the needed format.
+        """
 
         Options.__init__(self, options=options)
 
@@ -23,7 +28,7 @@ class Project(Options):
         self.confParse = None
 
         # fill 'self.options' if 'options' is given
-        if not options is None:
+        if options is not None:
             for key in self.options.keys():
                 self.options[key] = options[key]
 
@@ -39,7 +44,7 @@ class Project(Options):
         self.confParse.read(self.projectFilePath)
 
     def load(self, path):
-        """load and open a project file"""
+        """Load and open a project file."""
 
         ### check version and downward compatibility ###
 
@@ -69,7 +74,7 @@ class Project(Options):
             try:
                 self.options[opt] = self.confParse.get(self.sectionP, opt)
             except configparser.NoOptionError:
-                print("Option '%s' is not contained in the project file", opt)
+                print(f"Option '{opt}' is not contained in the project file")
 
         # method from the Options superclass
         self.importSettingsSet = self.allImportSettingsSet()
@@ -109,91 +114,13 @@ class Project(Options):
         for m in list(dictMfql.keys()):
             self.mfql[m] = dictMfql[m]
 
-    def writeOptionsToIni(self):
-
-        self.testConfiguration()
-
-        # write all settings
-        self.confParse.set(
-            configuration, "selectionWindow", o["selectionWindow"]
-        )
-        self.confParse.set(
-            configuration,
-            "timerange",
-            "(%f,%f)" % (o["timerange"][0], o["timerange"][1]),
-        )
-        self.confParse.set(
-            configuration, "selectionWindow", o["selectionWindow"]
-        )
-        str = ""
-        for m in o["MScalibration"]:
-            str += "%.4f," % m
-        self.confParse.set(configuration, "MScalibration", str)
-        str = ""
-        for m in o["MSMScalibration"]:
-            str += "%.4f," % m
-        self.confParse.set(configuration, "MSMScalibration", str)
-        self.confParse.set(
-            configuration,
-            "MSmassrange",
-            "(%f,%f)" % (o["MSmassrange"][0], o["MSmassrange"][1]),
-        )
-        self.confParse.set(
-            configuration,
-            "MSMSmassrange",
-            "(%f,%f)" % (o["MSMSmassrange"][0], o["MSMSmassrange"][1]),
-        )
-        self.confParse.set(
-            configuration, "MSresolution", o["MSresolution"].tolerance
-        )
-        self.confParse.set(
-            configuration, "MSMSresolution", o["MSMSresolution"].tolerance
-        )
-        self.confParse.set(configuration, "MStolerance", o["MStolerance"])
-        self.confParse.set(configuration, "MSMStolerance", o["MSMStolerance"])
-        self.confParse.set(configuration, "MSthreshold", str(o["MSthreshold"]))
-        self.confParse.set(
-            configuration, "MSMSthreshold", str(o["MSMSthreshold"])
-        )
-        self.confParse.set(
-            configuration, "MSresolutionDelta", str(o["MSresolutionDelta"])
-        )
-        self.confParse.set(
-            configuration, "MSMSresolutionDelta", str(o["MSMSresolutionDelta"])
-        )
-        self.confParse.set(
-            configuration, "MSminOccupation", o["MSminOccupation"]
-        )
-        self.confParse.set(
-            configuration, "MSMSminOccupation", o["MSMSminOccupation"]
-        )
-        self.confParse.set(
-            configuration, "precursorMassShift", o["precursorMassShift"]
-        )
-        self.confParse.set(
-            configuration,
-            "precursorMassShiftOrbi",
-            o["precursorMassShiftOrbi"],
-        )
-        self.confParse.set(
-            configuration, "alignmentMethodMS", o["alignmentMethodMS"]
-        )
-        self.confParse.set(
-            configuration, "alignmentMethodMSMS", o["alignmentMethodMSMS"]
-        )
-        self.confParse.set(
-            configuration, "scanAveragingMethod", o["scanAveragingMethod"]
-        )
-        self.confParse.set(configuration, "importMSMS", o["importMSMS"])
-
-        self.confParse.write(open(self.projectFilePath, "w+"))
-
 
 class GUIProject(Project):
-    """Load the project file into the GUI"""
+    """Load the project file into the GUI."""
 
     def formatOptions(self):
-        """Formats the some settings of the current configuration to fit in the GUI."""
+        """Formats the some settings of the current configuration to fit in the
+        GUI."""
 
         o = self.options
 
@@ -204,7 +131,7 @@ class GUIProject(Project):
             if o[option] == "False":
                 self.options_formatted[option] = False
 
-        if not o["timerange"] is None:
+        if o["timerange"] is not None:
             self.options_formatted["timerange"] = (
                 o["timerange"].split(",")[0].strip("() "),
                 o["timerange"].split(",")[1].strip("() "),
@@ -219,49 +146,49 @@ class GUIProject(Project):
                 "MSMScalibration"
             ].split(",")
 
-        if not o["MSmassrange"] is None:
+        if o["MSmassrange"] is not None:
             self.options_formatted["MSmassrange"] = (
                 (o["MSmassrange"].split(",")[0].strip("() ")),
                 (o["MSmassrange"].split(",")[1].strip("() ")),
             )
-        if not o["MSMSmassrange"] is None:
+        if o["MSMSmassrange"] is not None:
             self.options_formatted["MSMSmassrange"] = (
                 (o["MSMSmassrange"].split(",")[0].strip("() ")),
                 (o["MSMSmassrange"].split(",")[1].strip("() ")),
             )
 
-        if not o["MSresolution"] is None:
+        if o["MSresolution"] is not None:
             self.options_formatted["MSresolution"] = o["MSresolution"]
-        if not o["MSMSresolution"] is None:
+        if o["MSMSresolution"] is not None:
             self.options_formatted["MSMSresolution"] = o["MSMSresolution"]
 
-        if not self.options["MStolerance"] is None:
+        if self.options["MStolerance"] is not None:
             m = re.match(
                 r"(\d+|\d+\.\d+)(\s)*(ppm|Da)", self.options["MStolerance"]
             )
             if m is None:
                 if (
-                    not o["MStoleranceType"] is None
+                    o["MStoleranceType"] is not None
                     and not o["MStoleranceType"] == ""
                 ):
                     m = re.match(r"(\d+|\d+\.\d+)", o["MStolerance"])
-                    if not m is None:
+                    if m is not None:
                         self.options_formatted["MStolerance"] = o[
                             "MStolerance"
                         ]
             else:
                 self.options_formatted["MStolerance"] = o["MStolerance"]
-        if not self.options["MSMStolerance"] is None:
+        if self.options["MSMStolerance"] is not None:
             m = re.match(
                 r"(\d+|\d+\.\d+)(\s)*(ppm|Da)", self.options["MSMStolerance"]
             )
             if m is None:
                 if (
-                    not o["MSMStoleranceType"] is None
+                    o["MSMStoleranceType"] is not None
                     and not o["MSMStoleranceType"] == ""
                 ):
                     m = re.match(r"(\d+|\d+\.\d+)", o["MSMStolerance"])
-                    if not m is None:
+                    if m is not None:
                         self.options_formatted["MSMStolerance"] = o[
                             "MSMStolerance"
                         ]
@@ -273,5 +200,5 @@ class GUIProject(Project):
 
         # copy the rest of the string based options to the internal options
         for opt in self.options.keys():
-            if not opt in self.options_formatted.keys():
+            if opt not in self.options_formatted.keys():
                 self.options_formatted[opt] = self.options[opt]
