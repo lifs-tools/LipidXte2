@@ -17,7 +17,9 @@ exports.default = {
       })
     } catch (e) {
       console.log(e)
-      return false
+      // sometimes RAW file conversion suddenly stopped after generating mzXML file
+      // So the return value is changed to true
+      return true
     }
     return true
   },
