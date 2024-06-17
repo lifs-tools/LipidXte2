@@ -364,6 +364,7 @@ app.route('/batch')
     // }
 
     let file = DOWNLOAD_DIR + path.sep + folder + path.sep + outputTsv
+    let mergedOut = DOWNLOAD_DIR + path.sep + folder + path.sep + 'merged.csv'
 
     if (fsext.existsSync(file)) {
       let inputFolder = DOWNLOAD_DIR + path.sep + folder
@@ -380,6 +381,13 @@ app.route('/batch')
             nce = nce.slice(nce.indexOf('\t') + 1, nce.lastIndexOf('\t'))
         }
         // console.log(nce)
+      } else {
+        if (fsext.existsSync(mergedOut)) {
+          let data = fsext.readFileSync(mergedOut, 'utf-8')
+
+          nce = data.split('\n').filter(c => c.startsWith('#NCE')).map(line => parseFloat(line.split(',')[1]))
+          nce = JSON.stringify(nce).replaceAll(',', ', ')
+        }
       }
 
       fsext.readFile(file, (err, data) => {
@@ -394,10 +402,18 @@ app.route('/batch')
 
       // try to run LipidXte
       let process = require('./lipidXte').process
-      let mergedOut = DOWNLOAD_DIR + path.sep + folder + path.sep + 'merged.csv'
       let inputFolder = DOWNLOAD_DIR + path.sep + folder
 
       let nce = '[25.0, 30.0, 35.0]'
+      // Extract NCE from merged.csv
+
+      if (fsext.existsSync(mergedOut)) {
+        let data = fsext.readFileSync(mergedOut, 'utf-8')
+
+        nce = data.split('\n').filter(c => c.startsWith('#NCE')).map(line => parseFloat(line.split(',')[1]))
+        nce = JSON.stringify(nce).replaceAll(',', ', ')
+      }
+
       // Machine Performance check
       // if (fsext.existsSync(mergedOut) && !fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
       //   console.log('Machine Performance Check...')
@@ -723,7 +739,7 @@ app.route('/ultimate')
 
     // 'RemoveRef SummarizeNCE GroupOnly'
     let outputTsv = 'output_' + quantOption + '_' + outputOption + '(' + options + ').tsv'
-
+    let mergedOut = SAMPLE_DIR + path.sep + folder + path.sep + 'merged.csv'
     let file = SAMPLE_DIR + path.sep + folder + path.sep + outputTsv
 
     if (fsext.existsSync(file)) {
@@ -740,6 +756,13 @@ app.route('/ultimate')
           nce = nce.slice(nce.indexOf('\t') + 1, nce.lastIndexOf('\t'))
         }
         // console.log(nce)
+      } else {
+        if (fsext.existsSync(mergedOut)) {
+          let data = fsext.readFileSync(mergedOut, 'utf-8')
+
+          nce = data.split('\n').filter(c => c.startsWith('#NCE')).map(line => parseFloat(line.split(',')[1]))
+          nce = JSON.stringify(nce).replaceAll(',', ', ')
+        }
       }
 
       fsext.readFile(file, (err, data) => {
@@ -754,7 +777,6 @@ app.route('/ultimate')
 
       // try to run LipidXte
       let process = require('./lipidXte').process
-      let mergedOut = SAMPLE_DIR + path.sep + folder + path.sep + 'merged.csv'
       let inputFolder = SAMPLE_DIR + path.sep + folder
 
       let nce = '[25.0, 30.0, 35.0]'
@@ -770,6 +792,12 @@ app.route('/ultimate')
       // if (nceString !== 'null') {
       //   nce = nceString
       // }
+      if (fsext.existsSync(mergedOut)) {
+        let data = fsext.readFileSync(mergedOut, 'utf-8')
+
+        nce = data.split('\n').filter(c => c.startsWith('#NCE')).map(line => parseFloat(line.split(',')[1]))
+        nce = JSON.stringify(nce).replaceAll(',', ', ')
+      }
 
       console.log(nce)
 
