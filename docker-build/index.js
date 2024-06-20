@@ -250,6 +250,35 @@ app.route('/process')
         //   return
         // }
 
+        // 4.1 Class matching test
+        if (fsext.existsSync(mergedOut)) {
+          // console.log('Machine Performance Check...')
+          db.run(updateSql, ['Lipid Class check started', rowId])
+
+
+          let data = fsext.readFileSync(mergedOut, 'utf-8')
+
+          // Checking class in the merged file
+          // data = data.split('\n').filter(c => c.startsWith('###')).map(line => line.split(',')[1])
+          // data = data.filter(c => c.endsWith('FAS')).map(line => line.replaceAll('FAS', ''))
+          // let clazz = data && data.length > 0 ? data[0] : ''
+
+          // Checking the number of items
+          data = data.split('\n')
+
+          success = (data.length > 100)
+        }
+
+        if (success) {
+          db.run(updateSql, ['Lipid Class check finished', rowId])
+        } else {
+          db.run(updateSql, ['Lipid Class check finished(Failed)', rowId])
+          let err = 'process.lipidClassCheck failed. Please, contact to authors.'
+          console.error(err)
+          res.status(500).send(err)
+          return
+        }
+
         // 5. Verify merged-out.csv for LipidXte process
         if (fsext.existsSync(mergedOut)) {
           console.log('Run LipidXte...')
