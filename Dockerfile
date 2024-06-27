@@ -11,7 +11,7 @@ FROM builder
 ARG TARGETARCH
 
 RUN apt update && \
-    apt install -y  \
+    apt install -y \
     sudo \
     ssh \
     git \
@@ -24,7 +24,7 @@ RUN apt-key adv     --keyserver hkp://keyserver.ubuntu.com:80  \
     apt install ./zulu-repo_1.0.0-2_all.deb
 
 RUN apt update && \
-    apt install -y  \
+    apt install -y \
     build-essential  \
     python-dev-is-python3  \
     nodejs \
@@ -36,10 +36,10 @@ RUN apt update && \
 RUN wget https://cdn.azul.com/zulu/bin/zulu8.78.0.19-ca-fx-jdk8.0.412-linux_${TARGETARCH}.deb && \
     apt-get -yq install -f ./zulu8.78.0.19-ca-fx-jdk8.0.412-linux_${TARGETARCH}.deb && \
     rm -rf ./zulu8.78.0.19-ca-fx-jdk8.0.412-linux_${TARGETARCH}.deb && \
-    rm -rf /var/lib/apt/lists/* && \
     apt-get remove -y gnupg && \
-    apt-get autoremove -y && \
-    apt-get clean
+    apt-get clean autoclean && \
+    apt-get autoremove --yes && \
+    rm -rf /var/lib/apt/lists/*
 
 
 #RUN apt install -y dirmngr ca-certificates gnupg && \
@@ -50,7 +50,7 @@ RUN wget https://cdn.azul.com/zulu/bin/zulu8.78.0.19-ca-fx-jdk8.0.412-linux_${TA
 #    rm -rf /var/lib/apt/lists/*
 
 
-RUN python3 -m pip install \
+RUN python3 -m pip install --no-cache-dir \
     numpy \
     ply \
     configparser \
@@ -70,6 +70,7 @@ RUN npm install -g corepack
 RUN corepack enable
 RUN yarn set version stable
 RUN yarn
+RUN yarn cache clean --all
 
 # Development mode
 CMD ["yarn", "dev"]
