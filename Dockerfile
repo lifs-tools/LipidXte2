@@ -35,7 +35,11 @@ RUN apt update && \
 
 RUN wget https://cdn.azul.com/zulu/bin/zulu8.78.0.19-ca-fx-jdk8.0.412-linux_${TARGETARCH}.deb && \
     apt-get -yq install -f ./zulu8.78.0.19-ca-fx-jdk8.0.412-linux_${TARGETARCH}.deb && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf ./zulu8.78.0.19-ca-fx-jdk8.0.412-linux_${TARGETARCH}.deb && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get remove -y gnupg && \
+    apt-get autoremove -y && \
+    apt-get clean
 
 
 #RUN apt install -y dirmngr ca-certificates gnupg && \

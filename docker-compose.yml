@@ -36,6 +36,7 @@ services:
 
     volumes:
       - ./docker-build/download:/app/download
+      - ./docker-build/sample:/app/sample
       - ./web:/app/web
 
     develop:
