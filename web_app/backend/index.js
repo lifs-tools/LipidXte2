@@ -12,7 +12,8 @@ const app = express(),
   port = process.env.PORT || 443,
   BASE_DIR = path.join(__dirname, '.'),
   DOCS_DIR = path.join(BASE_DIR, 'www'),
-  DOWNLOAD_DIR = path.join(BASE_DIR, 'download')
+  DOWNLOAD_DIR = path.join(BASE_DIR, 'download'),
+  SAMPLE_DIR = path.join(BASE_DIR, 'sample')
 
 const sqlite3 = require('sqlite3').verbose()
 const db = new sqlite3.Database('db.sqlite')
@@ -177,19 +178,19 @@ app.route('/process')
         let lawFileProcessed = false
         let inputFolder = DOWNLOAD_DIR + path.sep + folder
         let success = true
+        let rawFiles = []
         fsext.readdirSync(DOWNLOAD_DIR + path.sep + folder).forEach( function (file)
         {
           if (file.endsWith('.raw') || file.endsWith('.RAW')) {
-            console.log('RAW file detected. Run peakStainer')
-            lawFileProcessed = true
-
-            // process.rawfile(inputFolder + path.sep + file)
-            // wine version
-            if(success) {
-              success = process.rawfile('download\\\\' + folder + '\\\\' + file)
-            }
+            rawFiles.push(file)
           }
         })
+
+        if (rawFiles.length > 0) {
+          console.log('RAW file detected. Run peakStainer')
+          success = process.processRawfiles(inputFolder + path.sep)
+          lawFileProcessed = true
+        }
 
         if(success) {
           db.run(updateSql, ['RawFileProcessed', rowId])
@@ -364,19 +365,21 @@ app.route('/batch')
 
     if (fsext.existsSync(file)) {
       let inputFolder = DOWNLOAD_DIR + path.sep + folder
-      let nce = ''
+      let nce = '[25.0, 30.0, 35.0]'
       // Machine Performance check
-      if (fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
-        let data = fsext.readFileSync(inputFolder + path.sep + 'machine_performance.tsv')
-        nce = data.toString('utf8').slice(0, data.indexOf('\n'))
-        let checkValue = nce.slice(nce.lastIndexOf('\t') + 1)
-        if (checkValue === '-Infinity') {
-            nce = '[25.0, 30.0, 35.0]'
-        } else {
-            nce = nce.slice(nce.indexOf('\t') + 1, nce.lastIndexOf('\t'))
-        }
-        // console.log(nce)
-      }
+      // if (fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
+      //
+      //   let nce = '[25.0, 30.0, 35.0]'
+      //   let data = fsext.readFileSync(inputFolder + path.sep + 'machine_performance.tsv')
+      //   nce = data.toString('utf8').slice(0, data.indexOf('\n'))
+      //   let checkValue = nce.slice(nce.lastIndexOf('\t') + 1)
+      //   if (checkValue === '-Infinity') {
+      //       nce = '[25.0, 30.0, 35.0]'
+      //   } else {
+      //       nce = nce.slice(nce.indexOf('\t') + 1, nce.lastIndexOf('\t'))
+      //   }
+      //   // console.log(nce)
+      // }
 
       fsext.readFile(file, (err, data) => {
         if (err) throw err
@@ -393,16 +396,16 @@ app.route('/batch')
       let mergedOut = DOWNLOAD_DIR + path.sep + folder + path.sep + 'merged.csv'
       let inputFolder = DOWNLOAD_DIR + path.sep + folder
 
-      let nce = ''
+      let nce = '[25.0, 30.0, 35.0]'
       // Machine Performance check
-      if (fsext.existsSync(mergedOut) && !fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
-        console.log('Machine Performance Check...')
-        process.machinePerformance(mergedOut, inputFolder)
-      }
-
-      let data = fsext.readFileSync(inputFolder + path.sep + 'machine_performance.tsv')
-      nce = data.toString('utf8').slice(0, data.indexOf('\n'))
-      nce = nce.slice(nce.indexOf('\t') + 1, nce.lastIndexOf('\t'))
+      // if (fsext.existsSync(mergedOut) && !fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
+      //   console.log('Machine Performance Check...')
+      //   process.machinePerformance(mergedOut, inputFolder)
+      // }
+      //
+      // let data = fsext.readFileSync(inputFolder + path.sep + 'machine_performance.tsv')
+      // nce = data.toString('utf8').slice(0, data.indexOf('\n'))
+      // nce = nce.slice(nce.indexOf('\t') + 1, nce.lastIndexOf('\t'))
       // console.log(nce)
 
       // 4. Run LipidXte process
@@ -699,7 +702,7 @@ app.route('/ultimate')
   .get(function (req, res) {
     let folder = req.headers.timestamp
 
-    console.log('Getting batch ... ' + DOWNLOAD_DIR + path.sep + folder)
+    console.log('Getting batch ... ' + SAMPLE_DIR + path.sep + folder)
 
     // batch id check
 
@@ -712,58 +715,73 @@ app.route('/ultimate')
     console.log(options)
     console.log(outputOption)
 
-    let groupFile = DOWNLOAD_DIR + path.sep + folder + path.sep + 'groups.json'
+    let groupFile = SAMPLE_DIR + path.sep + folder + path.sep + 'groups.json'
 
     const contents = fsext.readFileSync(groupFile, 'utf8')
     let groups = JSON.parse(contents)
 
     // 'RemoveRef SummarizeNCE GroupOnly'
     let outputTsv = 'output_' + quantOption + '_' + outputOption + '(' + options + ').tsv'
-
-    let file = DOWNLOAD_DIR + path.sep + folder + path.sep + outputTsv
+    let mergedOut = SAMPLE_DIR + path.sep + folder + path.sep + 'merged.csv'
+    let file = SAMPLE_DIR + path.sep + folder + path.sep + outputTsv
+    let standard_list_file = SAMPLE_DIR + path.sep + folder + path.sep + 'standard_list.csv'
+    const standard_list_exists = fsext.existsSync(standard_list_file)
+    console.log('Standard list file exists: ', standard_list_exists)
 
     if (fsext.existsSync(file)) {
-      // let inputFolder = DOWNLOAD_DIR + path.sep + folder
+      let inputFolder = SAMPLE_DIR + path.sep + folder
       let nce = '[25.0, 30.0, 35.0]'
       // Machine Performance check
-      // if (fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
-      //   let data = fsext.readFileSync(inputFolder + path.sep + 'machine_performance.tsv')
-      //   nce = data.toString('utf8').slice(0, data.indexOf('\n'))
-      //   let checkValue = nce.slice(nce.lastIndexOf('\t') + 1)
-      //   if (checkValue === '-Infinity') {
-      //     nce = '[25.0, 30.0, 35.0]'
-      //   } else {
-      //     nce = nce.slice(nce.indexOf('\t') + 1, nce.lastIndexOf('\t'))
-      //   }
-      //   // console.log(nce)
-      // }
+      if (fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
+        let data = fsext.readFileSync(inputFolder + path.sep + 'machine_performance.tsv')
+        nce = data.toString('utf8').slice(0, data.indexOf('\n'))
+        let checkValue = nce.slice(nce.lastIndexOf('\t') + 1)
+        if (checkValue === '-Infinity' || checkValue === 'null') {
+          nce = '[25.0, 30.0, 35.0]'
+        } else {
+          nce = nce.slice(nce.indexOf('\t') + 1, nce.lastIndexOf('\t'))
+        }
+        // console.log(nce)
+      } else {
+        if (fsext.existsSync(mergedOut)) {
+          let data = fsext.readFileSync(mergedOut, 'utf-8')
+
+          nce = data.split('\n').filter(c => c.startsWith('#NCE')).map(line => parseFloat(line.split(',')[1]))
+          nce = JSON.stringify(nce).replaceAll(',', ', ')
+        }
+      }
 
       fsext.readFile(file, (err, data) => {
         if (err) throw err
         let result = []
         result.push(nce)
         result.push(data.toString())
-        res.status(200).send(result.join('\n'))
+        result.push(standard_list_exists)
+        res.status(200).json(result)
       })
     } else {
       console.error(file + ' does not exist. Try to run LipidXte to produce it...')
 
       // try to run LipidXte
       let process = require('./lipidXte').process
-      let mergedOut = DOWNLOAD_DIR + path.sep + folder + path.sep + 'merged.csv'
-      let inputFolder = DOWNLOAD_DIR + path.sep + folder
+      let mergedOut = SAMPLE_DIR + path.sep + folder + path.sep + 'merged.csv'
+      let inputFolder = SAMPLE_DIR + path.sep + folder
 
       let nce = '[25.0, 30.0, 35.0]'
       // Machine Performance check
-      // if (fsext.existsSync(mergedOut) && !fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
-      //   console.log('Machine Performance Check...')
-      //   process.machinePerformance(mergedOut, inputFolder)
-      // }
+      if (fsext.existsSync(mergedOut) && !fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
+        console.log('Machine Performance Check...')
+        process.machinePerformance(mergedOut, inputFolder)
+      }
 
-      // let data = fsext.readFileSync(inputFolder + path.sep + 'machine_performance.tsv')
-      // nce = data.toString('utf8').slice(0, data.indexOf('\n'))
-      // nce = nce.slice(nce.indexOf('\t') + 1, nce.lastIndexOf('\t'))
-      // console.log(nce)
+      let data = fsext.readFileSync(inputFolder + path.sep + 'machine_performance.tsv')
+      const line = data.toString('utf8').slice(0, data.indexOf('\n'))
+      const nceString = line.slice(line.indexOf('\t') + 1, line.lastIndexOf('\t'))
+      if (nceString !== 'null') {
+        nce = nceString
+      }
+
+      console.log(nce)
 
       // 4. Run LipidXte process
       process.lipidXte(BASE_DIR, mergedOut, inputFolder, groups.group1, groups.group2, groups.group3, quantOption, outputOption, options.replace(/_/g, ' '))
@@ -775,13 +793,54 @@ app.route('/ultimate')
           let result = []
           result.push(nce)
           result.push(data.toString())
-          res.status(200).send(result.join('\n'))
+          result.push(standard_list_exists)
+          res.status(200).json(result)
         })
       } else {
         console.error(outputTsv + ' is not generated.')
 
         res.sendStatus(500)
       }
+    }
+  })
+
+// Download ultimate data
+app.route('/download-ultimate')
+  .get(function (req, res) {
+    let folder = req.headers.timestamp.replace(/:/g, '')
+    folder = folder.replace(/\./g, '_')
+
+    console.log('Getting batch for downloading... ' + SAMPLE_DIR + path.sep + folder)
+
+    // batch id check
+
+    // parsing all the parameters
+    let quantOption = req.headers.quantoption
+    let options = req.headers.options
+    let outputOption = req.headers.outputoption
+
+    // 'RemoveRef SummarizeNCE GroupOnly'
+    let outputTsv = 'output_' + quantOption + '_' + outputOption + '(' + options + ').tsv'
+
+    let file = SAMPLE_DIR + path.sep + folder + path.sep + outputTsv
+
+    if (fsext.existsSync(file)) {
+      fsext.readFile(file, 'utf-8', (err, data) => {
+        if (err) throw err
+
+        data = data.replace(/\t/g, ',')
+        outputTsv = outputTsv.replace('.tsv', '.csv')
+        res.writeHead(200, {
+          'Content-Type': 'text/csv',
+          'Content-disposition': 'attachment;filename="' + outputTsv + '"',
+          'Content-Length': data.length
+        })
+        res.end(new Buffer(data, 'binary'))
+      })
+    } else {
+      console.error(file + ' does not exist. Try to run LipidXte to produce it...')
+
+      res.sendStatus(500)
     }
   })
 
@@ -813,7 +872,7 @@ if (require.main === module) {
 
     let options = {
       key: fs.readFileSync('/etc/pki/tls/private/lipidxte.key.2023'),
-      cert: fs.readFileSync( '/etc/pki/tls/certs/lipidxte.pem.2023' )
+      cert: fs.readFileSync( '/etc/pki/tls/certs/lipidxte.pem.2024' )
     }
 
     let https = require('https')

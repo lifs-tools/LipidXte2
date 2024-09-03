@@ -9,7 +9,7 @@ describe('LipidXteServer', () => {
     const res = await requestWithSupertest.get('/classes');
     expect(res.status).toEqual(200);
     expect(res.type).toEqual(expect.stringContaining('json'));
-    expect(res.body).toEqual(["PA", "PC", "PCO", "PE", "PEO", "PG", "PI", "PS"])
+    expect(res.body).toEqual(["PA", "PC", "PCO", "PCO-FANL", "PCO-M-60","PCO-PR","PE", "PEO", "PG", "PI", "PS"])
   });
 });
 
@@ -55,3 +55,26 @@ it('GET / shows the SN2 curve', async () => {
   console.log(res.body)
   // expect(res.body).toEqual(["PA", "PC", "PCO", "PE", "PEO", "PG", "PI", "PS"])
 });
+
+it('GET / shows the SYM curve', async () => {
+  const res = await requestWithSupertest.get('/SYM/PC/1');
+  expect(res.status).toEqual(200);
+  expect(res.type).toEqual(expect.stringContaining('json'));
+  console.log(res.body)
+  // expect(res.body).toEqual(["PA", "PC", "PCO", "PE", "PEO", "PG", "PI", "PS"])
+});
+
+it('GET / check the user permission', async () => {
+  const res = await requestWithSupertest.get('/checkPass/lipidMpi003');
+  expect(res.status).toEqual(200);
+  expect(res.type).toEqual(expect.stringContaining('json'));
+  expect(res.body).toEqual([true, ''])
+});
+
+it('GET / check the user permission with wrong password', async () => {
+  const res = await requestWithSupertest.get('/checkPass/wrongPass');
+  expect(res.status).toEqual(500);
+  expect(res.type).toEqual(expect.stringContaining('json'));
+  expect(res.body).toEqual([false, 'No Access'])
+});
+
