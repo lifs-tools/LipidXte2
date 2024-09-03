@@ -1,44 +1,49 @@
 <template>
   <div id="wrapper">
-    <img id="logo" src="~@/assets/logo.png" alt="electron-vue" align="left"/>
+    <img id="logo" src="~@/assets/logo.png" alt="electron-vue"/>
 
-    <div>
-      <blockquote>
-      Kai Schuhmann, HongKee Moon, Henrik Thomas, Jacobo Miranda Ackerman, Michael Groessl, Nicolai Wagner, Markus Kellmann, Ian Henry, André Nadler, and Andrej Shevchenko.
-      <br/>
-      <b>Quantitative Fragmentation Model for Bottom-Up Shotgun Lipidomics</b>.
-      <br/>
-      Analytical Chemistry 2019 91 (18), 12085-12093
-      <br/>
-      DOI: <a href="https://doi.org/10.1021/acs.analchem.9b03270" target="_blank">10.1021/acs.analchem.9b03270</a>
-      </blockquote>
-    </div>
-
-    <br/>
+    <a href="https://github.com/lifs-tools/LipidXte2">
+      <svg aria-hidden="true" height="24" viewBox="0 0 16 16" version="1.1" width="24" data-view-component="true" class="octicon octicon-mark-github">
+        <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path>
+      </svg>
+      https://github.com/lifs-tools/LipidXte2
+    </a>
 
     <ul class="nav nav-tabs">
       <li role="presentation" class="active">
-        <router-link to="/">
+        <router-link :to="'/?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          Data Import
+        </router-link>
+        <router-link to="/" v-else>
           Data Import
         </router-link>
       </li>
-      <li role="presentation">
-        <router-link to="/slens">
-          Validation Samples
+      <li role="presentation" v-show="$route.query.timestamp">
+        <router-link :to="'/sample?timestamp=' + $route.query.timestamp">
+          Result View
         </router-link>
       </li>
       <li role="presentation">
-        <router-link to="/sample/ILIS experiment">
-          Sample
+        <router-link :to="'/slens?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          Samples
+        </router-link>
+        <router-link to="/slens" v-else>
+          Samples
         </router-link>
       </li>
       <li role="presentation">
-        <router-link to="/poly">
+        <router-link :to="'/poly?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          MS2 spectra calculator
+        </router-link>
+        <router-link to="/poly" v-else>
           MS2 spectra calculator
         </router-link>
       </li>
       <li role="presentation">
-        <router-link to="/help">
+        <router-link :to="'/help?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          Help
+        </router-link>
+        <router-link to="/help" v-else>
           Help
         </router-link>
       </li>
@@ -63,7 +68,13 @@
             <select id="class-name" v-model="className">
               <option disabled value="">Please select one</option>
               <option selected value="PC">PC</option>
+              <option value="PI">PI</option>
+              <option value="PEO">PEO</option>
               <option value="PE">PE</option>
+              <option value="PCO">PCO</option>
+              <option value="PS">PS</option>
+              <option value="PA">PA</option>
+              <option value="PG">PG</option>
             </select>
           </div>
           <label for="title">Title:</label>&nbsp;
@@ -74,16 +85,7 @@
           <label for="dropzone"><i class="fa fa-paste" aria-hidden="true"/> Group-1: RAW files & <code>standard_list.csv</code>:</label><br/>
           <vue-dropzone id="dropzone" ref="myVueDropzone" :options="dropzoneOptions">
           </vue-dropzone>
-          <label for="dropzone2"><i class="fa fa-paste" aria-hidden="true"/> Group-2: RAW files :</label><br/>
-          <vue-dropzone id="dropzone2" ref="myVueDropzone2" :options="dropzoneGroup2Options">
-          </vue-dropzone>
-          <label for="dropzone3"><i class="fa fa-paste" aria-hidden="true"/> Group-3: RAW files :</label><br/>
-          <vue-dropzone id="dropzone3" ref="myVueDropzone3" :options="dropzoneGroup3Options">
-          </vue-dropzone>
         </div>
-      </div>
-
-      <div class="right-side">
       </div>
     </main>
 
@@ -145,9 +147,7 @@
           return
         }
 
-        if (this.$refs.myVueDropzone.getQueuedFiles().length === 0 &&
-          this.$refs.myVueDropzone2.getQueuedFiles().length === 0 &&
-          this.$refs.myVueDropzone3.getQueuedFiles().length === 0) {
+        if (this.$refs.myVueDropzone.getQueuedFiles().length === 0) {
           this.alertMessage = 'Uploading files are necessary. Please, drag and drop the RAW files.'
           this.alert = true
           this.uploadClicked = false
@@ -164,20 +164,6 @@
           })
         }
 
-        if (this.$refs.myVueDropzone2.getQueuedFiles().length > 0) {
-          console.log(this.$refs.myVueDropzone2.getQueuedFiles())
-          this.$refs.myVueDropzone2.getQueuedFiles().forEach(c => {
-            totalSize += c.size
-          })
-        }
-
-        if (this.$refs.myVueDropzone3.getQueuedFiles().length > 0) {
-          console.log(this.$refs.myVueDropzone3.getQueuedFiles())
-          this.$refs.myVueDropzone3.getQueuedFiles().forEach(c => {
-            totalSize += c.size
-          })
-        }
-
         if (totalSize > 100000000) {
           this.alertMessage = 'Uploading files are too big. Please, remove some files.'
           this.alert = true
@@ -186,43 +172,15 @@
 
         this.timestamp = new Date().toISOString()
 
-        this.$refs.myVueDropzone3.options.headers.timestamp = this.timestamp
-        let files = this.$refs.myVueDropzone3.getQueuedFiles()
-        files.forEach(c => {
-          if (!c.name.endsWith('.csv')) {
-            this.group3.push(c.name.replace(/\.raw/ig, '.mzXML'))
-          }
-        })
-        this.$refs.myVueDropzone3.options.headers.files = files
-        // this.$refs.myVueDropzone3.processQueue()
-
-        this.$refs.myVueDropzone2.options.headers.timestamp = this.timestamp
-        files = this.$refs.myVueDropzone2.getQueuedFiles()
-        files.forEach(c => {
-          if (!c.name.endsWith('.csv')) {
-            this.group2.push(c.name.replace(/\.raw/ig, '.mzXML'))
-          }
-        })
-        this.$refs.myVueDropzone2.options.headers.files = files
-
         this.$refs.myVueDropzone.options.headers.timestamp = this.timestamp
-        files = this.$refs.myVueDropzone.getQueuedFiles()
+        const files = this.$refs.myVueDropzone.getQueuedFiles()
         files.forEach(c => {
           if (!c.name.endsWith('.csv')) {
             this.group1.push(c.name.replace(/\.raw/ig, '.mzXML'))
           }
         })
         this.$refs.myVueDropzone.options.headers.files = files
-
-        if (this.$refs.myVueDropzone3.options.headers.files.length === 0) {
-          if (this.$refs.myVueDropzone2.options.headers.files.length === 0) {
-            this.$refs.myVueDropzone.processQueue()
-          } else {
-            this.$refs.myVueDropzone2.processQueue()
-          }
-        } else {
-          this.$refs.myVueDropzone3.processQueue()
-        }
+        this.$refs.myVueDropzone.processQueue()
       },
       gotoSamplePage () {
         if (this.timestamp === '') {
@@ -273,29 +231,6 @@
         })
         this.$refs.myVueDropzone.options.headers.files = files
         console.info(files)
-      },
-      collapse (ref) {
-        let vm = this
-        let className = vm.$refs[ref].className
-        if (className.indexOf('collapse') < 0) {
-          vm.$refs[ref].className = className + ' collapse'
-        } else {
-          vm.$refs[ref].className = className.replace(' collapse', '')
-        }
-
-        if (ref === 'doc2') {
-          if (vm.$refs[ref].className.indexOf('collapse') > -1) {
-            vm.$refs.doc3.className = vm.$refs.doc3.className.replace(' collapse', '')
-          } else {
-            vm.$refs.doc3.className = vm.$refs.doc3.className + ' collapse'
-          }
-        } else if (ref === 'doc3') {
-          if (vm.$refs[ref].className.indexOf('collapse') > -1) {
-            vm.$refs.doc2.className = vm.$refs.doc2.className.replace(' collapse', '')
-          } else {
-            vm.$refs.doc2.className = vm.$refs.doc2.className + ' collapse'
-          }
-        }
       },
       dbTest () {
         let vm = this
@@ -363,47 +298,12 @@
                 oReq.open('GET', serverUrl + '/process')
                 oReq.setRequestHeader('timestamp', vm.timestamp)
                 oReq.setRequestHeader('title', vm.title)
-                oReq.setRequestHeader('tags', vm.sampleTags.join(','))
                 oReq.setRequestHeader('className', vm.className)
                 oReq.setRequestHeader('group1', vm.group1.join(','))
                 oReq.setRequestHeader('group2', vm.group2.join(','))
                 oReq.setRequestHeader('group3', vm.group3.join(','))
                 oReq.send()
               }
-            })
-          },
-          url: serverUrl + '/upload',
-          maxFilesize: 500,
-          acceptedFiles: '.csv,.raw',
-          createImageThumbnails: false,
-          autoProcessQueue: false,
-          addRemoveLinks: true,
-          paramName: true,
-          headers: {'LipidXTe-Header': 'version 1.0',
-            'timestamp': new Date().toISOString()}
-        },
-        dropzoneGroup2Options: {
-          init: function () {
-            this.on('complete', function (file) {
-              this.removeFile(file)
-              vm.$refs.myVueDropzone.processQueue()
-            })
-          },
-          url: serverUrl + '/upload',
-          maxFilesize: 500,
-          acceptedFiles: '.csv,.raw',
-          createImageThumbnails: false,
-          autoProcessQueue: false,
-          addRemoveLinks: true,
-          paramName: true,
-          headers: {'LipidXTe-Header': 'version 1.0',
-            'timestamp': new Date().toISOString()}
-        },
-        dropzoneGroup3Options: {
-          init: function () {
-            this.on('complete', function (file) {
-              this.removeFile(file)
-              vm.$refs.myVueDropzone2.processQueue()
             })
           },
           url: serverUrl + '/upload',
@@ -534,7 +434,7 @@
     justify-content: space-between;
   }
 
-  main > div { flex-basis: 45%; }
+  main > div { flex-basis: 90%; }
 
   /*.left-side {*/
     /*display: flex;*/

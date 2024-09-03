@@ -5,13 +5,13 @@ process.env.BABEL_ENV = 'web'
 const path = require('path')
 const webpack = require('webpack')
 
-const BabiliWebpackPlugin = require('babili-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
-const ExtractTextPlugin = require('extract-text-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
+const { VueLoaderPlugin } = require('vue-loader')
 
 let webConfig = {
-  devtool: '#cheap-module-eval-source-map',
+  devtool: 'eval-cheap-module-source-map',
   entry: {
     web: path.join(__dirname, '../src/renderer/main.js')
   },
@@ -29,11 +29,34 @@ let webConfig = {
         }
       },
       {
+        test: /\.scss$/,
+        use: ['vue-style-loader', 'css-loader', 'sass-loader']
+      },
+      {
+        test: /\.sass$/,
+        use: ['vue-style-loader', 'css-loader', 'sass-loader?indentedSyntax']
+      },
+      {
+        test: /\.less$/,
+        use: ['vue-style-loader', 'css-loader', 'less-loader']
+      },
+      {
         test: /\.css$/,
-        use: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
-          use: 'css-loader'
-        })
+        use: ['vue-style-loader', 'css-loader']
+      },
+      {
+        test: /\.vue$/,
+        use: {
+          loader: 'vue-loader',
+          options: {
+            extractCSS: true,
+            loaders: {
+              sass: 'vue-style-loader!css-loader!sass-loader?indentedSyntax=1',
+              scss: 'vue-style-loader!css-loader!sass-loader',
+              less: 'vue-style-loader!css-loader!less-loader'
+            }
+          }
+        }
       },
       {
         test: /\.html$/,
@@ -46,23 +69,18 @@ let webConfig = {
         exclude: /node_modules/
       },
       {
-        test: /\.vue$/,
-        use: {
-          loader: 'vue-loader',
-          options: {
-            extractCSS: true,
-            loaders: {
-              sass: 'vue-style-loader!css-loader!sass-loader?indentedSyntax=1',
-              scss: 'vue-style-loader!css-loader!sass-loader'
-            }
-          }
+        test: /\.tsx?$/,
+        loader: 'ts-loader',
+        exclude: /node_modules/,
+        options: {
+          appendTsSuffixTo: [/\.vue$/],
         }
       },
       {
         test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
         use: {
           loader: 'url-loader',
-          query: {
+          options: {
             limit: 10000,
             name: 'imgs/[name].[ext]'
           }
@@ -72,7 +90,7 @@ let webConfig = {
         test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
         use: {
           loader: 'url-loader',
-          query: {
+          options: {
             limit: 10000,
             name: 'fonts/[name].[ext]'
           }
@@ -81,7 +99,8 @@ let webConfig = {
     ]
   },
   plugins: [
-    new ExtractTextPlugin('styles.css'),
+    new VueLoaderPlugin(),
+    new MiniCssExtractPlugin({filename: 'styles.css'}),
     new HtmlWebpackPlugin({
       filename: 'index.html',
       template: path.resolve(__dirname, '../src/index.ejs'),
@@ -96,7 +115,6 @@ let webConfig = {
     new webpack.DefinePlugin({
       'process.env.IS_WEB': 'true'
     }),
-    new webpack.HotModuleReplacementPlugin(),
     new webpack.NoEmitOnErrorsPlugin(),
     new CopyWebpackPlugin([
       {
@@ -107,6 +125,8 @@ let webConfig = {
   ],
   output: {
     filename: '[name].js',
+    chunkFilename: '[name].bundle.js',
+    hashFunction: 'xxhash64',
     path: path.join(__dirname, '../dist/web')
   },
   resolve: {
@@ -114,10 +134,12 @@ let webConfig = {
       '@': path.join(__dirname, '../src/renderer'),
       'vue$': 'vue/dist/vue.esm.js'
     },
+    fallback: {
+      "fs": false,
+      "path": false,
+      "os": false,
+    },
     extensions: ['.js', '.vue', '.json', '.css']
-  },
-  node: {
-    fs: 'empty'
   },
   target: 'web'
 }
@@ -126,13 +148,9 @@ let webConfig = {
  * Adjust webConfig for production settings
  */
 if (process.env.NODE_ENV === 'production') {
-  webConfig.devtool = ''
+  webConfig.devtool = false
 
   webConfig.plugins.push(
-    new BabiliWebpackPlugin({
-      removeConsole: true,
-      removeDebugger: true
-    }),
     new CopyWebpackPlugin([
       {
         from: path.join(__dirname, '../static'),

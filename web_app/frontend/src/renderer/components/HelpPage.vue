@@ -1,39 +1,49 @@
 <template>
   <div id="wrapper">
-    <img id="logo" src="~@/assets/logo.png" alt="electron-vue" align="left"/>
+    <img id="logo" src="~@/assets/logo.png" alt="electron-vue"/>
 
-    <div>
-      <blockquote>
-        Kai Schuhmann, HongKee Moon, Henrik Thomas, Jacobo Miranda Ackerman, Michael Groessl, Nicolai Wagner, Markus Kellmann, Ian Henry, André Nadler, and Andrej Shevchenko.
-        <br/>
-        <b>Quantitative Fragmentation Model for Bottom-Up Shotgun Lipidomics</b>.
-        <br/>
-        Analytical Chemistry 2019 91 (18), 12085-12093
-        <br/>
-        DOI: <a href="https://doi.org/10.1021/acs.analchem.9b03270" target="_blank">10.1021/acs.analchem.9b03270</a>
-      </blockquote>
-    </div>
-
-    <br/>
+    <a href="https://github.com/lifs-tools/LipidXte2">
+      <svg aria-hidden="true" height="24" viewBox="0 0 16 16" version="1.1" width="24" data-view-component="true" class="octicon octicon-mark-github">
+        <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path>
+      </svg>
+      https://github.com/lifs-tools/LipidXte2
+    </a>
 
     <ul class="nav nav-tabs">
       <li role="presentation">
-        <router-link to="/">
+        <router-link :to="'/?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          Data Import
+        </router-link>
+        <router-link to="/" v-else>
           Data Import
         </router-link>
       </li>
-      <li role="presentation">
-        <router-link to="/slens">
-          Validation Samples
+      <li role="presentation" v-show="$route.query.timestamp">
+        <router-link :to="'/sample?timestamp=' + $route.query.timestamp">
+          Result View
         </router-link>
       </li>
       <li role="presentation">
-        <router-link to="/poly">
+        <router-link :to="'/slens?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          Samples
+        </router-link>
+        <router-link to="/slens" v-else>
+          Samples
+        </router-link>
+      </li>
+      <li role="presentation">
+        <router-link :to="'/poly?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          MS2 spectra calculator
+        </router-link>
+        <router-link to="/poly" v-else>
           MS2 spectra calculator
         </router-link>
       </li>
       <li role="presentation" class="active">
-        <router-link to="/help">
+        <router-link :to="'/help?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          Help
+        </router-link>
+        <router-link to="/help" v-else>
           Help
         </router-link>
       </li>
@@ -42,234 +52,250 @@
     <br/>
 
     <main>
-      <div class="left-side">
-        <div class="doc">
-
-          <div class="panel panel-default">
-            <div class="panel-heading title" @click="collapse('doc1')">LipidXte Service</div>
-            <div class="panel-body" ref="doc1">The LipidXte web application provides automatic correction for lipid HCD MS/MS spectra from Orbitrap instruments and is dedicated to supporting accurate quantification of molecular lipid species. The application is specifically designed to support easy access to established correction functions with minimum interference requirements.</div>
-          </div>
-
-          <div class="panel panel-default">
-            <div class="panel-heading title" @click="collapse('doc2')">Data Import</div>
-            <div class="panel-body" ref="doc2">
-              <h4>Format of input *.raw</h4>
-
-              <p>
-                LipidXte processes Thermo *.raw files with a defined structure. The *.raw files must contain:
-              </p>
-
-              <ul class="list-group">
-                <li class="list-group-item">n >= 2 broad-band FT MS with 140k resolution at m/z 200</li>
-                <li class="list-group-item">n >= 6 HCD FT MS/MS scans for each precursor with
-                  <ul>
-                    <li class="margin">140k resolution at m/z 200</li>
-                    <li class="margin"><i>Isolation window</i> of 1.0 m/z</li>
-                    <li class="margin"><i>Fixed first mass</i> set to 180 m/z</li>
-                    <li class="margin"><i>Maximum IT</i> >= 500 ms</li>
-                    <li class="margin">3 distinct normalized collision energies (e.g. 25, 30, 35 % defined in the inclusion list)</li>
-                  </ul>
-                </li>
-              </ul>
-              <p><i> * Please check our example .raw files shown below</i></p>
-
-              <h4>Example files for LipidXte</h4>
-
-              <p>
-                A set of commercial samples was measured by shotgun lipidomics using DIA of HCD MS/MS with multiple normalized collision energies as documented above. Full details of the QExactive acquisition method are documented in the *.raw file "Instrument method" meta-data.
-              </p>
-
-              <p>
-                Example *.raw were acquired for:
-              </p>
-
-              <ul class="list-group">
-                <li class="list-group-item">Synthetic PC standards - <a href="dat/PC_ILIS.zip" download>link</a></li>
-                <li class="list-group-item">Natural mixtures of:
-                  <ul>
-                    <li class="margin">Egg PC (Avanti nr. 840051) - <a href="dat/PC_egg.zip" download>link</a></li>
-                    <li class="margin">Heart PC (Avanti nr. 840052) - <a href="dat/PC_heart.zip" download>link</a></li>
-                    <li class="margin">Brain PC (Avanti nr. 840053) - <a href="dat/PC_brain.zip" download>link</a></li>
-                  </ul>
-                </li>
-              </ul>
-
-              <h4>Sample data input</h4>
-
-              <p>
-                n >= 1 .raw file(s) plus 1 internal standard list *.csv are required for running <i>LipidXte</i>. Add your *.raw files to "group 1" for processing them together. Alternatively, *.raw files can be uploaded in 3 separate groups. All files can be inserted to their destination via drag-and-drop. Upload time might significantly increase your processing time. Accepted files are further processed (processing time for example "Egg PC" was about 2 min 40 s).
-              </p>
-              <img class="fig" src="~@/assets/lipidxte_instructions.gif" width="500px"/>
-              <h4>Data processing</h4>
-
-              <p>
-                LipidXte web application contains runs a series of applications:
-              </p>
-
-              <ol class="margin">
-                <li>Input .raw data FT MS and HCD FT MS/MS scans are cleaned from noise by <i>PeakStrainer</i> and converted to *.mzXML by <i>RawFileReader</i><br/>
-                  <b style="font-size: smaller">(RawFileReader reading tool. Copyright © 2016 by Thermo Fisher Scientific, Inc. All rights reserved.)</b></li>
-                <li>Generated *.mzXML are imported into LipidXplorer</li>
-                <li>Measured intensities of precursor ions, carboxylate anions, and potential CO2 loss fragments of all lipid species are corrected for isotope effects and extracted from the temporary data</li>
-                <li>The intensities of carboxylate anions and potential CO2 loss fragments
-                  are corrected by LipidXte for:
-                  <ul>
-                    <li class="margin">Fragmentation influences using external calibration database</li>
-                    <li class="margin">Correction for instrument performance</li>
-                  </ul>
-                </li>
-                <li>The corrected fragment intensities are, if matching to external calibration, subjected to quantification. Whereas, the corrected intensities of all molecular lipid species are normalized to the given internal standard(s).</li>
-              </ol>
-
-            </div>
-          </div>
-
+      <div class="doc_help">
+        <div>
+          <blockquote>
+            Kai Schuhmann, HongKee Moon, Henrik Thomas, Jacobo Miranda Ackerman, Michael Groessl, Nicolai Wagner, Markus Kellmann, Ian Henry, André Nadler, and Andrej Shevchenko.
+            <br/>
+            <b>Quantitative Fragmentation Model for Bottom-Up Shotgun Lipidomics</b>.
+            <br/>
+            Analytical Chemistry 2019 91 (18), 12085-12093
+            <br/>
+            DOI: <a href="https://doi.org/10.1021/acs.analchem.9b03270" target="_blank">10.1021/acs.analchem.9b03270</a>
+          </blockquote>
         </div>
-      </div>
-      <div class="right-side">
+
+        <br/>
+
         <div class="panel panel-default">
-          <div class="panel-heading title" @click="collapse('doc4')">Validation Samples</div>
-          <div class="panel-body collapse" ref="doc4">
+          <div class="panel-heading title">LipidXte Service</div>
+          <div class="panel-body" ref="doc1">The LipidXte web application provides automatic correction for lipid HCD MS/MS spectra from Orbitrap instruments and is dedicated to supporting accurate quantification of molecular lipid species. The application is specifically designed to support easy access to established correction functions with minimum interference requirements.</div>
+        </div>
 
-            The result view enables to browse your own or the provided shotgun lipidomics data sets.
+        <div class="panel panel-default">
+          <div class="panel-heading title">Data Import</div>
+          <div class="panel-body" ref="doc2">
+            <h4>Format of input data</h4>
 
-            <img src="~@/assets/result-view.jpg"/>
+            <p>
+              LipidXte processes shotgun lipidomics DIA data containing HCD FTMS/MS with varying normalized collision energies. The current prototype supports Thermo *.raw files that follow a specific structure. A short description is available below. Comprehensive information about the QExactive acquisition method is given in the “Instrument method” metadata of the listed *.raw sample files.
+            </p>
+            <p>
+              Example *.raw were acquired as following:
+            </p>
 
-            Note:
+            <ul class="list-group">
+              <li class="list-group-item">FT MS with more than 2 scans and a resolution of 140k at m/z 200</li>
+              <li class="list-group-item">HCD FT MS/MS with
+                <ul>
+                  <li class="margin">More than 2 MS/MS scans per precursor</li>
+                  <li class="margin">Resolution of 140k at m/z 200</li>
+                  <li class="margin"><i>Isolation window</i> of 1.0 m/z</li>
+                  <li class="margin"><i>Fixed first mass</i> set to 180 m/z</li>
+                  <li class="margin">1 or 3 distinct normalized collision energies (e.g. 25, 30, 35 % defined in the inclusion list)</li>
+                </ul>
+              </li>
+            </ul>
+            <p><i> * Please check our example .raw files shown below</i></p>
 
-            <ul class="margin">
-              <li class="margin">Results are represented as box plots with min/median/max mole percentage (mol%) or quantity (uM ...) depending on the users selection.</li>
-              <li class="margin"><i>Remove References</i> check-box enables to removed standards from the result plots</li>
-              <li class="margin"><i>No MS/MS Correction</i> check-box enables to review data without correction for HCD fragmentation bias</li>
+            <h4>Example files for LipidXte</h4>
+
+            <p>
+              A set of commercial samples was measured by shotgun lipidomics using DIA of HCD MS/MS with multiple normalized collision energies as documented above. Full details of the QExactive acquisition method are documented in the *.raw file "Instrument method" meta-data.
+            </p>
+
+            <p>
+              Example *.raw files for LipidXte
+            </p>
+
+            <ul class="list-group">
+              <li class="list-group-item">
+                <ul>
+                  <li class="margin">Custom PC mix - <a href="dat/PC_ILIS.zip" download>link</a></li>
+                  <li class="margin">Ultimate SPLASH One (Avanti #330820) - <a href="" download>link</a></li>
+                  <li class="margin">Egg PC (Avanti #840051) - <a href="dat/PC_egg.zip" download>link</a></li>
+                  <li class="margin">Heart PC (Avanti #840052) - <a href="dat/PC_heart.zip" download>link</a></li>
+                  <li class="margin">Brain PC (Avanti #840053) - <a href="dat/PC_brain.zip" download>link</a></li>
+                  <li class="margin">Brain PS (Avanti #840032) - <a href="" download>link</a></li>
+                  <li class="margin">Egg PG (Avanti #841138) - <a href="" download>link</a></li>
+                  <li class="margin">Egg PE (Avanti #841138) - coming soon</li>
+                </ul>
+              </li>
             </ul>
 
-            <h4>Review pre-calculated data sets</h4>
+            <h4>Sample data upload</h4>
 
             <p>
-              In this tab, the user can select a one of the provided bottom-up shotgun lipidomics data sets that have been previously acquired with the defined acquisition method and analyzed by LipidXte. The results are directly accessible; no calculations are required.
+              To run <i>LipidXte</i>, you must upload at least one Thermo *.raw file along with one *.csv the reference compounds. You can group your *.raw files into "group 1" for joint processing. Files can be easily added using the drag-and-drop feature. Please note the time to upload files may extend the overall processing duration. Once uploaded, the files will be processed. For instance, processing time for the samples of "Egg PC" is ~ 2 minutes and 40 seconds.
+            </p>
+<!--            <img src="~@/assets/lipidxte_instructions.gif" width="500px"/>-->
+            <h4>Data processing by LipidXte2</h4>
+
+            <p>
+              The LipidXte web application processes data through a series of steps:
             </p>
 
-            <h4>Review of lipid species</h4>
+            <ol class="margin">
+              <li>Data Filtering: Input data from FT MS and HCD FTMS/MS are filtered to remove noise peaks using the <i>PeakStrainer</i>. The data is then converted to the *.mzXML format by the <i>RawFileReader</i><br/>
+                <span style="font-size: smaller">(RawFileReader reading tool. Copyright © 2016 by Thermo Fisher Scientific, Inc. All rights reserved.)</span></li>
+              <li>Data Analysis: The resulting *.mzXML files are imported into <i>LipidXplorer</i> for analysis. The software extracts the intensities of precursor ions, carboxylate anions, and potential CO2 loss fragments from all lipid species of the selected lipid class. In this process isotopic correction type 1 and 2 are applied.</li>
+              <li>Intensity Correction and Normalization: LipidXte2 removes the fragmentation bias from the MS/MS data by adjusting the intensities of carboxylate anions using an external calibration database. The corrected fragment intensities are normalized based on specified internal standards, facilitating accurate quantification of molecular lipid species.</li>
+            </ol>
 
             <p>
-              Here, the lipid species of a selected lipid class contained by a given sample can be reviewed. This result considers only readout from FT MS and correction for isotopic abundances and overlaps.
-            </p>
-
-            <p>
-              Lipid species plot for the <a href="dat/PC_ILIS.zip" download>synthetic PC mixture</a>:
-            </p>
-
-            <p>
-              <img class="fig" src="~@/assets/20180823_ILIS_Lspecies.jpg" width="500px"/>
-            </p>
-
-            <h4>Reviewing the molecular lipid species</h4>
-
-            <p>
-              In this tab, the molecular lipid species of a selected lipid class contained by a given sample can be reviewed. The user can observe the influence of HCD fragmentation and the carboxylate anion intensity correction on the quantification of molecular lipid species.
-            </p>
-
-            <p>
-              The plotly interface allows you to select species of interest, modify and export the result graph. Result data can be downloaded by using corresponding button.
-            </p>
-
-            <p>
-              Concentration of molecular lipid species in the <a href="dat/PC_ILIS.zip" download>synthetic PC mixture</a>:
-            </p>
-
-            <p>
-              <img class="fig" src="~@/assets/20180823_ILIS_Mspecies.jpg" width="500px"/>
-            </p>
-            <p>
-              <img class="fig" src="~@/assets/20180823_ILIS_Mspecies_uncorrected.jpg" width="500px"/>
-            </p>
-
-            <h4>Validation plot</h4>
-
-            <p>
-              The validation plot enables to review results from FT MS and HCD FT MS/MS in one graph. The plot shows the median quantity from FT MS (x-coordinate) vs. the median, corrected quantities from HCD FT MS/MS for all selected normalized collision energies (y-coordinate, blue dots) and the corresponding linear fit (blue line). Median values from uncorrected HCD FT MS/MS are shown for the highest selected collision energy.
-            </p>
-
-            <p>
-              <img class="fig" src="~@/assets/20180823_ILIS_validation_uncorrected.jpg" width="500px"/>
-            </p>
-            <p>
-              <img class="fig" src="~@/assets/20180823_ILIS_validation_corrected.jpg" width="500px"/>
+              Following, the users can review the processed data in the 'Result View' tab of the application.
             </p>
 
           </div>
         </div>
 
         <div class="panel panel-default">
-          <div class="panel-heading title" @click="collapse('doc5')">MS2 spectra calculator</div>
-          <div class="panel-body collapse" ref="doc5">
+          <div class="panel-heading title">Result View</div>
+          <div class="panel-body" ref="doc3">
 
-            The result view enables to browse your own or the provided shotgun lipidomics data sets.
+            The Result View tab offers an interface for browsing either user-uploaded or preprocessed shotgun lipidomics datasets. This section is structured to provide easy access to your lipidomics data.
 
-            <img src="~@/assets/result-view.jpg"/>
+            <h4>
+              Data selection and visualization options
+            </h4>
 
-            Note:
+            <p>
+              Within the batch field, you can select the dataset of interest.
+            </p>
+
+            <p>
+              For the visualization, there are several options available:
+            </p>
 
             <ul class="margin">
-              <li class="margin">Results are represented as box plots with min/median/max mole percentage (mol%) or quantity (uM ...) depending on the users selection.</li>
-              <li class="margin"><i>Remove References</i> check-box enables to removed standards from the result plots</li>
-              <li class="margin"><i>No MS/MS Correction</i> check-box enables to review data without correction for HCD fragmentation bias</li>
+              <li class="margin"><b>Display Mode</b> Choose how you want the quantitative data to be displayed: either in mol% (Fraction) or μM (Concentration).</li>
+              <li class="margin"><b>Remove References</b> Eliminates the reference compounds from the visualization.</li>
+              <li class="margin"><b>No Correction</b> Displays the fragment data without any correction.</li>
+              <li class="margin"><b>Thresholding</b> Excludes molecular species with less than 10% relative abundance compared to the most abundant analyte.</li>
             </ul>
 
-            <h4>Review pre-calculated data sets</h4>
-
             <p>
-              In this tab, the user can select a one of the provided bottom-up shotgun lipidomics data sets that have been previously acquired with the defined acquisition method and analyzed by LipidXte. The results are directly accessible; no calculations are required.
-            </p>
-
-            <h4>Review of lipid species</h4>
-
-            <p>
-              Here, the lipid species of a selected lipid class contained by a given sample can be reviewed. This result considers only readout from FT MS and correction for isotopic abundances and overlaps.
+              Use the Quantify button to update the displayed data. To download the quantitative results for the precursor and corresponding molecular lipid species, click the Download button.
             </p>
 
             <p>
-              Lipid species plot for the <a href="dat/PC_ILIS.zip" download>synthetic PC mixture</a>:
+              <img src="~@/assets/fig-1.png"/>
+              <figcaption>Figure 1: Result View window data selection and visualization options.</figcaption>
+            </p>
+
+            <h4>General Plot functionalities</h4>
+
+            <p>
+              All plots are generated using Plotly. You can interact with individual data points by hovering over them, select species of interest, modify, and export the results. To zoom in, hold down the left mouse button and select the region of interest. To zoom out, double-click on the plot. Basic functionalities include exporting plots as PNG (<i class="fa fa-camera" aria-hidden="true"/>) and accessing the data (<i class="fa fa-save" aria-hidden="true"/>).
+            </p>
+
+            <h4>Lipid species plot</h4>
+
+            <p>
+              In this section, the lipid species of a selected lipid class within a given sample are displayed. The results include readouts from FT MS and account for potential corrections for isotopic abundances and overlaps.
             </p>
 
             <p>
-              <img class="fig" src="~@/assets/20180823_ILIS_Lspecies.jpg" width="500px"/>
+              <img src="~@/assets/fig-2.png" width="500px"/>
+              <figcaption>Figure 2: Lipid species plot for Ultimate SPLASH One #2.</figcaption>
             </p>
 
-            <h4>Reviewing the molecular lipid species</h4>
+            <h4>
+              Molecular lipid species plot
+            </h4>
 
             <p>
-              In this tab, the molecular lipid species of a selected lipid class contained by a given sample can be reviewed. The user can observe the influence of HCD fragmentation and the carboxylate anion intensity correction on the quantification of molecular lipid species.
-            </p>
-
-            <p>
-              The plotly interface allows you to select species of interest, modify and export the result graph. Result data can be downloaded by using corresponding button.
-            </p>
-
-            <p>
-              Concentration of molecular lipid species in the <a href="dat/PC_ILIS.zip" download>synthetic PC mixture</a>:
+              In this tab, you can review the molecular lipid species of a selected lipid class within a given sample. The quantitative data displayed are based on the intensities of the carboxylate anion fragmentation, isotopic corrections (types 1 and 2), and the subsequent elimination of fragmentation bias by LipidXte2. Unique to shotgun lipidomics data, the sn1 and sn2 positions of the fatty acids are specified.
             </p>
 
             <p>
-              <img class="fig" src="~@/assets/20180823_ILIS_Mspecies.jpg" width="500px"/>
-            </p>
-            <p>
-              <img class="fig" src="~@/assets/20180823_ILIS_Mspecies_uncorrected.jpg" width="500px"/>
+              <img src="~@/assets/fig-3.png" width="500px"/>
+              <figcaption>Figure 3: Molecular lipid species plot for Ultimate SPLASH One #2.</figcaption>
             </p>
 
-            <h4>Validation plot</h4>
+            <h4>
+              Validation plots
+            </h4>
 
             <p>
-              The validation plot enables to review results from FT MS and HCD FT MS/MS in one graph. The plot shows the median quantity from FT MS (x-coordinate) vs. the median, corrected quantities from HCD FT MS/MS for all selected normalized collision energies (y-coordinate, blue dots) and the corresponding linear fit (blue line). Median values from uncorrected HCD FT MS/MS are shown for the highest selected collision energy.
+              These two plots allow you to review the results of LipidXte2.
+            </p>
+
+            <ul class="margin">
+              <li class="margin">
+                Quantification Plot (left): Displays the median quantity from FT MS (x-axis) compared to the corrected quantities from HCD FT MS/MS for all selected normalized collision energies (y-axis, blue dots). A linear fit (blue line) illustrates the correlation between the data. Red dots represent the results without correction for the highest selected collision energy.
+              </li>
+              <li class="margin">
+                Error Plot (right): Shows the differences in quantification between MS1 and MS2. The error indicates the difference between MS2 and MS1, with data categorized by the number of double bonds in the analytes (0-1, 2-3, and more than 4). This plot demonstrates how the applied corrections reduce discrepancies between the two acquisition methods.
+              </li>
+            </ul>
+
+
+            <p>
+              <img src="~@/assets/fig-4.png" width="500px"/>
+              <figcaption>Figure 4: Quantification plot for PG from Ultimate SPLASH One #2.</figcaption>
+            </p>
+            <p>
+              <img src="~@/assets/fig-5.png" width="500px"/>
+              <figcaption>Figure 5: Error plot for PG from Ultimate SPLASH One #2.</figcaption>
+            </p>
+
+          </div>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-heading title">MS2 Calculator</div>
+          <div class="panel-body" ref="doc5">
+
+            <p>
+              The MS2 Calculator allows access to the calibration functions underlying LipidXte2. It enables exploration of the impact of different collision energies on MS2 results and helps in selecting appropriate standards for targeted MS2 experiments.
+            </p>
+            <p>
+              Calibrations for multiple lipid classes, including PC, PCO (both [M+HCO2]-), and PE, PEO, PG, PA, PI, and PS (all [M-H]-), are stored here. Each class can be combined with a set of approximately 50 fatty acids based on the user's needs.
+            </p>
+
+            <h4>Analyte selection</h4>
+
+            <p>
+              In the field below, users can select the analytes of interest one by one. After selecting the class and fatty acids/alcohols, click ‘Add & Show’ to display the data. Use the ‘Clear’ button to reset the page.
             </p>
 
             <p>
-              <img class="fig" src="~@/assets/20180823_ILIS_validation_uncorrected.jpg" width="500px"/>
-            </p>
-            <p>
-              <img class="fig" src="~@/assets/20180823_ILIS_validation_corrected.jpg" width="500px"/>
+              <img src="~@/assets/fig-6.png"/>
+              <figcaption>Figure 6: Analyte selection field.</figcaption>
             </p>
 
+            <h4>General plot functionalities</h4>
+
+            <p>
+              See above.
+            </p>
+
+            <h4>Fragment intensity plot</h4>
+
+            <p>
+              The fragment intensity plot displays the intensities of fragments stored for the corresponding lipid class in the database. The data points are either experimental (annotated ‘-exp’, cross-shaped) or derived from polynomial calibration (dot-shaped). Users can select specific fragments and data types of interest by clicking on the legend. Fatty acid fragments and CO2 NL data are available for all lipid classes. Additional data for precursor and fragment signals are available for PCO.
+            </p>
+
+            <p>
+              The cursor below the plot allows you to select the normalized collision energy of the combined FTMS2 spectra by adjusting its position.
+            </p>
+
+            <p>
+              <img src="~@/assets/fig-7.png"/>
+              <figcaption>Figure 7: Fragment intensity plot showing the fragment intensities for FA 16:0 (experimental and calibration data) and FA 22:6 (4z) (calibration data only). Faded elements could be selected by the used based on the needs.</figcaption>
+            </p>
+
+            <h4>Combined MS2 spectra</h4>
+
+            <p>
+              The combined MS2 spectra display an overlaid MS2 spectrum or a cross-section of the fragment intensity plot data. The plot content depends on the selected analytes and the chosen collision energy. This feature allows users to estimate the fragmentation differences or bias between the selected analytes.
+            </p>
+
+            <p>
+              <img src="~@/assets/fig-8.png"/>
+              <figcaption>Figure 8: Combined MS2 spectra for PCO-16:0/16:0 and PCO-16:0/22:6 (4z) at a normalized collision energy of 30%. The fragment intensity of FA 22:6 (4z) at m/z 327 is approximately 4 times lower than that of FA 16:0 at m/z 255, given the same precursor intensity. Therefore, standards with saturated fatty acids are not ideal for quantifying lipids containing FA 22:6 (4z).</figcaption>
+            </p>
           </div>
         </div>
       </div>
@@ -296,29 +322,6 @@ export default {
   methods: {
     open (link) {
       this.$electron.shell.openExternal(link)
-    },
-    collapse (ref) {
-      let vm = this
-      let className = vm.$refs[ref].className
-      if (className.indexOf('collapse') < 0) {
-        vm.$refs[ref].className = className + ' collapse'
-      } else {
-        vm.$refs[ref].className = className.replace(' collapse', '')
-      }
-
-      if (ref === 'doc2') {
-        if (vm.$refs[ref].className.indexOf('collapse') > -1) {
-          vm.$refs.doc3.className = vm.$refs.doc3.className.replace(' collapse', '')
-        } else {
-          vm.$refs.doc3.className = vm.$refs.doc3.className + ' collapse'
-        }
-      } else if (ref === 'doc3') {
-        if (vm.$refs[ref].className.indexOf('collapse') > -1) {
-          vm.$refs.doc2.className = vm.$refs.doc2.className.replace(' collapse', '')
-        } else {
-          vm.$refs.doc2.className = vm.$refs.doc2.className + ' collapse'
-        }
-      }
     }
   },
   data: function () {
@@ -333,6 +336,13 @@ export default {
 <style>
 @import url('~@/assets/bootstrap.css');
 @import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro');
+
+.octicon {
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
 
 text.legendtext tspan {
   text-decoration: underline;
@@ -422,12 +432,12 @@ main {
   justify-content: space-between;
 }
 
-main > div { flex-basis: 45%; }
+main > div { flex-basis: 90%; }
 
-/*.left-side {*/
-/*display: flex;*/
-/*flex-direction: column;*/
-/*}*/
+.doc_help {
+display: flex;
+flex-direction: column;
+}
 
 .welcome {
   color: #555;
@@ -447,12 +457,26 @@ main > div { flex-basis: 45%; }
   margin-bottom: 10px;
 }
 
+.panel-body figcaption {
+  font-style: italic;
+}
+
+.panel-body b {
+  padding: 1px 4px;
+  font-size: 90%;
+  color: #fff;
+  background-color: #444;
+  border-radius: 3px;
+  -webkit-box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .25);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .25);
+}
+
 .doc p {
   color: black;
   margin-bottom: 10px;
 }
 
-.doc button {
+.doc_help button {
   font-size: .8em;
   cursor: pointer;
   outline: none;
@@ -467,7 +491,7 @@ main > div { flex-basis: 45%; }
   margin-bottom: 10px;
 }
 
-.doc input {
+.doc_help input {
   width: 200px;
   font-size: .8em;
   outline: none;
@@ -482,7 +506,7 @@ main > div { flex-basis: 45%; }
   margin-bottom: 10px;
 }
 
-.doc select {
+.doc_help select {
   margin-left: 1em;
   width: 100px;
   font-size: .8em;
@@ -498,7 +522,7 @@ main > div { flex-basis: 45%; }
   margin-bottom: 10px;
 }
 
-.doc select.timestamp {
+.doc_help select.timestamp {
   margin-left: 1em;
   width: 250px;
   font-size: .9em;
@@ -514,7 +538,7 @@ main > div { flex-basis: 45%; }
   margin-bottom: 10px;
 }
 
-.doc .vue-input-tag-wrapper {
+.doc_help .vue-input-tag-wrapper {
   overflow: unset;
   width: 200px;
   outline: none;
@@ -531,7 +555,7 @@ main > div { flex-basis: 45%; }
   margin-left: 1px;
 }
 
-.doc button.alt {
+.doc_help button.alt {
   color: #42b983;
   background-color: transparent;
 }
@@ -539,555 +563,6 @@ main > div { flex-basis: 45%; }
 ::selection {
   background:rgba(255, 255, 125, 0.99);
   color:#032764;
-}
-
-/*
-* The MIT License
-* Copyright (c) 2012 Matias Meno <m@tias.me>
-*/
-@-webkit-keyframes passing-through {
-  0% {
-    opacity: 0;
-    -webkit-transform: translateY(40px);
-    -moz-transform: translateY(40px);
-    -ms-transform: translateY(40px);
-    -o-transform: translateY(40px);
-    transform: translateY(40px); }
-  30%, 70% {
-    opacity: 1;
-    -webkit-transform: translateY(0px);
-    -moz-transform: translateY(0px);
-    -ms-transform: translateY(0px);
-    -o-transform: translateY(0px);
-    transform: translateY(0px); }
-  100% {
-    opacity: 0;
-    -webkit-transform: translateY(-40px);
-    -moz-transform: translateY(-40px);
-    -ms-transform: translateY(-40px);
-    -o-transform: translateY(-40px);
-    transform: translateY(-40px); } }
-@-moz-keyframes passing-through {
-  0% {
-    opacity: 0;
-    -webkit-transform: translateY(40px);
-    -moz-transform: translateY(40px);
-    -ms-transform: translateY(40px);
-    -o-transform: translateY(40px);
-    transform: translateY(40px); }
-  30%, 70% {
-    opacity: 1;
-    -webkit-transform: translateY(0px);
-    -moz-transform: translateY(0px);
-    -ms-transform: translateY(0px);
-    -o-transform: translateY(0px);
-    transform: translateY(0px); }
-  100% {
-    opacity: 0;
-    -webkit-transform: translateY(-40px);
-    -moz-transform: translateY(-40px);
-    -ms-transform: translateY(-40px);
-    -o-transform: translateY(-40px);
-    transform: translateY(-40px); } }
-@keyframes passing-through {
-  0% {
-    opacity: 0;
-    -webkit-transform: translateY(40px);
-    -moz-transform: translateY(40px);
-    -ms-transform: translateY(40px);
-    -o-transform: translateY(40px);
-    transform: translateY(40px); }
-  30%, 70% {
-    opacity: 1;
-    -webkit-transform: translateY(0px);
-    -moz-transform: translateY(0px);
-    -ms-transform: translateY(0px);
-    -o-transform: translateY(0px);
-    transform: translateY(0px); }
-  100% {
-    opacity: 0;
-    -webkit-transform: translateY(-40px);
-    -moz-transform: translateY(-40px);
-    -ms-transform: translateY(-40px);
-    -o-transform: translateY(-40px);
-    transform: translateY(-40px); } }
-@-webkit-keyframes slide-in {
-  0% {
-    opacity: 0;
-    -webkit-transform: translateY(40px);
-    -moz-transform: translateY(40px);
-    -ms-transform: translateY(40px);
-    -o-transform: translateY(40px);
-    transform: translateY(40px); }
-  30% {
-    opacity: 1;
-    -webkit-transform: translateY(0px);
-    -moz-transform: translateY(0px);
-    -ms-transform: translateY(0px);
-    -o-transform: translateY(0px);
-    transform: translateY(0px); } }
-@-moz-keyframes slide-in {
-  0% {
-    opacity: 0;
-    -webkit-transform: translateY(40px);
-    -moz-transform: translateY(40px);
-    -ms-transform: translateY(40px);
-    -o-transform: translateY(40px);
-    transform: translateY(40px); }
-  30% {
-    opacity: 1;
-    -webkit-transform: translateY(0px);
-    -moz-transform: translateY(0px);
-    -ms-transform: translateY(0px);
-    -o-transform: translateY(0px);
-    transform: translateY(0px); } }
-@keyframes slide-in {
-  0% {
-    opacity: 0;
-    -webkit-transform: translateY(40px);
-    -moz-transform: translateY(40px);
-    -ms-transform: translateY(40px);
-    -o-transform: translateY(40px);
-    transform: translateY(40px); }
-  30% {
-    opacity: 1;
-    -webkit-transform: translateY(0px);
-    -moz-transform: translateY(0px);
-    -ms-transform: translateY(0px);
-    -o-transform: translateY(0px);
-    transform: translateY(0px); } }
-@-webkit-keyframes pulse {
-  0% {
-    -webkit-transform: scale(1);
-    -moz-transform: scale(1);
-    -ms-transform: scale(1);
-    -o-transform: scale(1);
-    transform: scale(1); }
-  10% {
-    -webkit-transform: scale(1.1);
-    -moz-transform: scale(1.1);
-    -ms-transform: scale(1.1);
-    -o-transform: scale(1.1);
-    transform: scale(1.1); }
-  20% {
-    -webkit-transform: scale(1);
-    -moz-transform: scale(1);
-    -ms-transform: scale(1);
-    -o-transform: scale(1);
-    transform: scale(1); } }
-@-moz-keyframes pulse {
-  0% {
-    -webkit-transform: scale(1);
-    -moz-transform: scale(1);
-    -ms-transform: scale(1);
-    -o-transform: scale(1);
-    transform: scale(1); }
-  10% {
-    -webkit-transform: scale(1.1);
-    -moz-transform: scale(1.1);
-    -ms-transform: scale(1.1);
-    -o-transform: scale(1.1);
-    transform: scale(1.1); }
-  20% {
-    -webkit-transform: scale(1);
-    -moz-transform: scale(1);
-    -ms-transform: scale(1);
-    -o-transform: scale(1);
-    transform: scale(1); } }
-@keyframes pulse {
-  0% {
-    -webkit-transform: scale(1);
-    -moz-transform: scale(1);
-    -ms-transform: scale(1);
-    -o-transform: scale(1);
-    transform: scale(1); }
-  10% {
-    -webkit-transform: scale(1.1);
-    -moz-transform: scale(1.1);
-    -ms-transform: scale(1.1);
-    -o-transform: scale(1.1);
-    transform: scale(1.1); }
-  20% {
-    -webkit-transform: scale(1);
-    -moz-transform: scale(1);
-    -ms-transform: scale(1);
-    -o-transform: scale(1);
-    transform: scale(1); } }
-.dropzone, .dropzone * {
-  box-sizing: border-box; }
-
-.dropzone {
-  min-height: 150px;
-  border: 2px solid rgba(0, 0, 0, 0.3);
-  background: white;
-  padding: 20px 20px; }
-.dropzone.dz-clickable {
-  cursor: pointer; }
-.dropzone.dz-clickable * {
-  cursor: default; }
-.dropzone.dz-clickable .dz-message, .dropzone.dz-clickable .dz-message * {
-  cursor: pointer; }
-.dropzone.dz-started .dz-message {
-  display: none; }
-.dropzone.dz-drag-hover {
-  border-style: solid; }
-.dropzone.dz-drag-hover .dz-message {
-  opacity: 0.5; }
-.dropzone .dz-message {
-  text-align: center;
-  margin: 2em 0; }
-.dropzone .dz-preview {
-  position: relative;
-  display: inline-block;
-  vertical-align: top;
-  margin: 16px;
-  min-height: 100px; }
-.dropzone .dz-preview:hover {
-  z-index: 1000; }
-.dropzone .dz-preview:hover .dz-details {
-  opacity: 1; }
-.dropzone .dz-preview.dz-file-preview .dz-image {
-  border-radius: 20px;
-  background: #999;
-  background: linear-gradient(to bottom, #eee, #ddd); }
-.dropzone .dz-preview.dz-file-preview .dz-details {
-  opacity: 1; }
-.dropzone .dz-preview.dz-image-preview {
-  background: white; }
-.dropzone .dz-preview.dz-image-preview .dz-details {
-  -webkit-transition: opacity 0.2s linear;
-  -moz-transition: opacity 0.2s linear;
-  -ms-transition: opacity 0.2s linear;
-  -o-transition: opacity 0.2s linear;
-  transition: opacity 0.2s linear; }
-.dropzone .dz-preview .dz-remove {
-  font-size: 14px;
-  text-align: center;
-  display: block;
-  cursor: pointer;
-  border: none; }
-.dropzone .dz-preview .dz-remove:hover {
-  text-decoration: underline; }
-.dropzone .dz-preview:hover .dz-details {
-  opacity: 1; }
-.dropzone .dz-preview .dz-details {
-  z-index: 20;
-  position: absolute;
-  top: 0;
-  left: 0;
-  opacity: 0;
-  font-size: 13px;
-  min-width: 100%;
-  max-width: 100%;
-  padding: 2em 1em;
-  text-align: center;
-  color: rgba(0, 0, 0, 0.9);
-  line-height: 150%; }
-.dropzone .dz-preview .dz-details .dz-size {
-  margin-bottom: 1em;
-  font-size: 16px; }
-.dropzone .dz-preview .dz-details .dz-filename {
-  white-space: nowrap; }
-.dropzone .dz-preview .dz-details .dz-filename:hover span {
-  border: 1px solid rgba(200, 200, 200, 0.8);
-  background-color: rgba(255, 255, 255, 0.8); }
-.dropzone .dz-preview .dz-details .dz-filename:not(:hover) {
-  overflow: hidden;
-  text-overflow: ellipsis; }
-.dropzone .dz-preview .dz-details .dz-filename:not(:hover) span {
-  border: 1px solid transparent; }
-.dropzone .dz-preview .dz-details .dz-filename span, .dropzone .dz-preview .dz-details .dz-size span {
-  background-color: rgba(255, 255, 255, 0.4);
-  padding: 0 0.4em;
-  border-radius: 3px; }
-.dropzone .dz-preview:hover .dz-image img {
-  -webkit-transform: scale(1.05, 1.05);
-  -moz-transform: scale(1.05, 1.05);
-  -ms-transform: scale(1.05, 1.05);
-  -o-transform: scale(1.05, 1.05);
-  transform: scale(1.05, 1.05);
-  -webkit-filter: blur(8px);
-  filter: blur(8px); }
-.dropzone .dz-preview .dz-image {
-  border-radius: 20px;
-  overflow: hidden;
-  width: 120px;
-  height: 120px;
-  position: relative;
-  display: block;
-  z-index: 10; }
-.dropzone .dz-preview .dz-image img {
-  display: block; }
-.dropzone .dz-preview.dz-success .dz-success-mark {
-  -webkit-animation: passing-through 3s cubic-bezier(0.77, 0, 0.175, 1);
-  -moz-animation: passing-through 3s cubic-bezier(0.77, 0, 0.175, 1);
-  -ms-animation: passing-through 3s cubic-bezier(0.77, 0, 0.175, 1);
-  -o-animation: passing-through 3s cubic-bezier(0.77, 0, 0.175, 1);
-  animation: passing-through 3s cubic-bezier(0.77, 0, 0.175, 1); }
-.dropzone .dz-preview.dz-error .dz-error-mark {
-  opacity: 1;
-  -webkit-animation: slide-in 3s cubic-bezier(0.77, 0, 0.175, 1);
-  -moz-animation: slide-in 3s cubic-bezier(0.77, 0, 0.175, 1);
-  -ms-animation: slide-in 3s cubic-bezier(0.77, 0, 0.175, 1);
-  -o-animation: slide-in 3s cubic-bezier(0.77, 0, 0.175, 1);
-  animation: slide-in 3s cubic-bezier(0.77, 0, 0.175, 1); }
-.dropzone .dz-preview .dz-success-mark, .dropzone .dz-preview .dz-error-mark {
-  pointer-events: none;
-  opacity: 0;
-  z-index: 500;
-  position: absolute;
-  display: block;
-  top: 50%;
-  left: 50%;
-  margin-left: -27px;
-  margin-top: -27px; }
-.dropzone .dz-preview .dz-success-mark svg, .dropzone .dz-preview .dz-error-mark svg {
-  display: block;
-  width: 54px;
-  height: 54px; }
-.dropzone .dz-preview.dz-processing .dz-progress {
-  opacity: 1;
-  -webkit-transition: all 0.2s linear;
-  -moz-transition: all 0.2s linear;
-  -ms-transition: all 0.2s linear;
-  -o-transition: all 0.2s linear;
-  transition: all 0.2s linear; }
-.dropzone .dz-preview.dz-complete .dz-progress {
-  opacity: 0;
-  -webkit-transition: opacity 0.4s ease-in;
-  -moz-transition: opacity 0.4s ease-in;
-  -ms-transition: opacity 0.4s ease-in;
-  -o-transition: opacity 0.4s ease-in;
-  transition: opacity 0.4s ease-in; }
-.dropzone .dz-preview:not(.dz-processing) .dz-progress {
-  -webkit-animation: pulse 6s ease infinite;
-  -moz-animation: pulse 6s ease infinite;
-  -ms-animation: pulse 6s ease infinite;
-  -o-animation: pulse 6s ease infinite;
-  animation: pulse 6s ease infinite; }
-.dropzone .dz-preview .dz-progress {
-  opacity: 1;
-  z-index: 1000;
-  pointer-events: none;
-  position: absolute;
-  height: 16px;
-  left: 50%;
-  top: 50%;
-  margin-top: -8px;
-  width: 80px;
-  margin-left: -40px;
-  background: rgba(255, 255, 255, 0.9);
-  -webkit-transform: scale(1);
-  border-radius: 8px;
-  overflow: hidden; }
-.dropzone .dz-preview .dz-progress .dz-upload {
-  background: #333;
-  background: linear-gradient(to bottom, #666, #444);
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 0;
-  -webkit-transition: width 300ms ease-in-out;
-  -moz-transition: width 300ms ease-in-out;
-  -ms-transition: width 300ms ease-in-out;
-  -o-transition: width 300ms ease-in-out;
-  transition: width 300ms ease-in-out; }
-.dropzone .dz-preview.dz-error .dz-error-message {
-  display: block; }
-.dropzone .dz-preview.dz-error:hover .dz-error-message {
-  opacity: 1;
-  pointer-events: auto; }
-.dropzone .dz-preview .dz-error-message {
-  pointer-events: none;
-  z-index: 1000;
-  position: absolute;
-  display: block;
-  display: none;
-  opacity: 0;
-  -webkit-transition: opacity 0.3s ease;
-  -moz-transition: opacity 0.3s ease;
-  -ms-transition: opacity 0.3s ease;
-  -o-transition: opacity 0.3s ease;
-  transition: opacity 0.3s ease;
-  border-radius: 8px;
-  font-size: 13px;
-  top: 130px;
-  left: -10px;
-  width: 140px;
-  background: #be2626;
-  background: linear-gradient(to bottom, #be2626, #a92222);
-  padding: 0.5em 1.2em;
-  color: white; }
-.dropzone .dz-preview .dz-error-message:after {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: 64px;
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-bottom: 6px solid #be2626; }
-
-.vue-dropzone {
-  border: 2px solid #E5E5E5;
-  font-family: 'Arial', sans-serif;
-  letter-spacing: 0.2px;
-  color: #777;
-  transition: background-color 0.2s linear;
-}
-.vue-dropzone:hover {
-  background-color: #F6F6F6;
-}
-.vue-dropzone i {
-  color: #CCC;
-}
-.vue-dropzone .dz-preview .dz-image {
-  border-radius: 0;
-  width: 100%;
-  height: 100%;
-}
-.vue-dropzone .dz-preview .dz-image img:not([src]) {
-  width: 200px;
-  height: 200px;
-}
-.vue-dropzone .dz-preview .dz-image:hover img {
-  transform: none;
-  -webkit-filter: none;
-}
-.vue-dropzone .dz-preview .dz-details {
-  bottom: 0;
-  top: 0;
-  color: white;
-  background-color: rgba(33, 150, 243, 0.8);
-  transition: opacity .2s linear;
-  text-align: left;
-}
-.vue-dropzone .dz-preview .dz-details .dz-filename {
-  overflow: hidden;
-}
-.vue-dropzone .dz-preview .dz-details .dz-filename span,
-.vue-dropzone .dz-preview .dz-details .dz-size span {
-  background-color: transparent;
-}
-.vue-dropzone .dz-preview .dz-details .dz-filename:not(:hover) span {
-  border: none;
-}
-.vue-dropzone .dz-preview .dz-details .dz-filename:hover span {
-  background-color: transparent;
-  border: none;
-}
-.vue-dropzone .dz-preview .dz-progress .dz-upload {
-  background: #cccccc;
-}
-.vue-dropzone .dz-preview .dz-remove {
-  position: absolute;
-  z-index: 30;
-  color: white;
-  margin-left: 15px;
-  padding: 10px;
-  top: inherit;
-  bottom: 15px;
-  border: 2px white solid;
-  text-decoration: none;
-  text-transform: uppercase;
-  font-size: 0.8rem;
-  font-weight: 800;
-  letter-spacing: 1.1px;
-  opacity: 0;
-}
-.vue-dropzone .dz-preview:hover .dz-remove {
-  opacity: 1;
-}
-.vue-dropzone .dz-preview .dz-success-mark,
-.vue-dropzone .dz-preview .dz-error-mark {
-  margin-left: auto;
-  margin-top: auto;
-  width: 100%;
-  top: 35%;
-  left: 0;
-}
-.vue-dropzone .dz-preview .dz-success-mark svg,
-.vue-dropzone .dz-preview .dz-error-mark svg {
-  margin-left: auto;
-  margin-right: auto;
-}
-.vue-dropzone .dz-preview .dz-error-message {
-  top: calc(15%);
-  margin-left: auto;
-  margin-right: auto;
-  left: 0;
-  width: 100%;
-}
-.vue-dropzone .dz-preview .dz-error-message:after {
-  bottom: -6px;
-  top: initial;
-  border-top: 6px solid #a92222;
-  border-bottom: none;
-}
-
-/* customized */
-
-.vue-dropzone {
-  border: 2px solid #E5E5E5;
-  font-family: 'Arial', sans-serif;
-  letter-spacing: 0.2px;
-  color: #777;
-  transition: background-color 0.2s linear;
-  padding: 5px 5px;
-}
-
-.dropzone .dz-preview {
-  position: relative;
-  display: inline-block;
-  vertical-align: top;
-  margin: 5px;
-  width: 96%;
-}
-
-.vue-dropzone .dz-preview .dz-details {
-  bottom: 0;
-  top: 0;
-  color: white;
-  background-color: rgba(23, 77, 80, 0.76);
-  transition: opacity .2s linear;
-  text-align: left;
-}
-
-.dropzone .dz-preview.dz-file-preview .dz-image {
-  display: none;
-}
-
-.dropzone .dz-preview .dz-details .dz-filename {
-  white-space: normal;
-}
-
-.dropzone .dz-preview .dz-progress {
-  display: none;
-}
-
-.vue-dropzone .dz-preview .dz-remove {
-  position: absolute;
-  z-index: 30;
-  color: white;
-  margin-left: 150px;
-  padding: 10px;
-  top: inherit;
-  bottom: 50px;
-  border: 2px white solid;
-  text-decoration: none;
-  text-transform: uppercase;
-  font-size: 0.6rem;
-  font-weight: 800;
-  letter-spacing: 1.1px;
-  opacity: 1;
-}
-
-.dropzone .dz-preview .dz-details .dz-filename span,
-.dropzone .dz-preview .dz-details .dz-size span {
-  padding: 0;
-  width: 100%;
 }
 
 code,

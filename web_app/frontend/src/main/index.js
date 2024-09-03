@@ -15,6 +15,11 @@ const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
 
+// function sendStatusToWindow (text) {
+//   log.info(text)
+//   mainWindow.webContents.send('message', text)
+// }
+
 function createWindow () {
   /**
    * Initial window options
@@ -23,10 +28,14 @@ function createWindow () {
     height: 563,
     useContentSize: true,
     width: 1000,
-    'webPreferences': {
-      'webSecurity': false
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      enableRemoteModule: true
     }
   })
+
+  require('@electron/remote/main').enable(mainWindow.webContents)
 
   mainWindow.loadURL(winURL)
 
@@ -40,6 +49,10 @@ app.on('ready', createWindow)
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
+  } else if (mainWindow !== null) {
+    mainWindow.webContents.session.clearCache(() => {
+      console.log('cache cleared.')
+    })
   }
 })
 

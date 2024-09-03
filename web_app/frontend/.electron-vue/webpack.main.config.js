@@ -6,7 +6,8 @@ const path = require('path')
 const { dependencies } = require('../package.json')
 const webpack = require('webpack')
 
-const BabiliWebpackPlugin = require('babili-webpack-plugin')
+const MinifyPlugin = require("babel-minify-webpack-plugin");
+const rendererConfig = require('./webpack.renderer.config')
 
 let mainConfig = {
   entry: {
@@ -45,14 +46,18 @@ let mainConfig = {
   },
   output: {
     filename: '[name].js',
+    hashFunction: 'xxhash64',
     libraryTarget: 'commonjs2',
-    path: path.join(__dirname, '../dist/electron'),
-    publicPath: process.env.NODE_ENV === 'production'
-      ? ''
-      : '/'
+    path: path.join(__dirname, '../dist/electron')
   },
   plugins: [
-    new webpack.NoEmitOnErrorsPlugin()
+    new webpack.NoEmitOnErrorsPlugin(),
+    new webpack.ProvidePlugin({
+      $: 'jquery',
+      jquery: 'jquery',
+      'window.jQuery': 'jquery',
+      jQuery: 'jquery'
+    })
   ],
   resolve: {
     extensions: ['.js', '.json', '.node']
@@ -76,14 +81,13 @@ if (process.env.NODE_ENV !== 'production') {
  */
 if (process.env.NODE_ENV === 'production') {
   mainConfig.plugins.push(
-    new BabiliWebpackPlugin({
-      removeConsole: true,
-      removeDebugger: true
-    }),
+    new MinifyPlugin(),
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': '"production"'
     })
   )
+  mainConfig.mode = 'production'
+  rendererConfig.mode = 'production'
 }
 
 module.exports = mainConfig

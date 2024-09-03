@@ -2,24 +2,48 @@
   <div id="wrapper">
     <img id="logo" src="~@/assets/logo.png" alt="electron-vue"/>
 
+    <a href="https://github.com/lifs-tools/LipidXte2">
+      <svg aria-hidden="true" height="24" viewBox="0 0 16 16" version="1.1" width="24" data-view-component="true" class="octicon octicon-mark-github">
+        <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path>
+      </svg>
+      https://github.com/lifs-tools/LipidXte2
+    </a>
+
     <ul class="nav nav-tabs">
       <li role="presentation">
-        <router-link to="/">
+        <router-link :to="'/?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          Data Import
+        </router-link>
+        <router-link to="/" v-else>
           Data Import
         </router-link>
       </li>
+      <li role="presentation" v-show="$route.query.timestamp">
+        <router-link :to="'/sample?timestamp=' + $route.query.timestamp">
+          Result View
+        </router-link>
+      </li>
       <li role="presentation">
-        <router-link to="/slens">
-          Validation Samples
+        <router-link :to="'/slens?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          Samples
+        </router-link>
+        <router-link to="/slens" v-else>
+          Samples
         </router-link>
       </li>
       <li role="presentation" class="active">
-        <router-link to="/poly">
+        <router-link :to="'/poly?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          MS2 spectra calculator
+        </router-link>
+        <router-link to="/poly" v-else>
           MS2 spectra calculator
         </router-link>
       </li>
       <li role="presentation">
-        <router-link to="/help">
+        <router-link :to="'/help?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          Help
+        </router-link>
+        <router-link to="/help" v-else>
           Help
         </router-link>
       </li>
@@ -229,39 +253,39 @@ export default {
             'Content-Type': 'application/json'
           }
         })
-            .then(res => {
-              // console.log(res.data)
-              // Draw a plot
+          .then(res => {
+            // console.log(res.data)
+            // Draw a plot
+            vm.plotData.push({
+              x: _.map(res.data, 'CE'),
+              y: _.map(res.data, 'INT'),
+              // fill: 'tonexty',
+              mode: 'lines+markers',
+              // type: 'area',
+              text: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '/' + vm.lipidSn2.name + '</b>',
+              name: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '/' + vm.lipidSn2.name + '</b>',
+              mz: vm.lipidSn1.mz
+            })
+
+            mzList.push(vm.lipidSn1.mz)
+
+            if (res.data[0].CO2INT) {
               vm.plotData.push({
                 x: _.map(res.data, 'CE'),
-                y: _.map(res.data, 'INT'),
+                y: _.map(res.data, 'CO2INT'),
                 // fill: 'tonexty',
                 mode: 'lines+markers',
                 // type: 'area',
-                text: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '/' + vm.lipidSn2.name + '</b>',
-                name: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '/' + vm.lipidSn2.name + '</b>',
-                mz: vm.lipidSn1.mz
+                text: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '-CO2/' + vm.lipidSn2.name + '-CO2</b>',
+                name: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '-CO2/' + vm.lipidSn2.name + '-CO2</b>',
+                mz: vm.lipidSn2.mz - 43.99
               })
-
-              mzList.push(vm.lipidSn1.mz)
-
-              if (res.data[0].CO2INT) {
-                vm.plotData.push({
-                  x: _.map(res.data, 'CE'),
-                  y: _.map(res.data, 'CO2INT'),
-                  // fill: 'tonexty',
-                  mode: 'lines+markers',
-                  // type: 'area',
-                  text: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '-CO2/' + vm.lipidSn2.name + '-CO2</b>',
-                  name: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '-CO2/' + vm.lipidSn2.name + '-CO2</b>',
-                  mz: vm.lipidSn2.mz - 43.99
-                })
-              }
-            })
-            .catch(e => {
-              this.error = true
-              console.error(e)
-            })
+            }
+          })
+          .catch(e => {
+            this.error = true
+            console.error(e)
+          })
       } else {
         if (!(vm.lipidClass.startsWith('PCO') || vm.lipidClass.startsWith('PEO'))) {
           // vm.fragmentsSn1.push(vm.lipidClass + ' ' + vm.lipidSn1.name)
@@ -274,39 +298,39 @@ export default {
               'Content-Type': 'application/json'
             }
           })
-              .then(res => {
-                // console.log(res.data)
-                // Draw a plot
+            .then(res => {
+              // console.log(res.data)
+              // Draw a plot
+              vm.plotData.push({
+                x: _.map(res.data, 'CE'),
+                y: _.map(res.data, 'INT'),
+                // fill: 'tonexty',
+                mode: 'lines+markers',
+                // type: 'area',
+                text: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '</b>/' + vm.lipidSn2.name,
+                name: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '</b>/' + vm.lipidSn2.name,
+                mz: vm.lipidSn1.mz
+              })
+
+              mzList.push(vm.lipidSn1.mz)
+
+              if (res.data[0].CO2INT) {
                 vm.plotData.push({
                   x: _.map(res.data, 'CE'),
-                  y: _.map(res.data, 'INT'),
+                  y: _.map(res.data, 'CO2INT'),
                   // fill: 'tonexty',
                   mode: 'lines+markers',
                   // type: 'area',
-                  text: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '</b>/' + vm.lipidSn2.name,
-                  name: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '</b>/' + vm.lipidSn2.name,
-                  mz: vm.lipidSn1.mz
+                  text: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '-CO2</b>/' + vm.lipidSn2.name,
+                  name: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '-CO2</b>/' + vm.lipidSn2.name,
+                  mz: vm.lipidSn2.mz - 43.99
                 })
-
-                mzList.push(vm.lipidSn1.mz)
-
-                if (res.data[0].CO2INT) {
-                  vm.plotData.push({
-                    x: _.map(res.data, 'CE'),
-                    y: _.map(res.data, 'CO2INT'),
-                    // fill: 'tonexty',
-                    mode: 'lines+markers',
-                    // type: 'area',
-                    text: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '-CO2</b>/' + vm.lipidSn2.name,
-                    name: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '-CO2</b>/' + vm.lipidSn2.name,
-                    mz: vm.lipidSn2.mz - 43.99
-                  })
-                }
-              })
-              .catch(e => {
-                this.error = true
-                console.error(e)
-              })
+              }
+            })
+            .catch(e => {
+              this.error = true
+              console.error(e)
+            })
         }
 
         // if (vm.fragmentsSn2.indexOf(vm.lipidClass + ' ' + vm.lipidSn2.name) < 0)
@@ -405,35 +429,49 @@ export default {
             'Content-Type': 'application/json'
           }
         })
-            .then(res => {
-              // console.log(res.data)
-              // Check DMPE for PE and PEO fragments and PCO commercial and synthesized here
-              // const specie = res.data[vm.lipidClass + ' ' + vm.lipidSn1.name + '/' + vm.lipidSn2.name]
+          .then(res => {
+            // console.log(res.data)
+            // Check DMPE for PE and PEO fragments and PCO commercial and synthesized here
+            // const specie = res.data[vm.lipidClass + ' ' + vm.lipidSn1.name + '/' + vm.lipidSn2.name]
 
-              // const species = _.filter()
-              let speciesKeys = Object.keys(res.data).filter((key) => key.includes(`${vm.lipidSn1.name.substring(0, 4)}/${vm.lipidSn2.name.substring(0, 4)}`))
+            // const species = _.filter()
+            let speciesKeys = Object.keys(res.data).filter((key) => key.includes(`${vm.lipidSn1.name.substring(0, 4)}/${vm.lipidSn2.name.substring(0, 4)}`))
 
-              if (vm.lipidClass === 'PCO' && speciesKeys.length > 2) {
-                if (vm.lipidSn2.name.indexOf('5z') > -1) {
-                  speciesKeys.splice(2, 1)
-                } else {
-                  speciesKeys.splice(0, 2)
-                }
+            if (vm.lipidClass === 'PCO' && speciesKeys.length > 2) {
+              if (vm.lipidSn2.name.indexOf('5z') > -1) {
+                speciesKeys.splice(2, 1)
+              } else {
+                speciesKeys.splice(0, 2)
               }
-              // console.log(speciesKeys)
+            }
+            // console.log(speciesKeys)
 
-              speciesKeys.forEach(key => {
-                const specie = res.data[key]
+            speciesKeys.forEach(key => {
+              const specie = res.data[key]
 
-                if (specie) {
-                  // console.log(specie)
+              if (specie) {
+                // console.log(specie)
 
-                  if (!(vm.lipidClass.startsWith('PCO') || vm.lipidClass.startsWith('PEO')) && vm.lipidSn1 === vm.lipidSn2) {
-                    let exp = specie[vm.lipidSn1.mz]
+                if (!(vm.lipidClass.startsWith('PCO') || vm.lipidClass.startsWith('PEO')) && vm.lipidSn1 === vm.lipidSn2) {
+                  let exp = specie[vm.lipidSn1.mz]
+
+                  if (exp) {
+                    // console.log(exp)
+
+                    // // Draw a plot
+                    vm.plotData.push({
+                      x: exp.nce,
+                      y: exp.int,
+                      mode: 'lines+markers',
+                      marker: {symbol: 'x'},
+                      text: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp</b>',
+                      name: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp</b>',
+                      mz: vm.lipidSn1.mz
+                    })
+                  } else {
+                    const exp = specie[(vm.lipidSn1.mz + 0.01) + '']
 
                     if (exp) {
-                      // console.log(exp)
-
                       // // Draw a plot
                       vm.plotData.push({
                         x: exp.nce,
@@ -444,28 +482,28 @@ export default {
                         name: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp</b>',
                         mz: vm.lipidSn1.mz
                       })
-                    } else {
-                      const exp = specie[(vm.lipidSn1.mz + 0.01) + '']
-
-                      if (exp) {
-                        // // Draw a plot
-                        vm.plotData.push({
-                          x: exp.nce,
-                          y: exp.int,
-                          mode: 'lines+markers',
-                          marker: {symbol: 'x'},
-                          text: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp</b>',
-                          name: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp</b>',
-                          mz: vm.lipidSn1.mz
-                        })
-                      }
                     }
-                  } else if (!(vm.lipidClass.startsWith('PCO') || vm.lipidClass.startsWith('PEO'))) {
-                    let exp = specie[vm.lipidSn1.mz]
+                  }
+                } else if (!(vm.lipidClass.startsWith('PCO') || vm.lipidClass.startsWith('PEO'))) {
+                  let exp = specie[vm.lipidSn1.mz]
+
+                  if (exp) {
+                    // console.log(exp)
+
+                    // // Draw a plot
+                    vm.plotData.push({
+                      x: exp.nce,
+                      y: exp.int,
+                      mode: 'lines+markers',
+                      marker: {symbol: 'x'},
+                      text: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '</b>/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp',
+                      name: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '</b>/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp',
+                      mz: vm.lipidSn1.mz
+                    })
+                  } else {
+                    const exp = specie[(vm.lipidSn1.mz + 0.01) + '']
 
                     if (exp) {
-                      // console.log(exp)
-
                       // // Draw a plot
                       vm.plotData.push({
                         x: exp.nce,
@@ -476,30 +514,30 @@ export default {
                         name: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '</b>/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp',
                         mz: vm.lipidSn1.mz
                       })
-                    } else {
-                      const exp = specie[(vm.lipidSn1.mz + 0.01) + '']
-
-                      if (exp) {
-                        // // Draw a plot
-                        vm.plotData.push({
-                          x: exp.nce,
-                          y: exp.int,
-                          mode: 'lines+markers',
-                          marker: {symbol: 'x'},
-                          text: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '</b>/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp',
-                          name: vm.lipidClass + ' <b>' + vm.lipidSn1.name + '</b>/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp',
-                          mz: vm.lipidSn1.mz
-                        })
-                      }
                     }
                   }
+                }
 
-                  if (vm.lipidSn1 !== vm.lipidSn2) {
-                    let exp = specie[vm.lipidSn2.mz]
+                if (vm.lipidSn1 !== vm.lipidSn2) {
+                  let exp = specie[vm.lipidSn2.mz]
+
+                  if (exp) {
+                    // console.log(exp)
+
+                    // // Draw a plot
+                    vm.plotData.push({
+                      x: exp.nce,
+                      y: exp.int,
+                      mode: 'lines+markers',
+                      marker: {symbol: 'x'},
+                      text: vm.lipidClass + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '</b>-exp',
+                      name: vm.lipidClass + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '</b>-exp',
+                      mz: vm.lipidSn2.mz
+                    })
+                  } else {
+                    const exp = specie[(vm.lipidSn2.mz + 0.01) + '']
 
                     if (exp) {
-                      // console.log(exp)
-
                       // // Draw a plot
                       vm.plotData.push({
                         x: exp.nce,
@@ -510,30 +548,30 @@ export default {
                         name: vm.lipidClass + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '</b>-exp',
                         mz: vm.lipidSn2.mz
                       })
-                    } else {
-                      const exp = specie[(vm.lipidSn2.mz + 0.01) + '']
-
-                      if (exp) {
-                        // // Draw a plot
-                        vm.plotData.push({
-                          x: exp.nce,
-                          y: exp.int,
-                          mode: 'lines+markers',
-                          marker: {symbol: 'x'},
-                          text: vm.lipidClass + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '</b>-exp',
-                          name: vm.lipidClass + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '</b>-exp',
-                          mz: vm.lipidSn2.mz
-                        })
-                      }
                     }
+                  }
 
-                    // CO2loss
-                    let mz = vm.lipidSn2.mz - 43.99
-                    exp = specie[mz]
+                  // CO2loss
+                  let mz = vm.lipidSn2.mz - 43.99
+                  exp = specie[mz]
+
+                  if (exp) {
+                    // console.log(exp)
+
+                    // // Draw a plot
+                    vm.plotData.push({
+                      x: exp.nce,
+                      y: exp.int,
+                      mode: 'lines+markers',
+                      marker: {symbol: 'x'},
+                      text: vm.lipidClass + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-CO2</b>-exp',
+                      name: vm.lipidClass + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-CO2</b>-exp',
+                      mz: mz
+                    })
+                  } else {
+                    const exp = specie[(mz + 0.01) + '']
 
                     if (exp) {
-                      // console.log(exp)
-
                       // // Draw a plot
                       vm.plotData.push({
                         x: exp.nce,
@@ -542,75 +580,61 @@ export default {
                         marker: {symbol: 'x'},
                         text: vm.lipidClass + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-CO2</b>-exp',
                         name: vm.lipidClass + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-CO2</b>-exp',
-                        mz: mz
+                        mz: mz + 0.01
                       })
-                    } else {
-                      const exp = specie[(mz + 0.01) + '']
+                    }
+                  }
+
+                  // console.log(vm.lipidSn2.mz)
+                  // console.log(449.33 + vm.lipidSn2.mz)
+
+                  if (vm.lipidClass === 'PCO') {
+                    vm.lipidClassPCOExtList.forEach((c) => {
+                      let mz = vm.lipidSn2.mz
+                      if (c === 'PCO-FANL') {
+                        mz = Number((449.33 + 17).toFixed(2))
+                      } else if (c === 'PCO-M-60') {
+                        mz = Number((449.33 + vm.lipidSn2.mz).toFixed(2))
+                      } else if (c === 'PCO-PR') {
+                        mz = Number((449.33 + 60.02 + vm.lipidSn2.mz).toFixed(2))
+                      }
+
+                      // console.log(c + ':' + mz)
+                      let exp = specie[mz + '']
 
                       if (exp) {
-                        // // Draw a plot
+                        // Draw a plot
                         vm.plotData.push({
                           x: exp.nce,
                           y: exp.int,
                           mode: 'lines+markers',
                           marker: {symbol: 'x'},
-                          text: vm.lipidClass + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-CO2</b>-exp',
-                          name: vm.lipidClass + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-CO2</b>-exp',
-                          mz: mz + 0.01
+                          text: c === 'PCO-FANL' ? c + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '</b>-exp' : c + ' ' + vm.lipidSn1.name + '/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp',
+                          name: c === 'PCO-FANL' ? c + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '</b>-exp' : c + ' ' + vm.lipidSn1.name + '/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp',
+                          mz: mz
+                        })
+                      } else {
+                        exp = specie[(mz - 0.01) + '']
+                        vm.plotData.push({
+                          x: exp.nce,
+                          y: exp.int,
+                          mode: 'lines+markers',
+                          marker: {symbol: 'x'},
+                          text: c === 'PCO-FANL' ? c + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '</b>-exp' : c + ' ' + vm.lipidSn1.name + '/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp',
+                          name: c === 'PCO-FANL' ? c + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '</b>-exp' : c + ' ' + vm.lipidSn1.name + '/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp',
+                          mz: mz
                         })
                       }
-                    }
-
-                    console.log(vm.lipidSn2.mz)
-                    console.log(449.33 + vm.lipidSn2.mz)
-
-                    if (vm.lipidClass === 'PCO') {
-                      vm.lipidClassPCOExtList.forEach((c) => {
-                        let mz = vm.lipidSn2.mz
-                        if (c === 'PCO-FANL') {
-                          mz = Number((449.33 + 17).toFixed(2))
-                        } else if (c === 'PCO-M-60') {
-                          mz = Number((449.33 + vm.lipidSn2.mz).toFixed(2))
-                        } else if (c === 'PCO-PR') {
-                          mz = Number((449.33 + 60.02 + vm.lipidSn2.mz).toFixed(2))
-                        }
-
-                        // console.log(c + ':' + mz)
-                        let exp = specie[mz + '']
-
-                        if (exp) {
-                          // Draw a plot
-                          vm.plotData.push({
-                            x: exp.nce,
-                            y: exp.int,
-                            mode: 'lines+markers',
-                            marker: {symbol: 'x'},
-                            text: c === 'PCO-FANL' ? c + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '</b>-exp' : c + ' ' + vm.lipidSn1.name + '/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp',
-                            name: c === 'PCO-FANL' ? c + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '</b>-exp' : c + ' ' + vm.lipidSn1.name + '/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp',
-                            mz: mz
-                          })
-                        } else {
-                          exp = specie[(mz - 0.01) + '']
-                          vm.plotData.push({
-                            x: exp.nce,
-                            y: exp.int,
-                            mode: 'lines+markers',
-                            marker: {symbol: 'x'},
-                            text: c === 'PCO-FANL' ? c + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '</b>-exp' : c + ' ' + vm.lipidSn1.name + '/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp',
-                            name: c === 'PCO-FANL' ? c + ' ' + vm.lipidSn1.name + '/<b>' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '</b>-exp' : c + ' ' + vm.lipidSn1.name + '/' + key.replace(vm.lipidClass + ' ' + vm.lipidSn1.name + '/', '') + '-exp',
-                            mz: mz
-                          })
-                        }
-                      })
-                    }
+                    })
                   }
                 }
-              })
+              }
             })
-            .catch(e => {
-              this.error = true
-              console.error(e)
-            })
+          })
+          .catch(e => {
+            this.error = true
+            console.error(e)
+          })
       }
 
       let layout = {

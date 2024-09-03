@@ -49,18 +49,18 @@ export default {
           'Content-Type': 'application/json'
         }
       })
-          .then(res => {
-            // console.log(res.data)
-            if (res.data[0]) {
-              this.error = false
-              localStorage.setItem('authenticated', 'true')
-              this.$router.push('/poly')
-            }
-          })
-          .catch(e => {
-            this.error = true
-            console.error(e)
-          })
+        .then(res => {
+          // console.log(res.data)
+          if (res.data[0]) {
+            this.error = false
+            localStorage.setItem('authenticated', 'true')
+            this.$router.push('/poly')
+          }
+        })
+        .catch(e => {
+          this.error = true
+          console.error(e)
+        })
 
       // const res = await fetch(url, {
       //   method: 'GET',

@@ -2,24 +2,48 @@
   <div id="wrapper">
     <img id="logo" src="~@/assets/logo.png" alt="electron-vue"/>
 
+    <a href="https://github.com/lifs-tools/LipidXte2">
+      <svg aria-hidden="true" height="24" viewBox="0 0 16 16" version="1.1" width="24" data-view-component="true" class="octicon octicon-mark-github">
+        <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path>
+      </svg>
+      https://github.com/lifs-tools/LipidXte2
+    </a>
+
     <ul class="nav nav-tabs">
       <li role="presentation">
-        <router-link to="/">
+        <router-link :to="'/?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          Data Import
+        </router-link>
+        <router-link to="/" v-else>
           Data Import
         </router-link>
       </li>
+      <li role="presentation" v-show="$route.query.timestamp">
+        <router-link :to="'/sample?timestamp=' + $route.query.timestamp">
+          Result View
+        </router-link>
+      </li>
       <li role="presentation" class="active">
-        <router-link to="/slens">
-          Validation Samples
+        <router-link :to="'/slens?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          Samples
+        </router-link>
+        <router-link to="/slens" v-else>
+          Samples
         </router-link>
       </li>
       <li role="presentation">
-        <router-link to="/poly">
+        <router-link :to="'/poly?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          MS2 spectra calculator
+        </router-link>
+        <router-link to="/poly" v-else>
           MS2 spectra calculator
         </router-link>
       </li>
       <li role="presentation">
-        <router-link to="/help">
+        <router-link :to="'/help?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          Help
+        </router-link>
+        <router-link to="/help" v-else>
           Help
         </router-link>
       </li>
@@ -196,7 +220,31 @@
     </div>
 
     <div style="display: flex;flex-direction: row;">
-      <div v-show="timestamp === 'ultimate'" class="tabcontent" v-bind:style="{ display: 'block', width: '50%' }">
+      <div class="tabcontent" v-bind:style="{ display: 'block', width: '50%' }">
+        <table>
+          <tr><td>
+            R<sup>2</sup> = {{r2}}
+          </td></tr>
+          <tr><td>
+            Slope = {{slope}}
+          </td></tr>
+          <tr><td>
+            Intercept = {{intercept}}
+          </td></tr>
+          <tr>
+            <input type="checkbox" v-model="isLog"> Logarithm
+          </tr>
+        </table>
+        <div ref="validation1"></div>
+      </div>
+
+      <div class="tabcontent" v-bind:style="{ display: 'block', width: '50%' }">
+        <div ref="validation1Error"></div>
+      </div>
+    </div>
+
+    <div style="display: flex;flex-direction: row;">
+      <div v-show="timestamp.endsWith('ultimate')" class="tabcontent additional-validation">
         <table>
           <tr><td>
             R<sup>2</sup> = {{stdR2}}
@@ -209,21 +257,6 @@
           </td></tr>
         </table>
         <div ref="validation2"></div>
-      </div>
-
-      <div class="tabcontent" v-bind:style="{ display: 'block', width: '50%' }">
-        <table>
-          <tr><td>
-            R<sup>2</sup> = {{r2}}
-          </td></tr>
-          <tr><td>
-            Slope = {{slope}}
-          </td></tr>
-          <tr><td>
-            Intercept = {{intercept}}
-          </td></tr>
-        </table>
-        <div ref="validation1"></div>
       </div>
     </div>
 
@@ -250,7 +283,7 @@
         uncorrectedSum: {},
         quantOption: 'Quantity',
         outputOption: 'All',
-        timestamp: this.$route.query.timestamp,
+        timestamp: '',
         isLspecies: false,
         preLspecies: false,
         isMspecies: false,
@@ -266,6 +299,7 @@
         nceString: '',
         clazz: 'PE',
         thresholded: true,
+        isLog: false,
         standardList: [
           {
             'class': 'PC',
@@ -395,6 +429,13 @@
         ]
       }
     },
+    watch: {
+      isLog: function (newValue) {
+        const vm = this
+
+        vm.getValidation()
+      }
+    },
     methods: {
       quantify () {
         let vm = this
@@ -415,17 +456,17 @@
         let val = []
         let names = []
 
-//         _.filter(Object.keys(dat), (o) => o.startsWith('FAI.') && !o.startsWith('FAI.FC_Group'))
-//           .forEach((c) => {
-//             console.log(c)
-//             if (dat[c] !== '') {
-//               console.log(dat[c])
-//               val = _.concat(val, eval(dat[c].replace(/\.\./g, ',')))
-//               names = _.concat(names, )
-//             }
-//           }
-//         )
-//         console.log(dat)
+        //         _.filter(Object.keys(dat), (o) => o.startsWith('FAI.') && !o.startsWith('FAI.FC_Group'))
+        //           .forEach((c) => {
+        //             console.log(c)
+        //             if (dat[c] !== '') {
+        //               console.log(dat[c])
+        //               val = _.concat(val, eval(dat[c].replace(/\.\./g, ',')))
+        //               names = _.concat(names, )
+        //             }
+        //           }
+        //         )
+        //         console.log(dat)
 
         _.filter(Object.keys(dat), (o) => o.startsWith('FAI.FC_Group'))
           .forEach((c) => {
@@ -481,19 +522,27 @@
 
         if (vm.timestamp === 'ILIS' || vm.timestamp === 'brain' || vm.timestamp === 'egg' || vm.timestamp === 'heart') {
           vm.clazz = 'PC'
+        } else if (vm.timestamp === 'egg_PG') {
+          vm.clazz = 'PG'
+        } else if (vm.timestamp === 'egg_PE' || vm.timestamp === 'egg_PEO') {
+          vm.clazz = 'PE'
+        } else if (vm.timestamp === 'brain_PS') {
+          vm.clazz = 'PS'
         }
         let oReq = new XMLHttpRequest()
+        oReq.responseType = 'json'
         oReq.onload = function (e) {
           if (this.status === 200) {
-            let idx = this.responseText.indexOf('\n')
-            let nceHeader = this.responseText.slice(0, idx)
+            let jsonReponse = this.response
+            let nceHeader = jsonReponse[0]
             vm.nceString = 'NCE: ' + nceHeader
             // console.log(nceHeader)
-            // console.log(this.responseText.slice(idx + 1))
 
-            let tsv = this.responseText.slice(idx + 1)
+            let tsv = jsonReponse[1]
             let headerline = tsv.slice(0, tsv.indexOf('\n') + 1).split('\t')
             // console.log(headerline)
+
+            const isStandardListPresent = jsonReponse[2]
 
             let headers = []
             _.filter(headerline, (o) => o.startsWith('PRI_Group'))
@@ -505,7 +554,7 @@
 
             let groupSize = headers.length
 
-            let data = d3.tsvParse(this.responseText.slice(idx + 1), function (d) {
+            let data = d3.tsvParse(tsv, function (d) {
               if (d.Mspecies.startsWith(vm.clazz) && d.Mspecies !== 'Sum') {
                 let faiArr = vm.extractFAI(d)
 
@@ -536,7 +585,7 @@
               }
             }
 
-            let sum = d3.tsvParse(this.responseText.slice(idx + 1), function (d) {
+            let sum = d3.tsvParse(tsv, function (d) {
               if (d.Species.startsWith(vm.clazz) && d.Mspecies === 'Sum') {
                 return {
                   fai: vm.averageFAI(d),
@@ -546,14 +595,27 @@
               }
             })
 
+            const pspg = (item) => {
+              const specie = item.species
+              if (vm.timestamp.endsWith('PS') || vm.timestamp.endsWith('PG')) {
+                let m = /.* (\d+):(\d+):(\d+)/gm.exec(specie)
+                let c = parseInt(m[1])
+                return c <= 40 && c % 2 === 0
+              } else {
+                return true
+              }
+            }
+
+            sum = sum.filter(c => pspg(c))
+
             let nce = 'NCE ' + nceHeader.replace(/\[|\]/g, '') + ' '
 
             if (vm.options.indexOf('NoCorrection') > -1) {
               // no correction
-              vm.uncorrectedSum = { x: _.map(sum, 'pri'), y: _.map(sum, 'fai'), text: _.map(sum, 'species').map(c => c + '<br>' + nce + 'uncorrected') }
+              vm.uncorrectedSum = { x: _.map(sum, 'pri'), y: _.map(sum, 'fai'), text: _.map(sum, 'species').map(c => c + '<br>' + nce + 'uncorrected'), species: _.map(sum, 'species') }
             } else {
               // correction
-              vm.correctedSum = { x: _.map(sum, 'pri'), y: _.map(sum, 'fai'), text: _.map(sum, 'species').map(c => c + '<br>' + nce + 'corrected') }
+              vm.correctedSum = { x: _.map(sum, 'pri'), y: _.map(sum, 'fai'), text: _.map(sum, 'species').map(c => c + '<br>' + nce + 'corrected'), species: _.map(sum, 'species') }
             }
 
             let yTitle = 'Concentration, microM'
@@ -607,12 +669,12 @@
               height: 700,
               margin: {b: 180},
               xaxis: {title: 'Lipid species'},
-              yaxis: {title: 'Concentration, microM'}
+              yaxis: {title: isStandardListPresent ? 'Concentration, microM' : 'Concentration, percent(%)'}
             }
 
             Plotly.newPlot(vm.$refs.lspecies, data, layout)
           } else {
-            console.error(this.responseText)
+            console.error(this.response)
           }
         }
         oReq.open('GET', serverUrl + '/ultimate')
@@ -625,12 +687,14 @@
       getValidation () {
         let vm = this
         let oReq = new XMLHttpRequest()
+        oReq.responseType = 'json'
         oReq.onload = function (e) {
           if (this.status === 200) {
-            let idx = this.responseText.indexOf('\n')
-            let nceHeader = this.responseText.slice(0, idx)
+            let jsonReponse = this.response
+            // console.log(jsonReponse)
+            let nceHeader = jsonReponse[0]
 
-            let sum = d3.tsvParse(this.responseText.slice(idx + 1), function (d) {
+            let sum = d3.tsvParse(jsonReponse[1], function (d) {
               if (d.Species.startsWith(vm.clazz) && d.Mspecies === 'Sum') {
                 return {
                   fai: vm.averageFAI(d),
@@ -640,17 +704,41 @@
               }
             })
 
+            const pspg = (item) => {
+              const specie = item.species
+              if (vm.timestamp.endsWith('PS') || vm.timestamp.endsWith('PG')) {
+                let m = /.* (\d+):(\d+):(\d+)/gm.exec(specie)
+                let c = parseInt(m[1])
+                return c <= 40 && c % 2 === 0
+              } else {
+                return true
+              }
+            }
+
+            sum = sum.filter(c => pspg(c))
+
             let nce = 'NCE ' + nceHeader.replace(/\[|\]/g, '') + ' '
 
             if (vm.options.indexOf('NoCorrection') > -1) {
               // no correction
-              vm.correctedSum = { x: _.map(sum, 'pri'), y: _.map(sum, 'fai'), text: _.map(sum, 'species').map(c => c + '<br>' + nce + 'corrected') }
+              vm.correctedSum = { x: _.map(sum, 'pri'), y: _.map(sum, 'fai'), text: _.map(sum, 'species').map(c => c + '<br>' + nce + 'corrected'), species: _.map(sum, 'species') }
             } else {
               // correction
-              vm.uncorrectedSum = { x: _.map(sum, 'pri'), y: _.map(sum, 'fai'), text: _.map(sum, 'species').map(c => c + '<br>' + 'NCE ' + nceHeader.substr(nceHeader.lastIndexOf(',') + 2, 4) + ' uncorrected') }
+              vm.uncorrectedSum = { x: _.map(sum, 'pri'), y: _.map(sum, 'fai'), text: _.map(sum, 'species').map(c => c + '<br>' + 'NCE ' + nce.substr(nce.replace(/\[|\]/g, '').lastIndexOf(',') + 2) + 'uncorrected'), species: _.map(sum, 'species') }
             }
 
             // console.log(_.map(sum, 'species').map(c => c))
+
+            const species = sum.map(c => c.species)
+            const sortedStandard = vm.standardList.filter(c => c.class === vm.clazz)
+
+            // console.log(species)
+            // console.log(sortedStandard)
+
+            let standardDat = sortedStandard.filter(c => species.indexOf(c.specie) > -1).map(c => c.mol)
+            // standardDat.sort((a, b) => a - b)
+            // vm.correctedSum.y.sort((a, b) => a - b)
+            // vm.correctedSum.x.sort((a, b) => a - b)
 
             let corrected = {
               x: vm.correctedSum.x,
@@ -671,34 +759,26 @@
               type: 'scatter'
             }
 
+            // console.log(nceHeader.replace(/\[|\]/g, ''))
+
             let nocorrected = {
               x: vm.uncorrectedSum.x,
               y: vm.uncorrectedSum.y,
               mode: 'markers',
-              name: 'NCE ' + nceHeader.substr(nceHeader.lastIndexOf(',') + 2, 4) + ' uncorrected',
+              name: 'NCE ' + nce.replace(/\[|\]/g, '').substr(nce.replace(/\[|\]/g, '').lastIndexOf(',') + 2) + 'uncorrected',
               hovertext: vm.uncorrectedSum.text,
               hoverinfo: 'x+y+text',
               marker: {
                 color: 'rgb(219, 64, 82)',
                 size: 4
               },
-//              line: {
-//                shape: 'spline',
-//                color: 'rgb(219, 64, 82)',
-//                width: 3
-//              },
+              //              line: {
+              //                shape: 'spline',
+              //                color: 'rgb(219, 64, 82)',
+              //                width: 3
+              //              },
               type: 'scatter'
             }
-
-            const species = sum.map(c => c.species)
-            const sortedStandard = vm.standardList.filter(c => c.class === vm.clazz)
-
-            // console.log(species)
-            // console.log(sortedStandard)
-
-            let standardDat = sortedStandard.filter(c => species.indexOf(c.specie) > -1).map(c => c.mol)
-
-            // console.log(standardDat)
 
             let targetWithMolecularSpecies = {
               x: standardDat,
@@ -752,11 +832,13 @@
             vm.r2 = result.r2
             vm.slope = result.equation[0]
             vm.intercept = result.equation[1]
-            // console.log(result)
+
+            let fitModel = [...vm.correctedSum.x]
+            fitModel.sort((a, b) => a - b)
 
             let fitted = {
-              x: vm.correctedSum.x,
-              y: _.zipWith(vm.correctedSum.x, function (a) {
+              x: fitModel,
+              y: _.zipWith(fitModel, function (a) {
                 return result.predict(a)[1]
               }),
               name: 'Fitted line for corrected species',
@@ -782,14 +864,24 @@
               }
             }
 
-            let layout = {
-              // title: 'Validation Figure NCE:' + nceHeader,
-              title: 'Quantification via FTMS vs FTMSMS',
-              xaxis: {range: [20, 200], title: 'Specified concentration via FTMS1/precursor, microM'},
-              yaxis: {range: [20, 200], title: 'Specified concentration via FTMS2/fragment, microM'}
-            }
+            if (vm.isLog) {
+              let logLayout = {
+                title: 'Quantification via FTMS vs FTMSMS (log)',
+                xaxis: {type: 'log', rangemode: 'tozero', zeroline: true, title: 'Specified concentration via FTMS1/precursor, microM'},
+                yaxis: {type: 'log', rangemode: 'tozero', zeroline: true, title: 'Specified concentration via FTMS2/fragment, microM'}
+              }
 
-            Plotly.newPlot(vm.$refs.validation1, [corrected, nocorrected, fitted, orientation], layout)
+              Plotly.newPlot(vm.$refs.validation1, [corrected, nocorrected, fitted, orientation], logLayout)
+            } else {
+              let layout = {
+                // title: 'Validation Figure NCE:' + nceHeader,
+                title: 'Quantification via FTMS vs FTMSMS',
+                xaxis: {range: [0, 200], rangemode: 'tozero', zeroline: true, title: 'Specified concentration via FTMS1/precursor, microM'},
+                yaxis: {range: [0, 200], rangemode: 'tozero', zeroline: true, title: 'Specified concentration via FTMS2/fragment, microM'}
+              }
+
+              Plotly.newPlot(vm.$refs.validation1, [corrected, nocorrected, fitted, orientation], layout)
+            }
 
             dat = _.zip(standardDat, vm.correctedSum.x)
 
@@ -817,15 +909,76 @@
               }
             }
 
-            layout = {
+            let layout2 = {
               // title: 'Validation Figure NCE:' + nceHeader,
               title: 'Target vs specified concentration',
-              xaxis: {range: [20, 200], title: 'Target concentration, microM'},
-              yaxis: {range: [20, 200], title: 'Specified concentration, microM'}
+              xaxis: {rangemode: 'tozero', zeroline: true, range: [0, 200], title: 'Target concentration, microM'},
+              yaxis: {rangemode: 'tozero', zeroline: true, range: [0, 200], title: 'Specified concentration, microM'}
             }
-            Plotly.newPlot(vm.$refs.validation2, [standardConcentration, targetWithSpecies, targetWithMolecularSpecies, fitted2, orientation], layout)
+            Plotly.newPlot(vm.$refs.validation2, [standardConcentration, targetWithSpecies, targetWithMolecularSpecies, fitted2, orientation], layout2)
 
-//            console.log(data)
+            if (vm.uncorrectedSum) {
+              // console.log(vm.uncorrectedSum)
+
+              let ucdat = _.zip(vm.uncorrectedSum.x, vm.uncorrectedSum.y, vm.uncorrectedSum.species).filter(c => c[0] > 1 && c[1] / c[0] * 100 - 100 <= 100)
+              // console.log(ucdat)
+
+              let species = _.map(ucdat, c => c[2])
+              // console.log(species)
+
+              let cdat = _.zip(vm.correctedSum.x, vm.correctedSum.y, vm.correctedSum.species).filter(c => species.includes(c[2]))
+              // console.log(cdat)
+
+              // console.log(vm.correctedSum)
+              // console.log(vm.uncorrectedSum)
+              // console.log(vm.uncorrectedSum.species)
+              // console.log(noOfDoubleBonds.map(c => c.fragment))
+              // console.log(vm.uncorrectedSum.species)
+
+              let x = ucdat.map(c => {
+                let m = /.*:(\d+):(\d+)/gm.exec(c[2])
+                // console.log(m[1])
+
+                let dbno = parseInt(m[1])
+
+                if (dbno < 2) {
+                  return '0-1'
+                } else if (dbno < 4) {
+                  return '2-3'
+                } else {
+                  return '4-7'
+                }
+              })
+              // console.log(x)
+
+              // x = ['0-1', '0-1', '0-1', '2-3', '4-7']
+
+              let c1 =
+                {
+                  type: 'box',
+                  y: cdat.map(c => c[1] / c[0] * 100 - 100),
+                  x,
+                  // orientation: 'h',
+                  name: 'corrected'
+                }
+              let c3 =
+                {
+                  type: 'box',
+                  y: ucdat.map(c => c[1] / c[0] * 100 - 100),
+                  x,
+                  // orientation: 'h',
+                  name: 'uncorrected',
+                  marker: {color: '#FF4136'}
+                }
+              let errorLayout = {
+                // title: 'Validation Figure NCE:' + nceHeader,
+                title: 'Error over the number of double bonds',
+                xaxis: {range: [-0.5, 3], title: 'Number of double bonds'},
+                yaxis: {rangemode: 'tozero', zeroline: true, title: 'Error, %'},
+                boxmode: 'group'
+              }
+              Plotly.newPlot(vm.$refs.validation1Error, [c1, c3], errorLayout)
+            }
           } else {
             console.error(this.responseText)
           }
@@ -857,9 +1010,9 @@
         reqHeaders['options'] = copy.sort().join('_')
         reqHeaders['outputOption'] = vm.outputOption
 
-        vm.$http.get(serverUrl + '/download', { responseType: 'arraybuffer', headers: reqHeaders })
+        vm.$http.get(serverUrl + '/download-ultimate', { responseType: 'arraybuffer', headers: reqHeaders })
           .then(response => {
-//            console.log(response.headers)
+          //            console.log(response.headers)
             let blob = new Blob([response.data], {type: response.headers['content-type']})
 
             let contentDisposition = response.headers['content-disposition'] || ''
@@ -877,11 +1030,16 @@
     mounted: function () {
       let vm = this
       vm.batchlist = [
-        {text: 'ultimate', value: 'ultimate'},
-        {text: 'ILIS', value: 'ILIS'},
-        {text: 'brain', value: 'brain'},
-        {text: 'egg', value: 'egg'},
-        {text: 'heart', value: 'heart'}
+        {text: 'Heart PC', value: 'heart'},
+        {text: 'Egg PC', value: 'egg'},
+        {text: 'Brain PC', value: 'brain'},
+        {text: 'Custom PC mix', value: 'ILIS'},
+        {text: 'Ultimate SPLASH #1', value: 'ultimate'},
+        {text: 'Ultimate SPLASH #2', value: '2nd_ultimate'},
+        {text: 'Brain PS', value: 'brain_PS'},
+        {text: 'Egg PG', value: 'egg_PG'},
+        {text: 'Egg PE', value: 'egg_PE'}
+        // {text: 'Egg PEO', value: 'egg_PEO'}
       ]
       vm.timestamp = 'ultimate'
 
@@ -928,6 +1086,11 @@
     padding: 6px 12px;
     border: 1px solid #ccc;
     border-top: none;
+  }
+
+  .additional-validation {
+    display: block;
+    width: 100%;
   }
 
   .title {

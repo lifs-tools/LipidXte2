@@ -2,25 +2,49 @@
   <div id="wrapper">
     <img id="logo" src="~@/assets/logo.png" alt="electron-vue"/>
 
+    <a href="https://github.com/lifs-tools/LipidXte2">
+      <svg aria-hidden="true" height="24" viewBox="0 0 16 16" version="1.1" width="24" data-view-component="true" class="octicon octicon-mark-github">
+        <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path>
+      </svg>
+      https://github.com/lifs-tools/LipidXte2
+    </a>
+
     <ul class="nav nav-tabs">
       <li role="presentation">
-        <router-link to="/">
+        <router-link :to="'/?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          Data Import
+        </router-link>
+        <router-link to="/" v-else>
           Data Import
         </router-link>
       </li>
-      <li role="presentation" class="active">
-        <router-link to="/sample">
+      <li role="presentation" v-show="$route.query.timestamp" class="active">
+        <router-link :to="'/sample?timestamp=' + $route.query.timestamp">
           Result View
         </router-link>
       </li>
       <li role="presentation">
-        <router-link to="/poly">
+        <router-link :to="'/slens?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          Samples
+        </router-link>
+        <router-link to="/slens" v-else>
+          Samples
+        </router-link>
+      </li>
+      <li role="presentation">
+        <router-link :to="'/poly?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          MS2 spectra calculator
+        </router-link>
+        <router-link to="/poly" v-else>
           MS2 spectra calculator
         </router-link>
       </li>
       <li role="presentation">
-        <router-link to="/slens">
-          Sample Validation
+        <router-link :to="'/help?timestamp=' + $route.query.timestamp" v-if="$route.query.timestamp">
+          Help
+        </router-link>
+        <router-link to="/help" v-else>
+          Help
         </router-link>
       </li>
     </ul>
@@ -90,7 +114,7 @@
       </tr>
       <tr>
         <td>
-          <button type="button" class="btn btn-primary" @click="quantify">Quantify</button>
+          <button type="button" class="btn btn-primary" @click="quantify" :disabled="processing">Quantify</button>
         </td>
         <td>
           <button type="button" class="btn btn-success" @click="download">Download</button>
@@ -207,14 +231,22 @@
       <div ref="validation"></div>
     </div>
 
-
-
+    <modal v-if="processing" @close="processing = false">
+      <!--
+        you can use custom content here to overwrite
+        default content
+      -->
+      <h3 slot="header"><i class="fa fa-gear fa-spin" aria-hidden="true"/> LipidXte Web</h3>
+      <h4 slot="body">Quantifying your data ...</h4>
+      <p slot="footer">This window will be closed automatically soon.</p>
+    </modal>
   </div>
 </template>
 
 <script>
   import 'font-awesome/css/font-awesome.css'
   import { serverUrl } from './conf'
+  import modal from './ModalWindow.vue'
 
   let Plotly = require('./box')
   let d3 = require('d3-dsv')
@@ -222,6 +254,7 @@
 
   export default {
     name: 'sample-page',
+    components: {modal},
     data: function () {
       return {
         // options: ['RemoveRef', 'SummarizeNCE', 'GroupOnly'],
@@ -238,12 +271,14 @@
         r2: 0,
         slope: 0,
         intercept: 0,
-        nceString: ''
+        nceString: '',
+        processing: false
       }
     },
     methods: {
       quantify () {
         let vm = this
+        vm.processing = true
         console.log(this.quantOption)
         console.log(this.options)
         console.log(this.outputOption)
@@ -263,17 +298,17 @@
         let val = []
         let names = []
 
-//         _.filter(Object.keys(dat), (o) => o.startsWith('FAI.') && !o.startsWith('FAI.FC_Group'))
-//           .forEach((c) => {
-//             console.log(c)
-//             if (dat[c] !== '') {
-//               console.log(dat[c])
-//               val = _.concat(val, eval(dat[c].replace(/\.\./g, ',')))
-//               names = _.concat(names, )
-//             }
-//           }
-//         )
-//         console.log(dat)
+        //         _.filter(Object.keys(dat), (o) => o.startsWith('FAI.') && !o.startsWith('FAI.FC_Group'))
+        //           .forEach((c) => {
+        //             console.log(c)
+        //             if (dat[c] !== '') {
+        //               console.log(dat[c])
+        //               val = _.concat(val, eval(dat[c].replace(/\.\./g, ',')))
+        //               names = _.concat(names, )
+        //             }
+        //           }
+        //         )
+        //         console.log(dat)
 
         _.filter(Object.keys(dat), (o) => o.startsWith('FAI.FC_Group'))
           .forEach((c) => {
@@ -344,9 +379,9 @@
 
             let headers = []
             _.filter(headerline, (o) => o.startsWith('PRI_Group'))
-            .forEach((c) => {
-              headers.push(c)
-            })
+              .forEach((c) => {
+                headers.push(c)
+              })
 
             // console.log(headers)
 
@@ -478,7 +513,7 @@
               vm.correctedSum = { x: _.map(sum, 'pri'), y: _.map(sum, 'fai'), text: _.map(sum, 'species').map(c => c + '<br>' + nce + 'corrected') }
             } else {
               // correction
-              vm.uncorrectedSum = { x: _.map(sum, 'pri'), y: _.map(sum, 'fai'), text: _.map(sum, 'species').map(c => c + '<br>' + 'NCE ' + nceHeader.substr(nceHeader.lastIndexOf(',') + 2, 4) + ' uncorrected') }
+              vm.uncorrectedSum = { x: _.map(sum, 'pri'), y: _.map(sum, 'fai'), text: _.map(sum, 'species').map(c => c + '<br>' + 'NCE ' + nce.substr(nce.replace(/\[|\]/g, '').lastIndexOf(',') + 2) + 'uncorrected') }
             }
 
             let corrected = {
@@ -500,22 +535,24 @@
               type: 'scatter'
             }
 
+            console.log(nceHeader)
+
             let nocorrected = {
               x: vm.uncorrectedSum.x,
               y: vm.uncorrectedSum.y,
               mode: 'markers',
-              name: 'NCE ' + nceHeader.substr(nceHeader.lastIndexOf(',') + 2, 4) + ' uncorrected',
+              name: 'NCE ' + nce.substr(nce.replace(/\[|\]/g, '').lastIndexOf(',') + 2) + 'uncorrected',
               hovertext: vm.uncorrectedSum.text,
               hoverinfo: 'x+y+text',
               marker: {
                 color: 'rgb(219, 64, 82)',
                 size: 4
               },
-//              line: {
-//                shape: 'spline',
-//                color: 'rgb(219, 64, 82)',
-//                width: 3
-//              },
+              //              line: {
+              //                shape: 'spline',
+              //                color: 'rgb(219, 64, 82)',
+              //                width: 3
+              //              },
               type: 'scatter'
             }
 
@@ -556,13 +593,14 @@
 
             Plotly.newPlot(vm.$refs.validation, [corrected, nocorrected, fitted], layout)
 
-//            console.log(data)
+          //            console.log(data)
           } else {
             console.error(this.responseText)
           }
           vm.isLspecies = false
           vm.isMspecies = true
           vm.isValidation = false
+          vm.processing = false
         }
         oReq.open('GET', serverUrl + '/batch')
         oReq.setRequestHeader('timestamp', vm.timestamp)
@@ -593,7 +631,7 @@
 
         vm.$http.get(serverUrl + '/download', { responseType: 'arraybuffer', headers: reqHeaders })
           .then(response => {
-//            console.log(response.headers)
+          //            console.log(response.headers)
             let blob = new Blob([response.data], {type: response.headers['content-type']})
 
             let contentDisposition = response.headers['content-disposition'] || ''
@@ -640,16 +678,27 @@
           vm.batchlist = []
 
           Object.keys(list).map(function (key, index) {
-            vm.batchlist.push({text: `${list[key]}`, value: key})
+            if (key === vm.timestamp) {
+              vm.batchlist.push({text: `${list[key]}`, value: key})
+              vm.quantify()
+            }
           })
 
-          let found = _.find(vm.batchlist, { 'text': vm.batch_title })
-          if (found) {
-            // console.log(found)
-            vm.timestamp = found.value
-          }
+          // console.log(vm.batchlist)
+
+          // let found = _.find(vm.batchlist, { 'value': vm.timestamp })
+          // if (found) {
+          //   vm.quantify()
+          // }
+
+          // let found = _.find(vm.batchlist, { 'text': vm.batch_title })
+          // if (found) {
+          //   console.log(found)
+          //   vm.timestamp = found.value
+          //   vm.quantify()
+          // }
         } else {
-          // console.error(this.responseText)
+          console.error(this.responseText)
         }
       }
       oReq.open('GET', serverUrl + '/list')

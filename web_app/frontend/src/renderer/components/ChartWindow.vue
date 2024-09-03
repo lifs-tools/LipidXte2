@@ -6,7 +6,6 @@
 </template>
 
 <script>
-
   const {BrowserWindow} = require('electron').remote
 
   export default {
