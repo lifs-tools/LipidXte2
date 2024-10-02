@@ -770,6 +770,9 @@ app.route('/ultimate')
     let outputTsv = 'output_' + quantOption + '_' + outputOption + '(' + options + ').tsv'
     let mergedOut = SAMPLE_DIR + path.sep + folder + path.sep + 'merged.csv'
     let file = SAMPLE_DIR + path.sep + folder + path.sep + outputTsv
+    let standard_list_file = SAMPLE_DIR + path.sep + folder + path.sep + 'standard_list.csv'
+    const standard_list_exists = fsext.existsSync(standard_list_file)
+    console.log('Standard list file exists: ', standard_list_exists)
 
     if (fsext.existsSync(file)) {
       let inputFolder = SAMPLE_DIR + path.sep + folder
@@ -799,7 +802,8 @@ app.route('/ultimate')
         let result = []
         result.push(nce)
         result.push(data.toString())
-        res.status(200).send(result.join('\n'))
+        result.push(standard_list_exists)
+        res.status(200).json(result)
       })
     } else {
       console.error(file + ' does not exist. Try to run LipidXte to produce it...')
@@ -840,7 +844,8 @@ app.route('/ultimate')
           let result = []
           result.push(nce)
           result.push(data.toString())
-          res.status(200).send(result.join('\n'))
+          result.push(standard_list_exists)
+          res.status(200).json(result)
         })
       } else {
         console.error(outputTsv + ' is not generated.')
