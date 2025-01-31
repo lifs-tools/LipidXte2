@@ -92,17 +92,27 @@ graph TD;
 
 ```mermaid
 graph TD;
-  A["Collect PRI"]-->B["Collect FAI1 and FAI2"];
-  B-->C["Collect COI1 and COI2"];
-  C-->D["FA/CO ratio calcuation"];
-  D-->E["FAAnion Check"];
-  E-->F["Isomer estimation"];
-  F-->G["1st CF for FADB > 0 based on Isomer"];
-  G-->H["Populate SN1 and SN2"];
-  H-->I["Update both positions and recalculate CFs"];
-  I-->J["2nd position based on the 1st CF"];
-  J-->K["2nd CF according to 2nd position"];
-  K-->L["3rd position"];
+  subgraph Main Process
+     subgraph "LipidXplorer"
+        A["Collect precursor intensity"]-->B["Collect FAI1 and FAI2"];
+        B-->C["Collect corresponding CO2 intensities"];
+     end
+     C--> D["FA isomer estimation\n via FA/CO2 intensity ratio"];      
+     D-->E["1st FA sn position estimate"];
+     E-->F["1st FA intensity correction"];
+     F-->G["2nd FA sn position estimation"];
+     G-->H["2nd FA intensity correction"];
+     H-->I["Sum of FA"];
+     I-->J["Normalization to internal standard / \nMost abundant species"];
+     J-->K["Result oupput / plot"];
+ 
+  end
+  subgraph polyDB [Polynomial data]
+    PA[Intensity data\n sn1/sn2/sym of FA and CO2NL]~~~ PB
+    PB[Intensity data\n sn1/sn2 FA]--> PC & E & G
+    PC[FA correction factor\n sn1/sn2 FA]-->H & F
+    PA-->D
+  end
 ```
 
 ## 3. Process estimated samples
