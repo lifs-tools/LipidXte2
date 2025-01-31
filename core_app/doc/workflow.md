@@ -83,7 +83,7 @@ graph TD;
 
 1. Estimates Isomers and Updates Correction Factors:
    1. Performs initial isomer estimation.
-   1. Updates correction factors based on calculations and theoretical values.
+   1. Updates correction factors based on calculations by using polynomial data.
    1. Handles cases with multiple fragments (SN1 and SN2).
    1. Estimates positions for symmetric cases.
 
