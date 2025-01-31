@@ -136,9 +136,9 @@ graph TD;
    1. Calculates n-PRI-x (a normalization factor) for each detected mass and CE combination.
    1. Stores n-PRI-x values for later use.
 
-1. Calculates CF (correction factors):
+1. Retrieve CF (correction factors) from polynomial data:
    1. Iterates through species and samples.
-   1. Calculates CF (a correction factor for FAI and COI) for each detected mass and CE combination.
+   1. Retrieve CF (a correction factor for FAI and COI) for each detected mass and CE combination.
    1. Stores CF values in a fragment map.
 
 1. Normalizes FAI and COI data:
@@ -170,7 +170,7 @@ flowchart TD;
     E-->F["Isomer estimation"];
     F-->G["1st CF for FADB > 0 based on Isomer"];
     G-->H["Populate SN1 and SN2"];
-    H-->I["Update both positions and recalculate CFs"];
+    H-->I["Update both positions and recalculate CFs\nwith polynomial data"];
   end
   
   subgraph S3["CF Calculation"]
