@@ -1,7 +1,7 @@
 Workflow
 ==
 
-## 1. Machine performance check
+## 1. Machine performance check **<Is it still done in our current version?>**
 
 ### Purpose:
 * Evaluates machine performance in a lipidomics experiment by comparing estimated sample data to theoretical reference data for CO2/FAI ratios.
@@ -46,7 +46,7 @@ graph TD;
   E-->F[Use the found CE for further data processing];
 ```
 
-## 2. Create estimated samples
+## 2. Create estimated samples **<Title could be a bit more specific>**
 
 ### Purpose:
 
@@ -76,15 +76,15 @@ graph TD;
    1. Loops through input species and their fractions.
    1. Processes symmetric and non-symmetric cases differently.
    1. Identifies relevant information (mass, class, etc.).
-   1. Creates EstSample objects for each combination of species, fraction, and CE (Collision Energy).
-   1. Retrieves theoretical intensities from the Master Database.
+   1. Creates EstSample objects for each combination of species, fraction, and NCE (Normalized Collision Energy).
+   1. Retrieves theoretical intensities for CO2 and FA fragments from the Master Database.
    1. Applies TX CF if required.
-   1. Calculates CO2 ratios.
+   1. Calculates CO2 to FA fragment intensity ratios.
 
-1. Estimates Isomers and Updates Correction Factors:
-   1. Performs initial isomer estimation.
+1. Estimates FA-Isomers and Updates Correction Factors: **<is FA isomer correct here?>**
+   1. Performs initial FA isomer estimation.
    1. Updates correction factors based on calculations by using polynomial data.
-   1. Handles cases with multiple fragments (SN1 and SN2).
+   1. Handles cases with multiple fragments (for sn-1 and sn-2 FA).
    1. Estimates positions for symmetric cases.
 
 1. Returns Estimated Samples:
@@ -128,17 +128,17 @@ graph TD;
    1. Calculates reference PRI sums for each class (e.g., PC, PE).
    1. Stores sums in designated maps for later use.
 
-1. Applies transmission correction factors (TXCF) if applicable:
-   1. Adjusts FAI (fragment anion intensity) and COI (CO2 loss intensity) values based on TXCF for specific species and CE (collision energy) values.
+1. Applies TXCF if applicable:
+   1. Adjusts FAI (fatty acid anion intensity) and COI (CO2 loss intensity) values based on TXCF for specific species and NCE values.
 
 1. Calculates n-PRI-x:
    1. Iterates through species and samples.
-   1. Calculates n-PRI-x (a normalization factor) for each detected mass and CE combination.
+   1. Calculates n-PRI-x (a normalization factor) for each detected mass and NCE combination.
    1. Stores n-PRI-x values for later use.
 
 1. Retrieve CF (correction factors) from polynomial data:
    1. Iterates through species and samples.
-   1. Retrieve CF (a correction factor for FAI and COI) for each detected mass and CE combination.
+   1. Retrieve CF (a correction factor for FAI) for the corresponding number of carbon atoms, double bonds, location and NCE combination.
    1. Stores CF values in a fragment map.
 
 1. Normalizes FAI and COI data:
