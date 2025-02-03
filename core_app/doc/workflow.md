@@ -1,11 +1,11 @@
 Workflow
 ==
 
-## 1. Machine performance check **<Is it still done in our current version?>**
+## 1. Machine performance check
 
 ### Purpose:
-* Evaluates machine performance in a lipidomics experiment by comparing estimated sample data to theoretical reference data for CO2/FAI ratios.
-* Identifies ideal machine settings for accurate lipid measurement.
+* LipidXte2 evaluates the mass spectrometer performance by comparing fragment intensity ratios CO2 neutral loss (COI) and fatty acid anion (FAI) for measurements and theoretical reference data.
+* Identifies ideal instrument settings for accurate lipid quantification.
 
 ### Key Actions:
 
@@ -14,26 +14,26 @@ Workflow
 
 1. Iterates through samples and parameter combinations:
    1. Processes samples in groups based on user-defined criteria.
-   1. Iterates through different CE (collision energy) offsets for each group.
+   1. Iterates through different NCE (normalized collision energy) offsets for each group.
 
-1. Calculates CO2/FAI ratios for estimated samples:
-   1. Calls a helper function to process estimated samples and extract relevant CO2/FAI data.
-   1. Organizes CO2/FAI ratios for each CE offset.
+1. Calculates COI/FAI ratios for estimated samples:
+   1. Calls a helper function to process estimated samples and extract relevant COI/FAI data.
+   1. Organizes COI/FAI ratios for each NCE offset.
 
-1. Retrieves theoretical CO2/FAI ratios:
-   1. Retrieves reference CO2/FAI ratios for specific lipid classes and CE values from a master database.
+1. Retrieves theoretical COI/FAI ratios:
+   1. Retrieves reference COI/FAI ratios for specific lipid classes and NCE values from a master database.
 
 1. Compares estimated and theoretical ratios:
-   1. Calculates R-squared values to assess the correlation between estimated and theoretical CO2/FAI ratios for each CE offset.
+   1. Calculates R-squared values to assess the correlation between estimated and theoretical COI/FAI ratios for each NCE offset.
 
 1. Stores and analyzes results:
-   1. Saves performance scores (R-squared values and averages) for each combination of group and CE offset.
-   1. Identifies the best-performing CE offset for each group.
+   1. Saves performance scores (R-squared values and averages) for each combination of group and NCE offset.
+   1. Identifies the best-performing NCE offset for each group.
    1. Exports final results to a file, including the best-performing settings overall.
 
 ### SRS Considerations:
 1. Emphasize the importance of machine performance evaluation for accurate lipidomics results.
-1. Define key terms like CE, CO2/FAI ratios, and R-squared for clarity.
+1. Define key terms like NCE, COI/FAI ratios, and R-squared for clarity.
 1. Include a glossary or appendix for specialized terms if the SRS audience is diverse.
 1. Describe the potential impact of machine performance on experimental outcomes.
 
@@ -46,7 +46,7 @@ graph TD;
   E-->F[Use the found CE for further data processing];
 ```
 
-## 2. Create estimated samples **<Title could be a bit more specific>**
+## 2. Create estimated samples **<Title could be a bit more specific/explainatory>**
 
 ### Purpose:
 
@@ -61,7 +61,7 @@ graph TD;
 * species: A collection of TreeItem<BARow> objects, containing information about species and their fractions.
 * baMap: A map associating TreeItem<BARow> objects with their corresponding BA (Base Anion) objects.
 * mFaAnionsList: An observable list of FAAnion objects, likely containing information about fatty acid anions.
-* noCorrection: A boolean flag indicating whether TX CF (Transmission Correction Factor) should be applied.
+* noCorrection: A boolean flag indicating whether TXCF (Transmission Correction Factor) should be applied.
 
 ### Key Outputs:
 
@@ -70,13 +70,13 @@ graph TD;
 ### General Functionality:
 
 1. Prepares Reference Data:
-   1. Creates a referenceFAIMap if needed, likely used for reference FAI (Fatty Acid Intensities) values.
+   1. Creates a referenceFAIMap if needed, likely used for reference FAI values.
 
 1. Iterates through Species and Fractions:
    1. Loops through input species and their fractions.
    1. Processes symmetric and non-symmetric cases differently.
    1. Identifies relevant information (mass, class, etc.).
-   1. Creates EstSample objects for each combination of species, fraction, and NCE (Normalized Collision Energy).
+   1. Creates EstSample objects for each combination of species, fraction, and NCE.
    1. Retrieves theoretical intensities for CO2 and FA fragments from the Master Database.
    1. Applies TX CF if required.
    1. Calculates CO2 to FA fragment intensity ratios.
@@ -123,13 +123,13 @@ graph TD;
 
 ### Key Steps:
 
-1. Computes reference PRI (precursor ion) sums:
+1. Computes reference PRI (precursor ion intensity) sums:
    1. Iterates through species and samples.
    1. Calculates reference PRI sums for each class (e.g., PC, PE).
    1. Stores sums in designated maps for later use.
 
 1. Applies TXCF if applicable:
-   1. Adjusts FAI (fatty acid anion intensity) and COI (CO2 loss intensity) values based on TXCF for specific species and NCE values.
+   1. Adjusts FAI and COI values based on TXCF for specific species and NCE values.
 
 1. Calculates n-PRI-x:
    1. Iterates through species and samples.
