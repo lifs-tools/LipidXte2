@@ -5,14 +5,14 @@ package de.mpicbg.ms.view.treecell;
  */
 public class CheckBoxNamedBoolean extends NamedBoolean
 {
-	public CheckBoxNamedBoolean(String name)
-	{
-		super(name);
-	}
+   public CheckBoxNamedBoolean( String name )
+   {
+      super( name );
+   }
 
-	public CheckBoxNamedBoolean(String name, boolean value)
-	{
-		super(name);
-		this.setValue( value );
-	}
+   public CheckBoxNamedBoolean( String name, boolean value )
+   {
+      super( name );
+      this.setValue( value );
+   }
 }

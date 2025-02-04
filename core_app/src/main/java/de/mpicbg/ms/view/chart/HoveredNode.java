@@ -12,40 +12,47 @@ import javafx.scene.paint.Color;
  */
 public class HoveredNode extends StackPane
 {
-	final Label label;
-	public HoveredNode( Number value) {
-		setPrefSize(10, 10);
+   final Label label;
 
-		label = createDataThresholdLabel( value );
+   public HoveredNode( Number value )
+   {
+      setPrefSize( 10, 10 );
 
-		setOnMouseEntered(new EventHandler<MouseEvent >() {
-			@Override public void handle(MouseEvent mouseEvent) {
-				getChildren().add( label );
-				setCursor( Cursor.NONE);
-				toFront();
-			}
-		});
-		setOnMouseExited(new EventHandler<MouseEvent>() {
-			@Override public void handle(MouseEvent mouseEvent) {
-				getChildren().remove( label );
-				setCursor(Cursor.CROSSHAIR);
-			}
-		});
-	}
+      label = createDataThresholdLabel( value );
 
-	private Label createDataThresholdLabel(Number value) {
-		final Label label = new Label(value + "");
+      setOnMouseEntered( new EventHandler< MouseEvent >()
+      {
+         @Override public void handle( MouseEvent mouseEvent )
+         {
+            getChildren().add( label );
+            setCursor( Cursor.NONE );
+            toFront();
+         }
+      } );
+      setOnMouseExited( new EventHandler< MouseEvent >()
+      {
+         @Override public void handle( MouseEvent mouseEvent )
+         {
+            getChildren().remove( label );
+            setCursor( Cursor.CROSSHAIR );
+         }
+      } );
+   }
 
-		label.getStyleClass().addAll(getStyleClass());
-		label.setStyle("-fx-font-size: 10; -fx-font-weight: bold;");
-		label.setTextFill( Color.DARKSLATEGREY );
+   private Label createDataThresholdLabel( Number value )
+   {
+      final Label label = new Label( value + "" );
 
-		label.setMinSize( Label.USE_PREF_SIZE, Label.USE_PREF_SIZE );
-		return label;
-	}
+      label.getStyleClass().addAll( getStyleClass() );
+      label.setStyle( "-fx-font-size: 10; -fx-font-weight: bold;" );
+      label.setTextFill( Color.DARKSLATEGREY );
 
-	public void updateStyle(String... elements)
-	{
-		label.getStyleClass().addAll(elements);
-	}
+      label.setMinSize( Label.USE_PREF_SIZE, Label.USE_PREF_SIZE );
+      return label;
+   }
+
+   public void updateStyle( String... elements )
+   {
+      label.getStyleClass().addAll( elements );
+   }
 }

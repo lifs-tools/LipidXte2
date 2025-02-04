@@ -7,32 +7,33 @@ package de.mpicbg.ms.model.data;
  */
 public class FA extends BA
 {
-	CO co;
+   CO co;
 
-	public FA(double mass, int carbon, int db)
-	{
-		super(mass, carbon, db);
-	}
+   public FA( double mass, int carbon, int db )
+   {
+      super( mass, carbon, db );
+   }
 
-	public CO getCO()
-	{
-		return co;
-	}
+   public CO getCO()
+   {
+      return co;
+   }
 
-	public void setCO( CO co )
-	{
-		this.co = co;
-	}
+   public void setCO( CO co )
+   {
+      this.co = co;
+   }
 
-	public boolean validCO()
-	{
-		return co.validCO();
-	}
+   public boolean validCO()
+   {
+      return co.validCO();
+   }
 
-	@Override
-	public void setOffset( float offset )
-	{
-		super.setOffset( offset );
-		if(null != co && co.validCO()) co.setOffset( offset );
-	}
+   @Override
+   public void setOffset( float offset )
+   {
+      super.setOffset( offset );
+      if ( null != co && co.validCO() )
+         co.setOffset( offset );
+   }
 }

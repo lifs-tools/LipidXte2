@@ -10,27 +10,34 @@ import java.io.InputStreamReader;
  */
 public class Exec
 {
-	static public void run(String... commands)
-    {
-        Process process = null;
-        try {
-            process = new ProcessBuilder(commands).start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        InputStream is = process.getInputStream();
-        InputStreamReader isr = new InputStreamReader(is);
-        BufferedReader br = new BufferedReader(isr);
-        String line;
+   static public void run( String... commands )
+   {
+      Process process = null;
+      try
+      {
+         process = new ProcessBuilder( commands ).start();
+      }
+      catch ( IOException e )
+      {
+         e.printStackTrace();
+      }
+      InputStream is = process.getInputStream();
+      InputStreamReader isr = new InputStreamReader( is );
+      BufferedReader br = new BufferedReader( isr );
+      String line;
 
-//        System.out.printf("Output of running %s is:", Arrays.toString(args));
+      //        System.out.printf("Output of running %s is:", Arrays.toString(args));
 
-        try {
-            while ((line = br.readLine()) != null) {
-                System.out.println(line);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+      try
+      {
+         while ( ( line = br.readLine() ) != null )
+         {
+            System.out.println( line );
+         }
+      }
+      catch ( IOException e )
+      {
+         e.printStackTrace();
+      }
+   }
 }

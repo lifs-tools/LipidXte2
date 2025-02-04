@@ -12,13 +12,13 @@ import javafx.scene.layout.BorderPane;
  */
 public class LabeledPane extends BorderPane
 {
-	public LabeledPane( String title, Node content )
-	{
-		Label topic = new Label( title );
-		topic.setPadding( new Insets(5 ) );
-		topic.setLabelFor( this );
+   public LabeledPane( String title, Node content )
+   {
+      Label topic = new Label( title );
+      topic.setPadding( new Insets( 5 ) );
+      topic.setLabelFor( this );
 
-		setTop( topic );
-		setCenter( content );
-	}
+      setTop( topic );
+      setCenter( content );
+   }
 }

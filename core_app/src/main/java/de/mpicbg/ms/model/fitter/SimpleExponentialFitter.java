@@ -16,42 +16,44 @@ import java.util.Collection;
  */
 public class SimpleExponentialFitter extends AbstractCurveFitter
 {
-	private static final SimpleExponentialFunction.Parametric FUNCTION = new SimpleExponentialFunction.Parametric();
+   private static final SimpleExponentialFunction.Parametric FUNCTION = new SimpleExponentialFunction.Parametric();
 
-	/** Initial guess. */
-	private final double[] initialGuess;
+   /**
+    * Initial guess.
+    */
+   private final double[] initialGuess;
 
-	private SimpleExponentialFitter() { initialGuess = new double[] {  100, -1 }; }
+   private SimpleExponentialFitter()
+   {
+      initialGuess = new double[] { 100, -1 };
+   }
 
-	public static SimpleExponentialFitter create() { return new SimpleExponentialFitter(); }
+   public static SimpleExponentialFitter create()
+   {
+      return new SimpleExponentialFitter();
+   }
 
-	@Override protected LeastSquaresProblem getProblem( Collection<WeightedObservedPoint> observations )
-	{
-		final int len = observations.size();
-		final double[] target  = new double[len];
-		final double[] weights = new double[len];
+   @Override protected LeastSquaresProblem getProblem( Collection< WeightedObservedPoint > observations )
+   {
+      final int len = observations.size();
+      final double[] target = new double[ len ];
+      final double[] weights = new double[ len ];
 
-		int i = 0;
-		for (WeightedObservedPoint obs : observations) {
-			target[i]  = obs.getY();
-			weights[i] = obs.getWeight();
-			++i;
-		}
+      int i = 0;
+      for ( WeightedObservedPoint obs : observations )
+      {
+         target[ i ] = obs.getY();
+         weights[ i ] = obs.getWeight();
+         ++i;
+      }
 
-		final TheoreticalValuesFunction model =
-				new TheoreticalValuesFunction(FUNCTION, observations);
+      final TheoreticalValuesFunction model = new TheoreticalValuesFunction( FUNCTION, observations );
 
-		if (initialGuess == null) {
-			throw new MathInternalError();
-		}
+      if ( initialGuess == null )
+      {
+         throw new MathInternalError();
+      }
 
-		return new LeastSquaresBuilder().
-				maxEvaluations(Integer.MAX_VALUE).
-				maxIterations(Integer.MAX_VALUE).
-				start(initialGuess).
-				target(target).
-				weight(new DiagonalMatrix(weights)).
-				model(model.getModelFunction(), model.getModelFunctionJacobian()).
-				build();
-	}
+      return new LeastSquaresBuilder().maxEvaluations( Integer.MAX_VALUE ).maxIterations( Integer.MAX_VALUE ).start( initialGuess ).target( target ).weight( new DiagonalMatrix( weights ) ).model( model.getModelFunction(), model.getModelFunctionJacobian() ).build();
+   }
 }

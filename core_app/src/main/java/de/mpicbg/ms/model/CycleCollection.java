@@ -18,161 +18,161 @@ import java.util.stream.Collectors;
  */
 public class CycleCollection
 {
-	private final Logger logger = LoggerFactory.getLogger( this.getClass() );
-	private boolean removeIncompleteCycle = true;
+   private final Logger logger = LoggerFactory.getLogger( this.getClass() );
+   private boolean removeIncompleteCycle = true;
 
-	LinkedList<Cycle> cycles = new LinkedList<>();
-	Range<Double> range;
-	TreeSet<Float> rangeSet;
-	Float step;
+   LinkedList< Cycle > cycles = new LinkedList<>();
+   Range< Double > range;
+   TreeSet< Float > rangeSet;
+   Float step;
 
-	public TreeSet< Float > getRangeSet()
-	{
-		return rangeSet;
-	}
+   public TreeSet< Float > getRangeSet()
+   {
+      return rangeSet;
+   }
 
-	public void clear()
-	{
-		cycles.parallelStream().forEach( c -> c.clear() );
-		cycles.clear();
-	}
+   public void clear()
+   {
+      cycles.parallelStream().forEach( c -> c.clear() );
+      cycles.clear();
+   }
 
-	public void addScanCollection(ScanCollection scans)
-	{
-//		checkRange(scans);
+   public void addScanCollection( ScanCollection scans )
+   {
+      //		checkRange(scans);
 
-		Cycle cycle = null;
-		for(Scan scan : scans.getScans())
-		{
-//			System.out.println( scan.getCollisionEnergy() );
+      Cycle cycle = null;
+      for ( Scan scan : scans.getScans() )
+      {
+         //			System.out.println( scan.getCollisionEnergy() );
 
-			// Check the range
-			// If it is the minimum, create a cycle.
-			if ( rangeSet.first().equals( scan.getCollisionEnergy() ) )
-			{
-				cycle = new Cycle();
-			}
+         // Check the range
+         // If it is the minimum, create a cycle.
+         if ( rangeSet.first().equals( scan.getCollisionEnergy() ) )
+         {
+            cycle = new Cycle();
+         }
 
-			if( rangeSet.contains( scan.getCollisionEnergy() ) )
-			{
-				if (cycle == null) cycle = new Cycle();
-				cycle.addScan( scan.getCollisionEnergy(), scan );
-			}
+         if ( rangeSet.contains( scan.getCollisionEnergy() ) )
+         {
+            if ( cycle == null )
+               cycle = new Cycle();
+            cycle.addScan( scan.getCollisionEnergy(), scan );
+         }
 
-			if ( rangeSet.last().equals( scan.getCollisionEnergy() ))
-			{
-				cycles.add( cycle );
-			}
-		}
+         if ( rangeSet.last().equals( scan.getCollisionEnergy() ) )
+         {
+            cycles.add( cycle );
+         }
+      }
 
-		if(!removeIncompleteCycle)
-		{
-			cycles.add( cycle );
-		}
+      if ( !removeIncompleteCycle )
+      {
+         cycles.add( cycle );
+      }
 
-		scans.dispose();
+      scans.dispose();
 
-		final int[] i = { 1 };
-		cycles.forEach( c -> c.setId( i[ 0 ]++) );
-	}
+      final int[] i = { 1 };
+      cycles.forEach( c -> c.setId( i[ 0 ]++ ) );
+   }
 
-	public boolean isRemoveIncompleteCycle()
-	{
-		return removeIncompleteCycle;
-	}
+   public boolean isRemoveIncompleteCycle()
+   {
+      return removeIncompleteCycle;
+   }
 
-	public void setRemoveIncompleteCycle( boolean removeIncompleteCycle )
-	{
-		this.removeIncompleteCycle = removeIncompleteCycle;
-	}
+   public void setRemoveIncompleteCycle( boolean removeIncompleteCycle )
+   {
+      this.removeIncompleteCycle = removeIncompleteCycle;
+   }
 
-	public LinkedList< Cycle > getCycles()
-	{
-		return cycles;
-	}
+   public LinkedList< Cycle > getCycles()
+   {
+      return cycles;
+   }
 
-	public void setCycles( LinkedList< Cycle > cycles )
-	{
-		this.cycles = cycles;
-	}
+   public void setCycles( LinkedList< Cycle > cycles )
+   {
+      this.cycles = cycles;
+   }
 
-	public void rangeCheck( ScanCollection scans )
-	{
-		Range<Double> range;
-		TreeSet<Float> rangeSet;
+   public void rangeCheck( ScanCollection scans )
+   {
+      Range< Double > range;
+      TreeSet< Float > rangeSet;
 
-		DoubleSummaryStatistics summary = scans.getScans().parallelStream().mapToDouble( i -> i.getCollisionEnergy() ).summaryStatistics();
-		rangeSet = scans.getScans().parallelStream().map( i -> i.getCollisionEnergy() ).collect( Collectors.toCollection( TreeSet::new ) );
+      DoubleSummaryStatistics summary = scans.getScans().parallelStream().mapToDouble( i -> i.getCollisionEnergy() ).summaryStatistics();
+      rangeSet = scans.getScans().parallelStream().map( i -> i.getCollisionEnergy() ).collect( Collectors.toCollection( TreeSet::new ) );
 
-		//			for(Float f : rangeSet)
-		//			{
-		//				System.out.print( f + ", " );
-		//			}
+      //			for(Float f : rangeSet)
+      //			{
+      //				System.out.print( f + ", " );
+      //			}
 
-		Float min = rangeSet.first();
-		Float max = rangeSet.last();
+      Float min = rangeSet.first();
+      Float max = rangeSet.last();
 
+      if ( this.range == null || min > this.range.getMinimum() || max < this.range.getMaximum() )
+      {
+         step = rangeSet.higher( min ) - min;
+         range = Range.between( summary.getMin(), summary.getMax() );
 
-		if( this.range == null || min > this.range.getMinimum() || max < this.range.getMaximum() )
-		{
-			step = rangeSet.higher( min ) - min;
-			range = Range.between( summary.getMin(), summary.getMax() );
+         // Remove unnecessary collisionEnergy
+         rangeSet.clear();
+         for ( Float i = min; i <= max; i += step )
+         {
+            rangeSet.add( i );
+         }
 
-			// Remove unnecessary collisionEnergy
-			rangeSet.clear();
-			for ( Float i = min; i <= max; i += step )
-			{
-				rangeSet.add( i );
-			}
+         logger.info( "Collision Energy Range: " + range );
+         System.out.println( "Collision Energy Range: " + range );
+         System.out.println( "Collision Energy Step: " + step );
 
-			logger.info( "Collision Energy Range: " + range );
-			System.out.println( "Collision Energy Range: " + range );
-			System.out.println( "Collision Energy Step: " + step );
+         this.range = range;
+         this.rangeSet = rangeSet;
+      }
+   }
 
-			this.range = range;
-			this.rangeSet = rangeSet;
-		}
-	}
+   public class Cycle
+   {
+      private int id;
 
-	public class Cycle
-	{
-		private int id;
+      public int getId()
+      {
+         return id;
+      }
 
-		public int getId()
-		{
-			return id;
-		}
+      public void setId( int id )
+      {
+         this.id = id;
+      }
 
-		public void setId( int id )
-		{
-			this.id = id;
-		}
+      final TreeMap< Float, Scan > cycle = new TreeMap<>();
 
-		final TreeMap<Float, Scan> cycle = new TreeMap<>();
+      public void addScan( Float collisionEnergy, Scan scan )
+      {
+         cycle.put( collisionEnergy, scan );
+      }
 
-		public void addScan(Float collisionEnergy, Scan scan)
-		{
-			cycle.put(collisionEnergy, scan);
-		}
+      public int size()
+      {
+         return cycle.size();
+      }
 
-		public int size()
-		{
-			return cycle.size();
-		}
+      public Scan getScan( Float collisionEnergy )
+      {
+         return cycle.get( collisionEnergy );
+      }
 
-		public Scan getScan(Float collisionEnergy)
-		{
-			return cycle.get( collisionEnergy );
-		}
+      public Set< Float > getKeys()
+      {
+         return cycle.keySet();
+      }
 
-		public Set<Float> getKeys()
-		{
-			return cycle.keySet();
-		}
-
-		public void clear()
-		{
-			cycle.clear();
-		}
-	}
+      public void clear()
+      {
+         cycle.clear();
+      }
+   }
 }

@@ -7,8 +7,8 @@ package de.mpicbg.ms.model.data;
  */
 public class FAO extends BA
 {
-	public FAO(double mass, int carbon, int db, double err)
-	{
-		super(mass, carbon, db);
-	}
+   public FAO( double mass, int carbon, int db, double err )
+   {
+      super( mass, carbon, db );
+   }
 }

@@ -5,5 +5,5 @@ package de.mpicbg.ms.view.pane;
  */
 public interface TextAppender
 {
-	void appendText( String text );
+   void appendText( String text );
 }

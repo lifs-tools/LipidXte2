@@ -10,32 +10,33 @@ import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
  */
 public class SplineComposite implements UnivariateFunction
 {
-	final ExponentialFitter left, right;
-	final PolynomialSplineFunction middle;
-	final double leftPart, rightPart;
-	public SplineComposite(ExponentialFitter left, ExponentialFitter right, PolynomialSplineFunction middle,
-			double leftPart, double rightPart)
-	{
-		this.left = left;
-		this.right = right;
-		this.middle = middle;
+   final ExponentialFitter left, right;
+   final PolynomialSplineFunction middle;
+   final double leftPart, rightPart;
 
-		this.leftPart = leftPart;
-		this.rightPart = rightPart;
-	}
+   public SplineComposite( ExponentialFitter left, ExponentialFitter right, PolynomialSplineFunction middle, double leftPart, double rightPart )
+   {
+      this.left = left;
+      this.right = right;
+      this.middle = middle;
 
-	@Override public double value( double x )
-	{
-		if( x < leftPart)
-		{
-			return left.value( x );
-		}
-		else if( x > rightPart )
-		{
-			return right.value( x );
-		}
-		else {
-			return middle.value( x );
-		}
-	}
+      this.leftPart = leftPart;
+      this.rightPart = rightPart;
+   }
+
+   @Override public double value( double x )
+   {
+      if ( x < leftPart )
+      {
+         return left.value( x );
+      }
+      else if ( x > rightPart )
+      {
+         return right.value( x );
+      }
+      else
+      {
+         return middle.value( x );
+      }
+   }
 }

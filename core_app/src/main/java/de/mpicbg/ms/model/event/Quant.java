@@ -7,30 +7,30 @@ package de.mpicbg.ms.model.event;
  */
 public class Quant
 {
-	public enum Option
-	{
-		Intensity,
-		Profile,
-		Quantity
-	}
+   public enum Option
+   {
+      Intensity,
+      Profile,
+      Quantity
+   }
 
-	public enum Output
-	{
-		All,
-		Sum,
-		Mspecies
-	}
+   public enum Output
+   {
+      All,
+      Sum,
+      Mspecies
+   }
 
-	public enum AdditionalOption
-	{
-		RemoveReference,
-		SummarizeNCE,
-		NoCorrection,
-		GroupOnly,
-		MergeUnspecifiedIsomer,
-		MergeGlobalHomogeneous,
-		IntensityCheckRemove,
-		RemoveIsomerInfo
-		//ApplyTXCFinSummary
-	}
+   public enum AdditionalOption
+   {
+      RemoveReference,
+      SummarizeNCE,
+      NoCorrection,
+      GroupOnly,
+      MergeUnspecifiedIsomer,
+      MergeGlobalHomogeneous,
+      IntensityCheckRemove,
+      RemoveIsomerInfo
+      //ApplyTXCFinSummary
+   }
 }

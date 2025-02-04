@@ -9,50 +9,56 @@ import javafx.beans.property.SimpleBooleanProperty;
  */
 public class NamedBoolean extends SimpleBooleanProperty
 {
-	private String name;
+   private String name;
 
-	public NamedBoolean(String name)
-	{
-		super(name, name);
-		this.name = name;
-	}
+   public NamedBoolean( String name )
+   {
+      super( name, name );
+      this.name = name;
+   }
 
-	public String getName()
-	{
-		return name;
-	}
+   public String getName()
+   {
+      return name;
+   }
 
-	public void setName( String name )
-	{
-		this.name = name;
-	}
+   public void setName( String name )
+   {
+      this.name = name;
+   }
 
-	// --- Valid
-	private ReadOnlyBooleanWrapper valid;
+   // --- Valid
+   private ReadOnlyBooleanWrapper valid;
 
-	public void setValid(boolean value) {
-		if(value && name.equals( "0" )) this.name = "1";
-		validPropertyImpl().set(value);
-	}
+   public void setValid( boolean value )
+   {
+      if ( value && name.equals( "0" ) )
+         this.name = "1";
+      validPropertyImpl().set( value );
+   }
 
-	/**
-	 * Represents whether this property is currently valid or not.
-	 */
-	public final boolean isValid() {
-		return valid == null ? false : valid.get();
-	}
+   /**
+    * Represents whether this property is currently valid or not.
+    */
+   public final boolean isValid()
+   {
+      return valid == null ? false : valid.get();
+   }
 
-	/**
-	 * Property representing whether this is currently valid.
-	 */
-	public final ReadOnlyBooleanProperty validProperty() {
-		return validPropertyImpl().getReadOnlyProperty();
-	}
+   /**
+    * Property representing whether this is currently valid.
+    */
+   public final ReadOnlyBooleanProperty validProperty()
+   {
+      return validPropertyImpl().getReadOnlyProperty();
+   }
 
-	private ReadOnlyBooleanWrapper validPropertyImpl() {
-		if (valid == null) {
-			valid = new ReadOnlyBooleanWrapper(this, "valid");
-		}
-		return valid;
-	}
+   private ReadOnlyBooleanWrapper validPropertyImpl()
+   {
+      if ( valid == null )
+      {
+         valid = new ReadOnlyBooleanWrapper( this, "valid" );
+      }
+      return valid;
+   }
 }

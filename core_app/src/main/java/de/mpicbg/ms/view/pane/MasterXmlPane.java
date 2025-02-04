@@ -66,34 +66,34 @@ public class MasterXmlPane extends MasterDetailPane
    final protected TreeTableView< FAAnionRow > treeTableView;
    final private TableView collisionEnergyTableView;
 
-   final protected FilteredTreeItem<FAAnionRow> root;
+   final protected FilteredTreeItem< FAAnionRow > root;
 
-   final TreeMap<String, FilteredTreeItem< FAAnionRow > > classMap;
+   final TreeMap< String, FilteredTreeItem< FAAnionRow > > classMap;
 
-   final TreeMap<String, TreeMap< Integer, TreeItem >> masterDB;
+   final TreeMap< String, TreeMap< Integer, TreeItem > > masterDB;
 
-   final ObservableList<FilteredTreeItem<FAAnionRow>> treeItems = FXCollections.observableArrayList();
+   final ObservableList< FilteredTreeItem< FAAnionRow > > treeItems = FXCollections.observableArrayList();
 
-   final HashMap<FAAnionRow, Fragment> fragmentMap;
-   final HashMap<FAAnionRow, Fragment> co2LossFragmentMap;
+   final HashMap< FAAnionRow, Fragment > fragmentMap;
+   final HashMap< FAAnionRow, Fragment > co2LossFragmentMap;
 
    String currentClazz;
 
-   final HashMap<Float, Fragment> normBasisMap;
+   final HashMap< Float, Fragment > normBasisMap;
 
    protected ObservableList< FAAnion > mFaAnionsList;
 
    protected TabPane mCalibrationTabPane;
 
-   public MasterXmlPane( LineChart< Number, Number > chart)
+   public MasterXmlPane( LineChart< Number, Number > chart )
    {
-      classMap = new TreeMap<>( );
-      masterDB = new TreeMap<>( );
+      classMap = new TreeMap<>();
+      masterDB = new TreeMap<>();
 
-      fragmentMap = new HashMap<>( );
-      co2LossFragmentMap = new HashMap<>( );
+      fragmentMap = new HashMap<>();
+      co2LossFragmentMap = new HashMap<>();
 
-      normBasisMap = new HashMap<>( );
+      normBasisMap = new HashMap<>();
 
       addEventHandler( ProcessEvent.UPDATE_XML_MASTER, new EventHandler< ProcessEvent >()
       {
@@ -103,26 +103,27 @@ public class MasterXmlPane extends MasterDetailPane
             //				root.getChildren().clear();
 
             Object[] params = event.getParam();
-            TreeMap<String, TreeMap<String, TreeMap< String, Fragment > > > fragmentCollection
+            TreeMap< String, TreeMap< String, TreeMap< String, Fragment > > > fragmentCollection
                     = ( TreeMap< String, TreeMap< String, TreeMap< String, Fragment > > > ) params[ 0 ];
 
             ObservableList< FAAnion > mFaAnionsList = ( ObservableList< FAAnion > ) params[ 1 ];
 
-            TreeMap<String, TreeMap< String, Fragment > > classCollection = new TreeMap<>( );;
+            TreeMap< String, TreeMap< String, Fragment > > classCollection = new TreeMap<>();
+            ;
 
             for ( String clazz : fragmentCollection.keySet() )
             {
-               if(!classCollection.containsKey( clazz ))
-                  classCollection.put( clazz, new TreeMap<>(  ) );
+               if ( !classCollection.containsKey( clazz ) )
+                  classCollection.put( clazz, new TreeMap<>() );
 
-               if(!masterDB.containsKey( clazz ))
+               if ( !masterDB.containsKey( clazz ) )
                {
                   currentClazz = clazz;
                   masterDB.put( clazz, new TreeMap<>() );
                }
 
                //System.out.println(clazz);
-               if(!classMap.containsKey( clazz ))
+               if ( !classMap.containsKey( clazz ) )
                {
                   classMap.put( clazz, new FilteredTreeItem<>( new FAAnionRow( clazz ) ) );
                   treeItems.add( classMap.get( clazz ) );
@@ -132,7 +133,7 @@ public class MasterXmlPane extends MasterDetailPane
                clazzNode.setExpanded( true );
 
                // Setup NormBasis
-               setupNorms(clazz);
+               setupNorms( clazz );
 
                for ( String group : fragmentCollection.get( clazz ).keySet() )
                {
@@ -142,21 +143,22 @@ public class MasterXmlPane extends MasterDetailPane
                   TreeItem< FAAnionRow > faAnionRowNode = null;
                   for ( String position : collection.keySet() )
                   {
-                     System.out.println( position + ":" + collection.get(position).getIsomer());
-                     classCollection.get( clazz ).put( position, collection.get(position) );
-                     Fragment fragment = collection.get(position);
+                     System.out.println( position + ":" + collection.get( position ).getIsomer() );
+                     classCollection.get( clazz ).put( position, collection.get( position ) );
+                     Fragment fragment = collection.get( position );
 
                      faAnion = getFaAnion( mFaAnionsList, fragment.getMz(), fragment.getIsomer(), fragment.getCarbon(), fragment.getDoubleBond() );
-                     if(faAnion == null) continue;
+                     if ( faAnion == null )
+                        continue;
 
-                     if( !masterDB.get( clazz ).containsKey( faAnion.getIndex() ) )
+                     if ( !masterDB.get( clazz ).containsKey( faAnion.getIndex() ) )
                      {
                         final FAAnionRow faAnionRow = new FAAnionRow( faAnion.getIndex(), faAnion );
                         final FilteredTreeItem< FAAnionRow > faAnionRowNodeCreated = new FilteredTreeItem< FAAnionRow >( faAnionRow );
 
                         masterDB.get( clazz ).put( faAnion.getIndex(), faAnionRowNodeCreated );
                         clazzNode.add( faAnionRowNodeCreated );
-                        clazzNode.getChildren().sort( Comparator.comparing( t -> Integer.parseInt( t.getValue().getName() ) ));
+                        clazzNode.getChildren().sort( Comparator.comparing( t -> Integer.parseInt( t.getValue().getName() ) ) );
                      }
 
                      faAnionRowNode = masterDB.get( clazz ).get( faAnion.getIndex() );
@@ -193,13 +195,13 @@ public class MasterXmlPane extends MasterDetailPane
 
                            if ( newValue )
                            {
-                              Fragment mz = fragmentMap.get(row);
+                              Fragment mz = fragmentMap.get( row );
 
                               Fragment co2mz = null;
 
                               if ( row.getCo2Mass() != null && row.getCo2Mass().getMass() != 0d )
                               {
-                                 co2mz = co2LossFragmentMap.get(row);
+                                 co2mz = co2LossFragmentMap.get( row );
                               }
 
                               XYChart.Series seriesFit = new XYChart.Series();
@@ -212,7 +214,7 @@ public class MasterXmlPane extends MasterDetailPane
                                  if ( co2mz != null && co2mz.contains( ce ) )
                                     row1 = new String[] { ce.toString(), mz.get( ce ).toString(),
                                             mz.getCF( ce ).toString(),
-                                            co2mz.get( ce ).toString()};
+                                            co2mz.get( ce ).toString() };
                                  else
                                     row1 = new String[] { ce.toString(), mz.get( ce ).toString(),
                                             mz.getCF( ce ).toString(),
@@ -221,7 +223,7 @@ public class MasterXmlPane extends MasterDetailPane
                                  collisionEnergyTableView.getItems().add( row1 );
 
                                  XYChart.Data actNode = new XYChart.Data( ce, mz.get( ce ) );
-                                 actNode.setNode( new HoveredNode( mz.get( ce )) );
+                                 actNode.setNode( new HoveredNode( mz.get( ce ) ) );
                                  seriesFit.getData().add( actNode );
                               }
 
@@ -234,11 +236,13 @@ public class MasterXmlPane extends MasterDetailPane
                         } );
                      }
 
-                     if( faAnion.getFADoubleBonds() > 2 ) {
+                     if ( faAnion.getFADoubleBonds() > 2 )
+                     {
                         double co2 = Precision.round( fragment.getMz() - Precision.round( 43.99, 2 ), 2 );
                         String co2name = co2 + "-" + fragment.getPosition();
 
-                        if(faAnionRowNode.getValue().getCo2Mass() == null) {
+                        if ( faAnionRowNode.getValue().getCo2Mass() == null )
+                        {
                            faAnionRowNode.getValue().setCo2MassString( "" + co2 );
                         }
 
@@ -251,7 +255,7 @@ public class MasterXmlPane extends MasterDetailPane
                            {
                               final String seriesName = clazz + ":" + mzNode.getValue().getName() + ":CO2Loss-" + fragment.getPosition();
 
-                              if(newValue)
+                              if ( newValue )
                               {
                                  Fragment co2mz = co2LossFragmentMap.get( row );
 
@@ -277,11 +281,11 @@ public class MasterXmlPane extends MasterDetailPane
                   }
 
                   // Add additional sn1 and sn2 varied series
-                  if( !clazz.equals( "PCO" ) && !clazz.equals( "PEO" ) && containSn1Sn2( faAnionRowNode ) )
+                  if ( !clazz.equals( "PCO" ) && !clazz.equals( "PEO" ) && containSn1Sn2( faAnionRowNode ) )
                   {
                      // sn1 = 0.5, sn2 = 0.5
                      {
-                        final float sn1 = 0.5f,	sn2 = 0.5f;
+                        final float sn1 = 0.5f, sn2 = 0.5f;
                         addOptionalNode( sn1, sn2, clazz, faAnion, faAnionRowNode );
                      }
 
@@ -303,30 +307,32 @@ public class MasterXmlPane extends MasterDetailPane
             event.consume();
          }
 
-         private void setupNorms(String clazz) {
+         private void setupNorms( String clazz )
+         {
             Fragment sn1NormBasis = new Fragment( 255.23d, Pos.SN1 );
             Fragment sn2NormBasis = new Fragment( 255.23d, Pos.SN2 );
 
             Fragment[] fragments;
 
-            if(clazz.equals( "PCO" ) || clazz.equals( "PEO" ))
+            if ( clazz.equals( "PCO" ) || clazz.equals( "PEO" ) )
                fragments = new Fragment[] { sn2NormBasis };
             else
                fragments = new Fragment[] { sn1NormBasis, sn2NormBasis };
 
-            setupNormBasis(clazz, fragments);
+            setupNormBasis( clazz, fragments );
 
-            for(float sn1 = 0.25f; sn1 < 1f; sn1 += 0.25f) {
-               if( !normBasisMap.containsKey( sn1 ))
+            for ( float sn1 = 0.25f; sn1 < 1f; sn1 += 0.25f )
+            {
+               if ( !normBasisMap.containsKey( sn1 ) )
                {
                   // NormBasis
                   final PolynomialSplineFunction func = computeSn2Fragment( fragments, 1.0f - sn1 );
 
                   final Fragment fragment = new Fragment();
 
-                  for ( Float ce : fragments[1].keys() )
+                  for ( Float ce : fragments[ 1 ].keys() )
                   {
-                     float intensity = (float) func.value( ce );
+                     float intensity = ( float ) func.value( ce );
                      fragment.put( ce, intensity );
                   }
 
@@ -359,21 +365,21 @@ public class MasterXmlPane extends MasterDetailPane
                   final XYChart.Series seriesFit = new XYChart.Series();
                   seriesFit.setName( seriesName + ".Fitted" );
 
-                  final PolynomialSplineFunction func = computeSn2Fragment( getSn1Sn2( fragmentMap, faAnionRowNode ), sn2  );
+                  final PolynomialSplineFunction func = computeSn2Fragment( getSn1Sn2( fragmentMap, faAnionRowNode ), sn2 );
 
                   PolynomialSplineFunction funcCo2Loss = null;
                   Fragment co2LossFragment = null;
-                  if( !faAnionRowNode.getValue().getCo2MassString().equals( "" ) )
+                  if ( !faAnionRowNode.getValue().getCo2MassString().equals( "" ) )
                   {
-                     funcCo2Loss = computeSn2Fragment( getSn1Sn2( co2LossFragmentMap, faAnionRowNode ), sn2  );
-                     co2LossFragment = getSn1Sn2( co2LossFragmentMap, faAnionRowNode )[1];
+                     funcCo2Loss = computeSn2Fragment( getSn1Sn2( co2LossFragmentMap, faAnionRowNode ), sn2 );
+                     co2LossFragment = getSn1Sn2( co2LossFragmentMap, faAnionRowNode )[ 1 ];
                   }
 
-                  Fragment fragment = getSn1Sn2( fragmentMap, faAnionRowNode )[1];
+                  Fragment fragment = getSn1Sn2( fragmentMap, faAnionRowNode )[ 1 ];
 
                   for ( Float ce : fragment.keys() )
                   {
-                     float intensity = (float) func.value( ce );
+                     float intensity = ( float ) func.value( ce );
                      float cf = getCf( ce, intensity, sn1 );
                      final String[] row1 = new String[] { ce.toString(), intensity + "",
                              cf + "",
@@ -400,7 +406,7 @@ public class MasterXmlPane extends MasterDetailPane
             } );
 
             // For CO2Loss
-            if( !faAnionRowNode.getValue().getCo2MassString().equals( "" ) )
+            if ( !faAnionRowNode.getValue().getCo2MassString().equals( "" ) )
             {
                row.setCo2mass( faAnion.getCo2mass() );
                row.getCo2MassProperty().addListener( new ChangeListener< Boolean >()
@@ -409,15 +415,15 @@ public class MasterXmlPane extends MasterDetailPane
                   {
                      final String seriesName = clazz + ":" + mzNode.getValue().getName() + ":CO2Loss-" + "SN1=" + sn1 + ",SN2=" + sn2;
 
-                     if(newValue)
+                     if ( newValue )
                      {
                         final XYChart.Series seriesFit = new XYChart.Series();
                         seriesFit.setName( seriesName + ".Fitted" );
 
                         Fragment[] fragments = getSn1Sn2( co2LossFragmentMap, faAnionRowNode );
-                        final PolynomialSplineFunction func = computeSn2Fragment( fragments, sn2  );
+                        final PolynomialSplineFunction func = computeSn2Fragment( fragments, sn2 );
 
-                        for ( Float ce : fragments[1].keys() )
+                        for ( Float ce : fragments[ 1 ].keys() )
                         {
                            XYChart.Data actNode = new XYChart.Data( ce, func.value( ce ) );
                            actNode.setNode( new HoveredNode( func.value( ce ) ) );
@@ -437,14 +443,14 @@ public class MasterXmlPane extends MasterDetailPane
          }
       } );
 
-      TreeMap<Integer, Fragment[]> faIndexMap = new TreeMap<>();
-      TreeMap<Integer, Fragment[]> co2LossFaIndexMap = new TreeMap<>();
+      TreeMap< Integer, Fragment[] > faIndexMap = new TreeMap<>();
+      TreeMap< Integer, Fragment[] > co2LossFaIndexMap = new TreeMap<>();
 
       addEventHandler( ProcessEvent.CALIBRATION, new EventHandler< ProcessEvent >()
       {
          @Override public void handle( ProcessEvent event )
          {
-            Integer index = (Integer) event.getParam()[ 0 ];
+            Integer index = ( Integer ) event.getParam()[ 0 ];
             Fragment fragment = ( Fragment ) event.getParam()[ 1 ];
             //				Float faIndex = fragment.getFaIndex();
 
@@ -458,36 +464,36 @@ public class MasterXmlPane extends MasterDetailPane
             else if ( event.getEventType() == ProcessEvent.DB_SN2_FRAG_RESP )
                faIndexMap.get( index )[ 2 ] = fragment;
 
-            if( event.getParam().length == 3 )
+            if ( event.getParam().length == 3 )
             {
                // CO2Loss is available
-               fragment = (Fragment) event.getParam()[ 2 ];
+               fragment = ( Fragment ) event.getParam()[ 2 ];
 
-               if( !co2LossFaIndexMap.containsKey( index ) )
-                  co2LossFaIndexMap.put( index, new Fragment[3] );
+               if ( !co2LossFaIndexMap.containsKey( index ) )
+                  co2LossFaIndexMap.put( index, new Fragment[ 3 ] );
 
-               if( event.getEventType() == ProcessEvent.DB_SYM_FRAG_RESP )
-                  co2LossFaIndexMap.get( index )[0] = fragment;
-               else if( event.getEventType() == ProcessEvent.DB_SN1_FRAG_RESP )
-                  co2LossFaIndexMap.get( index )[1] = fragment;
-               else if( event.getEventType() == ProcessEvent.DB_SN2_FRAG_RESP )
-                  co2LossFaIndexMap.get( index )[2] = fragment;
+               if ( event.getEventType() == ProcessEvent.DB_SYM_FRAG_RESP )
+                  co2LossFaIndexMap.get( index )[ 0 ] = fragment;
+               else if ( event.getEventType() == ProcessEvent.DB_SN1_FRAG_RESP )
+                  co2LossFaIndexMap.get( index )[ 1 ] = fragment;
+               else if ( event.getEventType() == ProcessEvent.DB_SN2_FRAG_RESP )
+                  co2LossFaIndexMap.get( index )[ 2 ] = fragment;
             }
 
-            if( LipidClassCollection.isSym( currentClazz ) )
+            if ( LipidClassCollection.isSym( currentClazz ) )
             {
-               if( faIndexMap.containsKey( mFaAnionsList.size() ) &&
-                       null != faIndexMap.get( mFaAnionsList.size() )[0] &&
-                       null != faIndexMap.get( mFaAnionsList.size() )[1] &&
-                       null != faIndexMap.get( mFaAnionsList.size() )[2])
+               if ( faIndexMap.containsKey( mFaAnionsList.size() ) &&
+                       null != faIndexMap.get( mFaAnionsList.size() )[ 0 ] &&
+                       null != faIndexMap.get( mFaAnionsList.size() )[ 1 ] &&
+                       null != faIndexMap.get( mFaAnionsList.size() )[ 2 ] )
                {
                   processAllFAanions( chart, faIndexMap, co2LossFaIndexMap );
                }
             }
             else
             {
-               if( faIndexMap.containsKey( mFaAnionsList.size() ) &&
-                       null != faIndexMap.get( mFaAnionsList.size() )[2])
+               if ( faIndexMap.containsKey( mFaAnionsList.size() ) &&
+                       null != faIndexMap.get( mFaAnionsList.size() )[ 2 ] )
                {
                   processAllFAanions( chart, faIndexMap, co2LossFaIndexMap );
                }
@@ -506,37 +512,37 @@ public class MasterXmlPane extends MasterDetailPane
       treeTableView = new TreeTableView< FAAnionRow >();
       treeTableView.setEditable( true );
 
-      root = new FilteredTreeItem<>(new FAAnionRow( "" ));
-      root.setExpanded(true);
+      root = new FilteredTreeItem<>( new FAAnionRow( "" ) );
+      root.setExpanded( true );
 
-      TreeTableColumn<FAAnionRow, NamedBoolean> column1 = new TreeTableColumn<>("");
-      column1.setPrefWidth(150);
+      TreeTableColumn< FAAnionRow, NamedBoolean > column1 = new TreeTableColumn<>( "" );
+      column1.setPrefWidth( 150 );
 
       //Defining cell content
       column1.setCellFactory( SelectiveCheckBoxTreeTableCell.forTreeTableTitleColumn( treeTableView ) );
-      column1.setCellValueFactory((param) ->
+      column1.setCellValueFactory( ( param ) ->
               new ReadOnlyObjectWrapper<>( param.getValue().getValue().getTitle() )
       );
 
       //Creating a column2
-      TreeTableColumn<FAAnionRow, String> column2 = new TreeTableColumn<>("mz");
-      column2.setPrefWidth(80);
+      TreeTableColumn< FAAnionRow, String > column2 = new TreeTableColumn<>( "mz" );
+      column2.setPrefWidth( 80 );
 
       //Defining cell content
-      column2.setCellValueFactory( (param) ->
+      column2.setCellValueFactory( ( param ) ->
               new ReadOnlyStringWrapper( param.getValue().getValue().getMassString() ) );
 
       //Creating a column3
-      TreeTableColumn<FAAnionRow, String> column3 = new TreeTableColumn<>("Iso");
-      column3.setPrefWidth(50);
+      TreeTableColumn< FAAnionRow, String > column3 = new TreeTableColumn<>( "Iso" );
+      column3.setPrefWidth( 50 );
 
       //Defining cell content
-      column3.setCellValueFactory( (param) ->
+      column3.setCellValueFactory( ( param ) ->
               new ReadOnlyStringWrapper( param.getValue().getValue().getIsomer() ) );
 
       //Creating a column4
-      TreeTableColumn<FAAnionRow, NamedBoolean > column4 = new TreeTableColumn<>("sn1");
-      column4.setPrefWidth(100);
+      TreeTableColumn< FAAnionRow, NamedBoolean > column4 = new TreeTableColumn<>( "sn1" );
+      column4.setPrefWidth( 100 );
       column4.setEditable( false );
       column4.setCellFactory( CheckBoxTextFieldTreeTableCell.forTreeTableSn1Column( treeTableView ) );
       column4.setCellValueFactory( ( param ) ->
@@ -544,29 +550,29 @@ public class MasterXmlPane extends MasterDetailPane
       );
 
       //Creating a column5
-      TreeTableColumn<FAAnionRow, NamedBoolean> column5 = new TreeTableColumn<>("sn2");
-      column5.setPrefWidth(100);
+      TreeTableColumn< FAAnionRow, NamedBoolean > column5 = new TreeTableColumn<>( "sn2" );
+      column5.setPrefWidth( 100 );
       column5.setEditable( false );
       column5.setCellFactory( CheckBoxTextFieldTreeTableCell.forTreeTableSn2Column( treeTableView ) );
-      column5.setCellValueFactory( (param) ->
+      column5.setCellValueFactory( ( param ) ->
               new ReadOnlyObjectWrapper<>( param.getValue().getValue().getSn2() )
       );
 
       //Creating a column6
-      TreeTableColumn<FAAnionRow, NamedBoolean> column6 = new TreeTableColumn<>("sym");
-      column6.setPrefWidth(100);
+      TreeTableColumn< FAAnionRow, NamedBoolean > column6 = new TreeTableColumn<>( "sym" );
+      column6.setPrefWidth( 100 );
       column6.setEditable( false );
       column6.setCellFactory( CheckBoxTextFieldTreeTableCell.forTreeTableSymColumn( treeTableView ) );
-      column6.setCellValueFactory( (param) ->
+      column6.setCellValueFactory( ( param ) ->
               new ReadOnlyObjectWrapper<>( param.getValue().getValue().getSym() )
       );
 
       //Creating a column7
-      TreeTableColumn<FAAnionRow, NamedBoolean> column7 = new TreeTableColumn<>("CO2Loss");
-      column7.setPrefWidth(100);
+      TreeTableColumn< FAAnionRow, NamedBoolean > column7 = new TreeTableColumn<>( "CO2Loss" );
+      column7.setPrefWidth( 100 );
 
       column7.setCellFactory( SelectiveCheckBoxTreeTableCell.forTreeTableCo2LossColumn( treeTableView ) );
-      column7.setCellValueFactory( (param) ->
+      column7.setCellValueFactory( ( param ) ->
               new ReadOnlyObjectWrapper<>( param.getValue().getValue().getCo2MassProperty() )
       );
 
@@ -574,7 +580,7 @@ public class MasterXmlPane extends MasterDetailPane
       treeTableView.setRoot( root );
 
       treeTableView.setShowRoot( false );
-      treeTableView.getColumns().setAll(column1, column2, column3, column4, column5, column6, column7 );
+      treeTableView.getColumns().setAll( column1, column2, column3, column4, column5, column6, column7 );
 
       collisionEnergyTableView = new TableView();
       //		collisionEnergyTableView.setEditable( true );
@@ -583,34 +589,42 @@ public class MasterXmlPane extends MasterDetailPane
 
       TableColumn tableColumn1 = new TableColumn( "CE" );
       tableColumn1.setPrefWidth( 150 );
-      tableColumn1.setCellValueFactory( new Callback<TableColumn.CellDataFeatures<String[], String>, ObservableValue<String> >() {
+      tableColumn1.setCellValueFactory( new Callback< TableColumn.CellDataFeatures< String[], String >, ObservableValue< String > >()
+      {
          @Override
-         public ObservableValue<String> call(TableColumn.CellDataFeatures<String[], String> p) {
-            return new SimpleStringProperty((p.getValue()[0]));
+         public ObservableValue< String > call( TableColumn.CellDataFeatures< String[], String > p )
+         {
+            return new SimpleStringProperty( ( p.getValue()[ 0 ] ) );
          }
       } );
       TableColumn tableColumn2 = new TableColumn( "INT" );
       tableColumn2.setPrefWidth( 150 );
-      tableColumn2.setCellValueFactory( new Callback<TableColumn.CellDataFeatures<String[], String>, ObservableValue<String>>() {
+      tableColumn2.setCellValueFactory( new Callback< TableColumn.CellDataFeatures< String[], String >, ObservableValue< String > >()
+      {
          @Override
-         public ObservableValue<String> call(TableColumn.CellDataFeatures<String[], String> p) {
-            return new SimpleStringProperty((p.getValue()[1]));
+         public ObservableValue< String > call( TableColumn.CellDataFeatures< String[], String > p )
+         {
+            return new SimpleStringProperty( ( p.getValue()[ 1 ] ) );
          }
       } );
       TableColumn tableColumn3 = new TableColumn( "CF" );
       tableColumn3.setPrefWidth( 150 );
-      tableColumn3.setCellValueFactory( new Callback<TableColumn.CellDataFeatures<String[], String>, ObservableValue<String>>() {
+      tableColumn3.setCellValueFactory( new Callback< TableColumn.CellDataFeatures< String[], String >, ObservableValue< String > >()
+      {
          @Override
-         public ObservableValue<String> call(TableColumn.CellDataFeatures<String[], String> p) {
-            return new SimpleStringProperty((p.getValue()[2]));
+         public ObservableValue< String > call( TableColumn.CellDataFeatures< String[], String > p )
+         {
+            return new SimpleStringProperty( ( p.getValue()[ 2 ] ) );
          }
       } );
       TableColumn tableColumn4 = new TableColumn( "CO2 INT" );
       tableColumn4.setPrefWidth( 150 );
-      tableColumn4.setCellValueFactory( new Callback<TableColumn.CellDataFeatures<String[], String>, ObservableValue<String>>() {
+      tableColumn4.setCellValueFactory( new Callback< TableColumn.CellDataFeatures< String[], String >, ObservableValue< String > >()
+      {
          @Override
-         public ObservableValue<String> call(TableColumn.CellDataFeatures<String[], String> p) {
-            return new SimpleStringProperty((p.getValue()[3]));
+         public ObservableValue< String > call( TableColumn.CellDataFeatures< String[], String > p )
+         {
+            return new SimpleStringProperty( ( p.getValue()[ 3 ] ) );
          }
       } );
 
@@ -654,8 +668,7 @@ public class MasterXmlPane extends MasterDetailPane
       //
       //		} );
 
-
-      final FilteredList<FilteredTreeItem<FAAnionRow>> filteredData = new FilteredList<FilteredTreeItem<FAAnionRow>>( treeItems, s -> true);
+      final FilteredList< FilteredTreeItem< FAAnionRow > > filteredData = new FilteredList< FilteredTreeItem< FAAnionRow > >( treeItems, s -> true );
 
       filteredData.addListener( new ListChangeListener< TreeItem< FAAnionRow > >()
       {
@@ -669,13 +682,15 @@ public class MasterXmlPane extends MasterDetailPane
 
       searchText.textProperty().addListener( obs -> {
          String filter = searchText.getText();
-         if(filter == null || filter.length() == 0) {
+         if ( filter == null || filter.length() == 0 )
+         {
 
-            filteredData.setPredicate(s -> true);
+            filteredData.setPredicate( s -> true );
             filteredData.forEach( c -> c.setPredicate( s -> true ) );
          }
-         else {
-            Predicate<TreeItem<FAAnionRow>> predicate = new Predicate< TreeItem< FAAnionRow > >()
+         else
+         {
+            Predicate< TreeItem< FAAnionRow > > predicate = new Predicate< TreeItem< FAAnionRow > >()
             {
                @Override public boolean test( TreeItem< FAAnionRow > faAnionRowTreeItem )
                {
@@ -698,18 +713,19 @@ public class MasterXmlPane extends MasterDetailPane
             MasterDatabase db = new MasterDatabase();
             db.connect();
 
-            TreeMap<String, TreeMap< Integer, FAAnion > > masterDBSet = db.getMasterDB();
+            TreeMap< String, TreeMap< Integer, FAAnion > > masterDBSet = db.getMasterDB();
 
-            if( null ==  masterDBSet) return;
+            if ( null == masterDBSet )
+               return;
 
-            for( String clazz : masterDBSet.keySet() )
+            for ( String clazz : masterDBSet.keySet() )
             {
-               if(!masterDB.containsKey( clazz ))
-                  masterDB.put( clazz, new TreeMap<>(  ) );
+               if ( !masterDB.containsKey( clazz ) )
+                  masterDB.put( clazz, new TreeMap<>() );
                else
                   continue;
 
-               if( !classMap.containsKey( clazz ) )
+               if ( !classMap.containsKey( clazz ) )
                {
                   classMap.put( clazz, new FilteredTreeItem<>( new FAAnionRow( clazz ) ) );
                   treeItems.add( classMap.get( clazz ) );
@@ -718,22 +734,22 @@ public class MasterXmlPane extends MasterDetailPane
                final FilteredTreeItem< FAAnionRow > clazzNode = classMap.get( clazz );
                clazzNode.setExpanded( true );
 
-               for( Integer index : masterDBSet.get(clazz).keySet() )
+               for ( Integer index : masterDBSet.get( clazz ).keySet() )
                {
-                  FAAnion faAnion = masterDBSet.get(clazz).get( index );
-                  if(!masterDB.get( clazz ).containsKey( index ))
+                  FAAnion faAnion = masterDBSet.get( clazz ).get( index );
+                  if ( !masterDB.get( clazz ).containsKey( index ) )
                   {
                      final FAAnionRow faAnionRow = new FAAnionRow( index, faAnion );
                      final FilteredTreeItem< FAAnionRow > faAnionRowNode = new FilteredTreeItem< FAAnionRow >( faAnionRow );
 
                      masterDB.get( clazz ).put( index, faAnionRowNode );
                      clazzNode.add( faAnionRowNode );
-                     clazzNode.getChildren().sort( Comparator.comparing( t -> Integer.parseInt( t.getValue().getName() ) ));
+                     clazzNode.getChildren().sort( Comparator.comparing( t -> Integer.parseInt( t.getValue().getName() ) ) );
                   }
 
                   final TreeItem< FAAnionRow > faAnionRowNode = masterDB.get( clazz ).get( index );
 
-                  for( FAAnionRow row : db.getFAAnionRows( clazz, index ) )
+                  for ( FAAnionRow row : db.getFAAnionRows( clazz, index ) )
                   {
                      final TreeItem< FAAnionRow > mzNode = new TreeItem<>( row );
                      faAnionRowNode.getChildren().add( mzNode );
@@ -759,8 +775,8 @@ public class MasterXmlPane extends MasterDetailPane
                            {
                               collisionEnergyTableView.getItems().add( detailRow );
 
-                              Float ce = Float.parseFloat( detailRow[0] );
-                              Float intensity = Float.parseFloat( detailRow[1] );
+                              Float ce = Float.parseFloat( detailRow[ 0 ] );
+                              Float intensity = Float.parseFloat( detailRow[ 1 ] );
 
                               XYChart.Data actNode = new XYChart.Data( ce, intensity );
                               actNode.setNode( new HoveredNode( intensity ) );
@@ -777,9 +793,10 @@ public class MasterXmlPane extends MasterDetailPane
                         }
                      } );
 
-                     if( !row.getCo2MassString().equals( "" ) )
+                     if ( !row.getCo2MassString().equals( "" ) )
                      {
-                        if(faAnionRowNode.getValue().getCo2MassString().equals( "" )) {
+                        if ( faAnionRowNode.getValue().getCo2MassString().equals( "" ) )
+                        {
                            faAnionRowNode.getValue().setCo2MassString( row.getCo2MassString() );
                         }
 
@@ -790,7 +807,7 @@ public class MasterXmlPane extends MasterDetailPane
                            {
                               final String seriesName = clazz + ":" + mzNode.getValue().getName() + "CO2Loss:SN1-" + row.getSn1().getName() + ",SN2-" + row.getSn2().getName();
 
-                              if(newValue)
+                              if ( newValue )
                               {
                                  XYChart.Series seriesFit = new XYChart.Series();
                                  seriesFit.setName( seriesName + ".Fitted" );
@@ -800,7 +817,7 @@ public class MasterXmlPane extends MasterDetailPane
 
                                  for ( String[] detailRow : masterDatabase.getDetails( index, clazz, row.getSn1().getName(), row.getSn2().getName(), row.getSym().getName() ) )
                                  {
-                                    if( !detailRow[3].equals( "" ) )
+                                    if ( !detailRow[ 3 ].equals( "" ) )
                                     {
                                        Float ce = Float.parseFloat( detailRow[ 0 ] );
                                        Float intensity = Float.parseFloat( detailRow[ 3 ] );
@@ -840,7 +857,7 @@ public class MasterXmlPane extends MasterDetailPane
       } );
 
       BorderPane borderPane = new BorderPane();
-      borderPane.setTop( new HBox( searchText, loadButton, storeButton) );
+      borderPane.setTop( new HBox( searchText, loadButton, storeButton ) );
       borderPane.setCenter( treeTableView );
 
       setMasterNode( borderPane );
@@ -855,70 +872,72 @@ public class MasterXmlPane extends MasterDetailPane
    {
       final FilteredTreeItem< FAAnionRow > clazzNode = classMap.get( currentClazz );
 
-      for( FAAnion faAnion : mFaAnionsList )
+      for ( FAAnion faAnion : mFaAnionsList )
       {
-         if( !masterDB.get( currentClazz ).containsKey( faAnion.getIndex() ) )
+         if ( !masterDB.get( currentClazz ).containsKey( faAnion.getIndex() ) )
          {
             final FAAnionRow faAnionRow = new FAAnionRow( faAnion );
             final FilteredTreeItem< FAAnionRow > faAnionRowNode = new FilteredTreeItem< FAAnionRow >( faAnionRow );
 
             masterDB.get( currentClazz ).put( faAnion.getIndex(), faAnionRowNode );
             clazzNode.add( faAnionRowNode );
-            clazzNode.getChildren().sort( Comparator.comparing( t -> Integer.parseInt( t.getValue().getName() ) ));
+            clazzNode.getChildren().sort( Comparator.comparing( t -> Integer.parseInt( t.getValue().getName() ) ) );
          }
 
          final TreeItem< FAAnionRow > faAnionRowNode = masterDB.get( currentClazz ).get( faAnion.getIndex() );
 
          // Have to check if Co2Loss is attached later even though we could not find any CO2Loss in the calibration steps.
 
-         if( LipidClassCollection.isSym( currentClazz ) )
+         if ( LipidClassCollection.isSym( currentClazz ) )
          {
-            if( !contain( faAnionRowNode, "1", "0", "0" )  )
+            if ( !contain( faAnionRowNode, "1", "0", "0" ) )
                createTreeItem( currentClazz, chart, faAnion, faAnionRowNode, faIndexMap, co2LossFaIndexMap, 0 );
             else
                checkCo2Loss( faAnionRowNode, chart, faAnion, co2LossFaIndexMap, "1", "0", "0", 0 );
          }
 
-         if( LipidClassCollection.isSn1( currentClazz ) )
+         if ( LipidClassCollection.isSn1( currentClazz ) )
          {
-            if( !contain( faAnionRowNode, "0", "1", "0" )  )
+            if ( !contain( faAnionRowNode, "0", "1", "0" ) )
                createTreeItem( currentClazz, chart, faAnion, faAnionRowNode, faIndexMap, co2LossFaIndexMap, 1 );
             else
                checkCo2Loss( faAnionRowNode, chart, faAnion, co2LossFaIndexMap, "0", "1", "0", 1 );
          }
 
-         if( LipidClassCollection.isSn2( currentClazz ) )
+         if ( LipidClassCollection.isSn2( currentClazz ) )
          {
 
-            if( !contain( faAnionRowNode, "0", "0", "1" )  )
+            if ( !contain( faAnionRowNode, "0", "0", "1" ) )
                createTreeItem( currentClazz, chart, faAnion, faAnionRowNode, faIndexMap, co2LossFaIndexMap, 2 );
             else
                checkCo2Loss( faAnionRowNode, chart, faAnion, co2LossFaIndexMap, "0", "0", "1", 2 );
          }
 
-         if( LipidClassCollection.isSym( currentClazz ) )
+         if ( LipidClassCollection.isSym( currentClazz ) )
          {
-            Fragment[] sn1sn2 = new Fragment[] { faIndexMap.get(faAnion.getIndex())[1], faIndexMap.get(faAnion.getIndex())[2] };
+            Fragment[] sn1sn2 = new Fragment[] { faIndexMap.get( faAnion.getIndex() )[ 1 ],
+                    faIndexMap.get( faAnion.getIndex() )[ 2 ] };
 
             Fragment[] sn1sn2Co2Loss = co2LossFaIndexMap.containsKey( faAnion.getIndex() ) ?
-                    new Fragment[] { co2LossFaIndexMap.get(faAnion.getIndex())[1], co2LossFaIndexMap.get(faAnion.getIndex())[2] } : null;
+                    new Fragment[] { co2LossFaIndexMap.get( faAnion.getIndex() )[ 1 ],
+                            co2LossFaIndexMap.get( faAnion.getIndex() )[ 2 ] } : null;
 
             // sn1 = 0.5, sn2 = 0.5
-            if( !contain( faAnionRowNode, "0", "0.5", "0.5" ) )
+            if ( !contain( faAnionRowNode, "0", "0.5", "0.5" ) )
             {
-               final float sn1 = 0.5f,	sn2 = 0.5f;
+               final float sn1 = 0.5f, sn2 = 0.5f;
                addOptionalTreeItem( currentClazz, chart, sn1, sn2, sn1sn2, sn1sn2Co2Loss, faAnion, faAnionRowNode );
             }
 
             // sn1 = 0.75, sn2 =0.25
-            if( !contain( faAnionRowNode, "0", "0.75", "0.25" ) )
+            if ( !contain( faAnionRowNode, "0", "0.75", "0.25" ) )
             {
                final float sn1 = 0.75f, sn2 = 0.25f;
                addOptionalTreeItem( currentClazz, chart, sn1, sn2, sn1sn2, sn1sn2Co2Loss, faAnion, faAnionRowNode );
             }
 
             // sn1 = 0.25, sn2 = 0.75
-            if( !contain( faAnionRowNode, "0", "0.25", "0.75" ) )
+            if ( !contain( faAnionRowNode, "0", "0.25", "0.75" ) )
             {
                final float sn1 = 0.25f, sn2 = 0.75f;
                addOptionalTreeItem( currentClazz, chart, sn1, sn2, sn1sn2, sn1sn2Co2Loss, faAnion, faAnionRowNode );
@@ -930,37 +949,37 @@ public class MasterXmlPane extends MasterDetailPane
    private void checkCo2Loss( TreeItem< FAAnionRow > faAnionRowNode, LineChart< Number, Number > chart,
            FAAnion faAnion, TreeMap< Integer, Fragment[] > co2LossFaIndexMap, String sym, String sn1, String sn2, int dbType )
    {
-      Optional<TreeItem<FAAnionRow>> row = faAnionRowNode.getChildren().filtered( c ->
+      Optional< TreeItem< FAAnionRow > > row = faAnionRowNode.getChildren().filtered( c ->
               c.getValue().getSn1().getName().equals( sn1 ) &&
                       c.getValue().getSn2().getName().equals( sn2 ) &&
                       c.getValue().getSym().getName().equals( sym ) ).stream().findAny();
 
-      if(row.isPresent())
+      if ( row.isPresent() )
       {
-         TreeItem<FAAnionRow> faAnionRow = row.get();
+         TreeItem< FAAnionRow > faAnionRow = row.get();
          final Fragment co2loss = co2LossFaIndexMap.containsKey( faAnion.getIndex() ) ?
-                 co2LossFaIndexMap.get( faAnion.getIndex() )[dbType] : null;
+                 co2LossFaIndexMap.get( faAnion.getIndex() )[ dbType ] : null;
 
-         if(co2loss != null && faAnionRow.getValue().getCo2Mass() == null)
+         if ( co2loss != null && faAnionRow.getValue().getCo2Mass() == null )
          {
             co2LossFragmentMap.put( faAnionRow.getValue(), co2loss );
 
             faAnionRow.getValue().setCo2MassString( faAnion.getCo2mass().getMass().toString() );
 
             faAnionRow.getValue().setCo2mass( faAnion.getCo2mass() );
-            faAnionRow.getValue().getCo2MassProperty().addListener( createCO2LossChangeListener( chart, faAnionRow, co2loss, dbType) );
+            faAnionRow.getValue().getCo2MassProperty().addListener( createCO2LossChangeListener( chart, faAnionRow, co2loss, dbType ) );
          }
       }
    }
 
-   private ChangeListener< Boolean > createCO2LossChangeListener(LineChart< Number, Number > chart,
-           TreeItem<FAAnionRow> faAnionRow, Fragment co2loss, int dbType)
+   private ChangeListener< Boolean > createCO2LossChangeListener( LineChart< Number, Number > chart,
+           TreeItem< FAAnionRow > faAnionRow, Fragment co2loss, int dbType )
    {
       return ( observable, oldValue, newValue ) ->
       {
          final String seriesName = faAnionRow.getValue().getName() + ":CO2Loss-" + Calib.values()[ dbType ];
 
-         if( newValue )
+         if ( newValue )
          {
             XYChart.Series seriesFit = new XYChart.Series();
             seriesFit.setName( seriesName + ".Fitted" );
@@ -1015,19 +1034,19 @@ public class MasterXmlPane extends MasterDetailPane
             final PolynomialSplineFunction funcCo2Loss = null != co2LossFragments ?
                     computeSn2Fragment( co2LossFragments, sn2 ) : null;
 
-            int idx = getCEIndex(fragments);
-            Fragment fragment = fragments[idx];
+            int idx = getCEIndex( fragments );
+            Fragment fragment = fragments[ idx ];
 
             for ( Float ce : getCE( fragments ) )
             {
-               float intensity = (float) func.value(ce);
+               float intensity = ( float ) func.value( ce );
                float cf = getCf( ce, intensity, sn1 );
                final String[] row1 =
                        new String[] { ce.toString(), intensity + "",
                                cf + "",
                                "" };
 
-               if( null != funcCo2Loss )
+               if ( null != funcCo2Loss )
                {
                   row1[ 4 ] = funcCo2Loss.value( ce ) + "";
                }
@@ -1045,9 +1064,9 @@ public class MasterXmlPane extends MasterDetailPane
          {
             chart.getData().removeIf( series -> series.getName().startsWith( seriesName ) );
          }
-      });
+      } );
 
-      if( co2LossFragments != null )
+      if ( co2LossFragments != null )
       {
          row.setCo2mass( faAnion.getCo2mass() );
          row.getCo2MassProperty().addListener( new ChangeListener< Boolean >()
@@ -1056,7 +1075,7 @@ public class MasterXmlPane extends MasterDetailPane
             {
                final String seriesName = clazz + ":" + mzNode.getValue().getName() + ":CO2Loss-" + "SN1=" + sn1 + ",SN2=" + sn2;
 
-               if(newValue)
+               if ( newValue )
                {
                   final XYChart.Series seriesFit = new XYChart.Series();
                   seriesFit.setName( seriesName + ".Fitted" );
@@ -1085,7 +1104,7 @@ public class MasterXmlPane extends MasterDetailPane
    private void createTreeItem( String clazz, LineChart< Number, Number > chart, FAAnion faAnion,
            TreeItem< FAAnionRow > faAnionRowNode, TreeMap< Integer, Fragment[] > faIndexMap, TreeMap< Integer, Fragment[] > co2LossFaIndexMap, int dbType )
    {
-      final Fragment mz = faIndexMap.get(faAnion.getIndex())[dbType];
+      final Fragment mz = faIndexMap.get( faAnion.getIndex() )[ dbType ];
 
       final FAAnionRow row = new FAAnionRow( faAnion.getIndex(), faAnion );
       final TreeItem< FAAnionRow > mzNode = new TreeItem<>( row );
@@ -1109,9 +1128,9 @@ public class MasterXmlPane extends MasterDetailPane
             break;
       }
 
-      final Fragment co2loss = co2LossFaIndexMap.containsKey( faAnion.getIndex() ) ? co2LossFaIndexMap.get( faAnion.getIndex() )[dbType] : null;
+      final Fragment co2loss = co2LossFaIndexMap.containsKey( faAnion.getIndex() ) ? co2LossFaIndexMap.get( faAnion.getIndex() )[ dbType ] : null;
 
-      if( null != co2loss )
+      if ( null != co2loss )
          co2LossFragmentMap.put( row, co2loss );
 
       nb.addListener( ( observable, oldValue, newValue ) -> {
@@ -1131,7 +1150,7 @@ public class MasterXmlPane extends MasterDetailPane
                        mz.getCF( ce ).toString(),
                        "" };
 
-               if( null != co2loss )
+               if ( null != co2loss )
                {
                   row1[ 4 ] = co2loss.get( ce ) + "";
                }
@@ -1139,7 +1158,7 @@ public class MasterXmlPane extends MasterDetailPane
                collisionEnergyTableView.getItems().add( row1 );
 
                XYChart.Data actNode = new XYChart.Data( ce, mz.get( ce ) );
-               actNode.setNode( new HoveredNode( mz.get( ce )) );
+               actNode.setNode( new HoveredNode( mz.get( ce ) ) );
                seriesFit.getData().add( actNode );
             }
 
@@ -1151,14 +1170,15 @@ public class MasterXmlPane extends MasterDetailPane
          }
       } );
 
-      if( null != co2loss )
+      if ( null != co2loss )
       {
-         if(faAnionRowNode.getValue().getCo2Mass() == null) {
+         if ( faAnionRowNode.getValue().getCo2Mass() == null )
+         {
             faAnionRowNode.getValue().setCo2MassString( faAnion.getCo2mass().getMass().toString() );
          }
 
          row.setCo2mass( faAnion.getCo2mass() );
-         row.getCo2MassProperty().addListener( createCO2LossChangeListener( chart, faAnionRowNode, co2loss, dbType));
+         row.getCo2MassProperty().addListener( createCO2LossChangeListener( chart, faAnionRowNode, co2loss, dbType ) );
       }
    }
 
@@ -1170,14 +1190,14 @@ public class MasterXmlPane extends MasterDetailPane
       );
    }
 
-   private void startStoreDatabase(boolean bNew)
+   private void startStoreDatabase( boolean bNew )
    {
       System.err.println( "Database store process starts" );
 
-      if(bNew)
+      if ( bNew )
          System.err.println( "Database is reset." );
 
-      new Thread(new Runnable()
+      new Thread( new Runnable()
       {
          @Override public void run()
          {
@@ -1185,48 +1205,49 @@ public class MasterXmlPane extends MasterDetailPane
             db.connect();
             db.initTables( bNew );
 
-            for( String clazz : masterDB.keySet() )
+            for ( String clazz : masterDB.keySet() )
             {
-               for( Integer index : masterDB.get( clazz ).keySet() )
+               for ( Integer index : masterDB.get( clazz ).keySet() )
                {
                   System.err.println( clazz + "-FAAnion " + index + "/" + masterDB.get( clazz ).keySet().size() );
-                  TreeItem< FAAnionRow > faAnionRowNode = masterDB.get( clazz ).get(index);
+                  TreeItem< FAAnionRow > faAnionRowNode = masterDB.get( clazz ).get( index );
 
-                  Fragment[] fragments = new Fragment[2];
-                  Fragment[] co2LossFragments = new Fragment[2];
+                  Fragment[] fragments = new Fragment[ 2 ];
+                  Fragment[] co2LossFragments = new Fragment[ 2 ];
 
-                  for( TreeItem< FAAnionRow > faAnionRowItem : faAnionRowNode.getChildren() )
+                  for ( TreeItem< FAAnionRow > faAnionRowItem : faAnionRowNode.getChildren() )
                   {
                      FAAnionRow row = faAnionRowItem.getValue();
 
-                     if(row.isMaster()) continue;
+                     if ( row.isMaster() )
+                        continue;
 
-                     if( 	row.getSn2().getName().equals( "1" ) ||
+                     if ( row.getSn2().getName().equals( "1" ) ||
                              row.getSn1().getName().equals( "1" ) ||
                              row.getSym().getName().equals( "1" ) )
                      {
-                        Fragment mz = fragmentMap.get(row);
+                        Fragment mz = fragmentMap.get( row );
 
-                        if(row.getSn1().getName().equals( "1" ))
-                           fragments[0] = mz;
-                        else if(row.getSn2().getName().equals( "1" ))
-                           fragments[1] = mz;
+                        if ( row.getSn1().getName().equals( "1" ) )
+                           fragments[ 0 ] = mz;
+                        else if ( row.getSn2().getName().equals( "1" ) )
+                           fragments[ 1 ] = mz;
 
                         Fragment co2mz = null;
 
                         if ( row.getCo2Mass() != null && row.getCo2Mass().getMass() != 0d )
                         {
                            co2mz = co2LossFragmentMap.get( row );
-                           if(row.getSn1().getName().equals( "1" ))
-                              co2LossFragments[0] = co2mz;
-                           else if(row.getSn2().getName().equals( "1" ))
-                              co2LossFragments[1] = co2mz;
+                           if ( row.getSn1().getName().equals( "1" ) )
+                              co2LossFragments[ 0 ] = co2mz;
+                           else if ( row.getSn2().getName().equals( "1" ) )
+                              co2LossFragments[ 1 ] = co2mz;
 
                         }
 
                         insertMasterData( db, row, clazz );
 
-                        ArrayList<String[]> rows = new ArrayList< String[] >();
+                        ArrayList< String[] > rows = new ArrayList< String[] >();
 
                         for ( Float ce : mz.keys() )
                         {
@@ -1235,7 +1256,7 @@ public class MasterXmlPane extends MasterDetailPane
                            if ( co2mz != null && co2mz.contains( ce ) )
                               detailRow = new String[] { ce.toString(), mz.get( ce ).toString(),
                                       mz.getCF( ce ).toString(),
-                                      co2mz.get( ce ).toString()};
+                                      co2mz.get( ce ).toString() };
                            else
                               detailRow = new String[] { ce.toString(), mz.get( ce ).toString(),
                                       mz.getCF( ce ).toString(),
@@ -1259,16 +1280,16 @@ public class MasterXmlPane extends MasterDetailPane
             db.close();
             System.err.println( "Master database saved!" );
          }
-      }).start();
+      } ).start();
    }
 
    private int getCEIndex( Fragment[] fragments )
    {
-      final Fragment sn1 = fragments[0];
+      final Fragment sn1 = fragments[ 0 ];
 
-      final Fragment sn2 = fragments[1];
+      final Fragment sn2 = fragments[ 1 ];
 
-      if(sn1.keys().size() > sn2.keys().size())
+      if ( sn1.keys().size() > sn2.keys().size() )
          return 0;
       else
          return 1;
@@ -1296,17 +1317,17 @@ public class MasterXmlPane extends MasterDetailPane
       {
          // Database insert with co2loss
          db.insertMasterData( row.getName(), clazz, row.getMassString(), row.getIsomer(), sn1 + "",
-                 (1f - sn1) + "", "0", row.getCo2MassString() );
+                 ( 1f - sn1 ) + "", "0", row.getCo2MassString() );
       }
       else
       {
          // Database insert without co2loss
          db.insertMasterData( row.getName(), clazz, row.getMassString(), row.getIsomer(), sn1 + "",
-                 (1f - sn1) + "", "0" );
+                 ( 1f - sn1 ) + "", "0" );
       }
    }
 
-   private void insertDetailData( MasterDatabase db, FAAnionRow row, String clazz, ArrayList<String[]> dataRows )
+   private void insertDetailData( MasterDatabase db, FAAnionRow row, String clazz, ArrayList< String[] > dataRows )
    {
       db.insertDetailData( row.getName(), clazz, row.getSn1().getName(), row.getSn2().getName(), row.getSym().getName(), dataRows );
    }
@@ -1314,13 +1335,13 @@ public class MasterXmlPane extends MasterDetailPane
    private void insertDetailData( MasterDatabase db, FAAnionRow row, String clazz, Fragment[] fragments, Fragment[] co2LossFragments, float sn1 )
    {
       //		final SplineComposite func = computeLinearRegression( fragments, sn1 );
-      float sn2 = (1f - sn1);
+      float sn2 = ( 1f - sn1 );
       final PolynomialSplineFunction func = computeSn2Fragment( fragments, sn2 );
-      final ArrayList<String[]> rows = new ArrayList< String[] >();
+      final ArrayList< String[] > rows = new ArrayList< String[] >();
 
-      Fragment fragment = fragments[1];
+      Fragment fragment = fragments[ 1 ];
 
-      if( row.getCo2MassString().equals( "" ) )
+      if ( row.getCo2MassString().equals( "" ) )
       {
          double ret;
 
@@ -1328,7 +1349,8 @@ public class MasterXmlPane extends MasterDetailPane
          {
             ret = 0;
 
-            if( func.isValidPoint( ce ) ) ret = func.value( ce );
+            if ( func.isValidPoint( ce ) )
+               ret = func.value( ce );
 
             float cf = getCf( ce, ret, sn1 );
 
@@ -1343,16 +1365,18 @@ public class MasterXmlPane extends MasterDetailPane
          //			final SplineComposite funcCo2Loss = computeLinearRegression( co2LossFragments, sn1 );
          final PolynomialSplineFunction funcCo2Loss = computeSn2Fragment( co2LossFragments, sn2 );
 
-         int idx = getCEIndex(fragments);
+         int idx = getCEIndex( fragments );
          double ret, co2ret;
 
          for ( Float ce : getCE( fragments ) )
          {
             ret = co2ret = 0;
 
-            if( func.isValidPoint( ce ) ) ret = func.value( ce );
+            if ( func.isValidPoint( ce ) )
+               ret = func.value( ce );
 
-            if( funcCo2Loss.isValidPoint( ce ) ) co2ret = funcCo2Loss.value( ce );
+            if ( funcCo2Loss.isValidPoint( ce ) )
+               co2ret = funcCo2Loss.value( ce );
 
             float cf = getCf( ce, ret, sn1 );
 
@@ -1363,7 +1387,8 @@ public class MasterXmlPane extends MasterDetailPane
          }
       }
 
-      db.insertDetailData( row.getName(), clazz, row.getSn1().getName(), row.getSn2().getName(), row.getSym().getName(), rows );	}
+      db.insertDetailData( row.getName(), clazz, row.getSn1().getName(), row.getSn2().getName(), row.getSym().getName(), rows );
+   }
 
    public void setCalibrationTabPane( TabPane calibrationTabPane )
    {
@@ -1372,7 +1397,7 @@ public class MasterXmlPane extends MasterDetailPane
 
    public void setFaAnionsList( ObservableList< FAAnion > faAnionsList )
    {
-      if(null == mFaAnionsList)
+      if ( null == mFaAnionsList )
          this.mFaAnionsList = faAnionsList;
    }
 
@@ -1383,12 +1408,12 @@ public class MasterXmlPane extends MasterDetailPane
               c.getValue().getSn2().getName().equals( "0.5" ) ).count() == 2;
    }
 
-   protected void uncheckNode( TreeItem<FAAnionRow> item )
+   protected void uncheckNode( TreeItem< FAAnionRow > item )
    {
-      if(item.getValue().getTitle() instanceof CheckBoxNamedBoolean )
+      if ( item.getValue().getTitle() instanceof CheckBoxNamedBoolean )
       {
          item.getValue().getTitle().set( false );
-         if(item.getValue().getCo2MassProperty() != null)
+         if ( item.getValue().getCo2MassProperty() != null )
             item.getValue().getCo2MassProperty().set( false );
       }
       else
@@ -1399,7 +1424,7 @@ public class MasterXmlPane extends MasterDetailPane
 
    PolynomialSplineFunction computeSn2Fragment( Fragment[] fragments, float sn2 )
    {
-      final Fragment snOne = fragments[0], snTwo = fragments[1];
+      final Fragment snOne = fragments[ 0 ], snTwo = fragments[ 1 ];
 
       // snOne -> lower bound [ 1, 2, 3, 4, 5, 4, 3, 2, 1 ]
       // snTwo -> upper bound [ 2, 4, 6, 8, 10, 8, 6, 4, 2 ]
@@ -1407,16 +1432,16 @@ public class MasterXmlPane extends MasterDetailPane
 
       Float[] ce = getCE( fragments );
 
-      double[] x = new double[ce.length];
-      double[] y = new double[ce.length];
+      double[] x = new double[ ce.length ];
+      double[] y = new double[ ce.length ];
 
-      for(int i = 0; i < ce.length; i++ )
+      for ( int i = 0; i < ce.length; i++ )
       {
-         x[i] = ce[i];
+         x[ i ] = ce[ i ];
 
-         if( snOne.contains( ce[i] ) && snTwo.contains( ce[i] ) )
+         if ( snOne.contains( ce[ i ] ) && snTwo.contains( ce[ i ] ) )
          {
-            y[i] = snOne.get( ce[i] ) + ( snTwo.get( ce[i] ) - snOne.get( ce[i] ) ) * sn2;
+            y[ i ] = snOne.get( ce[ i ] ) + ( snTwo.get( ce[ i ] ) - snOne.get( ce[ i ] ) ) * sn2;
          }
          //			else
          //			{
@@ -1429,14 +1454,14 @@ public class MasterXmlPane extends MasterDetailPane
 
    private Float[] getCE( Fragment[] fragments )
    {
-      final Fragment sn1 = fragments[0];
+      final Fragment sn1 = fragments[ 0 ];
 
-      final Fragment sn2 = fragments[1];
+      final Fragment sn2 = fragments[ 1 ];
 
-      if(sn1.keys().size() > sn2.keys().size())
-         return sn1.keys().toArray( new Float[]{} );
+      if ( sn1.keys().size() > sn2.keys().size() )
+         return sn1.keys().toArray( new Float[] {} );
       else
-         return sn2.keys().toArray( new Float[]{} );
+         return sn2.keys().toArray( new Float[] {} );
       //		final Fragment sn1 = fragments[0];
       //
       //		final Fragment sn2 = fragments[1];
@@ -1449,17 +1474,18 @@ public class MasterXmlPane extends MasterDetailPane
 
    private float getCf( Float ce, double value, float sn1 )
    {
-      if( value == 0d ) return 1f;
-      return normBasisMap.get( sn1 ).get( ce ) / (float) value;
+      if ( value == 0d )
+         return 1f;
+      return normBasisMap.get( sn1 ).get( ce ) / ( float ) value;
    }
 
-   private Fragment[] getSn1Sn2( HashMap<FAAnionRow, Fragment> fragmentMap, TreeItem< FAAnionRow > faAnionRow )
+   private Fragment[] getSn1Sn2( HashMap< FAAnionRow, Fragment > fragmentMap, TreeItem< FAAnionRow > faAnionRow )
    {
-      Optional<TreeItem<FAAnionRow>> sn1Item = faAnionRow.getChildren().stream().filter( c -> c.getValue().getSn1().getName().equals( "1" ) ).findAny();
-      Optional<TreeItem<FAAnionRow>> sn2Item = faAnionRow.getChildren().stream().filter( c -> c.getValue().getSn2().getName().equals( "1" ) ).findAny();
+      Optional< TreeItem< FAAnionRow > > sn1Item = faAnionRow.getChildren().stream().filter( c -> c.getValue().getSn1().getName().equals( "1" ) ).findAny();
+      Optional< TreeItem< FAAnionRow > > sn2Item = faAnionRow.getChildren().stream().filter( c -> c.getValue().getSn2().getName().equals( "1" ) ).findAny();
 
-      final Fragment sn1Fragment = fragmentMap.get(sn1Item.get().getValue());
-      final Fragment sn2Fragment = fragmentMap.get(sn2Item.get().getValue());
+      final Fragment sn1Fragment = fragmentMap.get( sn1Item.get().getValue() );
+      final Fragment sn2Fragment = fragmentMap.get( sn2Item.get().getValue() );
 
       return new Fragment[] { sn1Fragment, sn2Fragment };
    }
@@ -1468,12 +1494,12 @@ public class MasterXmlPane extends MasterDetailPane
    {
       FAAnion found = null;
 
-      Optional<FAAnion> faAnion = mFaAnionsList.stream().filter( c ->
+      Optional< FAAnion > faAnion = mFaAnionsList.stream().filter( c ->
               c.getMass().equals( mass ) && c.getFAIsomer().equals( isomer ) &&
                       c.getFACarbon().equals( carbon ) &&
                       c.getFADoubleBonds().equals( db ) ).findFirst();
 
-      if(faAnion.isPresent())
+      if ( faAnion.isPresent() )
          found = faAnion.get();
       else
          System.err.println( mass + ":carbon - " + carbon + ":db - " + db + " => Not found in FAAnion List!" );

@@ -14,66 +14,66 @@ import java.util.List;
  */
 public class Validation
 {
-	public static Double computeRsquared( HashMap< Float, Float > map, PolynomialFunction function )
-	{
-		double average = map.values().stream().mapToDouble(c -> c).average().getAsDouble();
-		double rSquared = 0d;
-		double fitted = 0d;
-		for( Float cq : map.keySet() )
-		{
-			double intensity = function.value( cq );
-			double target = map.get( cq );
+   public static Double computeRsquared( HashMap< Float, Float > map, PolynomialFunction function )
+   {
+      double average = map.values().stream().mapToDouble( c -> c ).average().getAsDouble();
+      double rSquared = 0d;
+      double fitted = 0d;
+      for ( Float cq : map.keySet() )
+      {
+         double intensity = function.value( cq );
+         double target = map.get( cq );
 
-			rSquared += FastMath.pow( target - intensity, 2d );
-			fitted += FastMath.pow( intensity - average, 2d );
-		}
+         rSquared += FastMath.pow( target - intensity, 2d );
+         fitted += FastMath.pow( intensity - average, 2d );
+      }
 
-		rSquared = 1 - (rSquared / fitted);
+      rSquared = 1 - ( rSquared / fitted );
 
-		return rSquared;
-	}
+      return rSquared;
+   }
 
-	public static Double computeRsquared( ArrayList< Float > sourceList, ArrayList< Float > targetList )
-	{
-		double rSquared = 0d;
-		double fitted = 0d;
-		double average = sourceList.stream().mapToDouble(c -> c).average().getAsDouble();
+   public static Double computeRsquared( ArrayList< Float > sourceList, ArrayList< Float > targetList )
+   {
+      double rSquared = 0d;
+      double fitted = 0d;
+      double average = sourceList.stream().mapToDouble( c -> c ).average().getAsDouble();
 
-		for( int i = 0; i < sourceList.size(); i++ )
-		{
-			rSquared += FastMath.pow(sourceList.get(i) - targetList.get(i), 2d);
-			fitted += FastMath.pow( sourceList.get(i) - average, 2d );
-		}
+      for ( int i = 0; i < sourceList.size(); i++ )
+      {
+         rSquared += FastMath.pow( sourceList.get( i ) - targetList.get( i ), 2d );
+         fitted += FastMath.pow( sourceList.get( i ) - average, 2d );
+      }
 
-		rSquared = 1 - (rSquared / fitted);
+      rSquared = 1 - ( rSquared / fitted );
 
-		return rSquared;
-	}
+      return rSquared;
+   }
 
-	public static Double computeRsquared( List< Float > sourceList, Float target )
-	{
-//		double rSquared = 0d;
-//		double fitted = 0d;
-//		double average = sourceList.stream().mapToDouble(c -> c).average().getAsDouble();
-//
-//		for( int i = 0; i < sourceList.size(); i++ )
-//		{
-//			rSquared += FastMath.pow(sourceList.get(i) - target, 2d);
-//			fitted += FastMath.pow( sourceList.get(i) - average, 2d );
-//		}
-//
-//		rSquared = 1 - (rSquared / fitted);
-//
-//		return rSquared;
-		double rSquared = 0d;
+   public static Double computeRsquared( List< Float > sourceList, Float target )
+   {
+      //		double rSquared = 0d;
+      //		double fitted = 0d;
+      //		double average = sourceList.stream().mapToDouble(c -> c).average().getAsDouble();
+      //
+      //		for( int i = 0; i < sourceList.size(); i++ )
+      //		{
+      //			rSquared += FastMath.pow(sourceList.get(i) - target, 2d);
+      //			fitted += FastMath.pow( sourceList.get(i) - average, 2d );
+      //		}
+      //
+      //		rSquared = 1 - (rSquared / fitted);
+      //
+      //		return rSquared;
+      double rSquared = 0d;
 
-		for( int i = 0; i < sourceList.size(); i++ )
-		{
-			rSquared += FastMath.pow( sourceList.get(i) - target, 2d );
-		}
+      for ( int i = 0; i < sourceList.size(); i++ )
+      {
+         rSquared += FastMath.pow( sourceList.get( i ) - target, 2d );
+      }
 
-		rSquared = 1.0 - FastMath.sqrt( rSquared / (sourceList.size() - 1.0) );
+      rSquared = 1.0 - FastMath.sqrt( rSquared / ( sourceList.size() - 1.0 ) );
 
-		return rSquared;
-	}
+      return rSquared;
+   }
 }

@@ -42,15 +42,15 @@ import java.util.TreeSet;
 @SuppressWarnings( "Duplicates" )
 public class PolynomialCalibrationTab extends CalibrationTab
 {
-   TreeMap<String, TreeMap<String, TreeMap< Double, Fragment > > > fragmentCollection;
+   TreeMap< String, TreeMap< String, TreeMap< Double, Fragment > > > fragmentCollection;
 
-   TreeMap<String, TreeMap<String, TreeMap< String, Fragment > > > calibrateFragmentCollection;
+   TreeMap< String, TreeMap< String, TreeMap< String, Fragment > > > calibrateFragmentCollection;
 
-   TreeMap<String, TreeSet< FAAnion > > selectedFAanionMap;
+   TreeMap< String, TreeSet< FAAnion > > selectedFAanionMap;
 
-   TreeMap<String, TreeMap< String, Fragment > > correctionFactor;
+   TreeMap< String, TreeMap< String, Fragment > > correctionFactor;
 
-   TreeMap<String, TreeMap<String, TreeMap< String, Fragment > > > correctedCollection;
+   TreeMap< String, TreeMap< String, TreeMap< String, Fragment > > > correctedCollection;
 
    final protected MasterXmlPane masterXmlPane;
 
@@ -69,19 +69,18 @@ public class PolynomialCalibrationTab extends CalibrationTab
       this.masterXmlPane = masterXmlPane;
 
       // Creating isomer column
-      TreeTableColumn<FAAnionRow, String> column2 = new TreeTableColumn<>("Isomer");
-      column2.setPrefWidth(60);
+      TreeTableColumn< FAAnionRow, String > column2 = new TreeTableColumn<>( "Isomer" );
+      column2.setPrefWidth( 60 );
 
       //Defining cell content
-      column2.setCellValueFactory( (param) ->
+      column2.setCellValueFactory( ( param ) ->
               new ReadOnlyStringWrapper( param.getValue().getValue().getIsomer() + "" ) );
 
-
       // Getting the initial isomer information from mFaAnionsList;
-      TreeSet<Float> isomers = new TreeSet<>();
+      TreeSet< Float > isomers = new TreeSet<>();
       mFaAnionsList.stream().forEach( c -> isomers.add( c.getFAIsomer() ) );
 
-      ObservableList<String> isomerValues = FXCollections.observableArrayList();
+      ObservableList< String > isomerValues = FXCollections.observableArrayList();
       isomers.forEach( c -> isomerValues.add( c + "" ) );
 
       column2.setCellFactory( ComboBoxTreeTableCell.forTreeTableColumn( isomerValues ) );
@@ -96,8 +95,10 @@ public class PolynomialCalibrationTab extends CalibrationTab
 
             String group = event.getRowValue().getParent().getValue().getName();
             //            System.out.println(selectedFAanionMap.get(group));
-            for(FAAnion faAnion : selectedFAanionMap.get(group)) {
-               if(item.getName().equals( faAnion.getName() )) {
+            for ( FAAnion faAnion : selectedFAanionMap.get( group ) )
+            {
+               if ( item.getName().equals( faAnion.getName() ) )
+               {
                   faAnion.setFAIsomer( isomer );
                }
             }
@@ -118,7 +119,7 @@ public class PolynomialCalibrationTab extends CalibrationTab
 
    @Override protected Node getDetailNode()
    {
-      Button resetButton = new Button("Reset");
+      Button resetButton = new Button( "Reset" );
       resetButton.setOnAction( new EventHandler< ActionEvent >()
       {
          @Override public void handle( ActionEvent event )
@@ -128,7 +129,7 @@ public class PolynomialCalibrationTab extends CalibrationTab
          }
       } );
 
-      Button newtButton = new Button("Compute correction factors.");
+      Button newtButton = new Button( "Compute correction factors." );
       newtButton.setOnAction( new EventHandler< ActionEvent >()
       {
          @Override public void handle( ActionEvent event )
@@ -148,37 +149,37 @@ public class PolynomialCalibrationTab extends CalibrationTab
 
       //      TitledPane validationPane = new TitledPane( "Validation", new VBox( 10, interpolateBox, interpolateHBox ) );
 
-      return new VBox( 10, preparationPane, correctionPane  );
+      return new VBox( 10, preparationPane, correctionPane );
    }
 
    @Override
    protected void removeCurrentTreeItem()
    {
       // remove
-      TreeItem<FAAnionRow> row = treeTableView.getSelectionModel().getSelectedItem();
-      if(!row.getValue().getMassString().equals( "" ))
+      TreeItem< FAAnionRow > row = treeTableView.getSelectionModel().getSelectedItem();
+      if ( !row.getValue().getMassString().equals( "" ) )
       {
-         final TreeItem<FAAnionRow> groupItem = row.getParent();
-         final TreeItem<FAAnionRow> clazzItem = groupItem.getParent();
+         final TreeItem< FAAnionRow > groupItem = row.getParent();
+         final TreeItem< FAAnionRow > clazzItem = groupItem.getParent();
 
          final String clazz = clazzItem.getValue().getName();
          final String group = groupItem.getValue().getName();
 
-         calibrateFragmentCollection.get(clazz).get(group).remove( row.getValue().getMass() );
+         calibrateFragmentCollection.get( clazz ).get( group ).remove( row.getValue().getMass() );
 
-         if(null != correctedCollection &&
+         if ( null != correctedCollection &&
                  correctedCollection.containsKey( clazz ) &&
-                 correctedCollection.get( clazz ).containsKey( group ))
-            correctedCollection.get(clazz).get(group).remove( row.getValue().getMass() );
+                 correctedCollection.get( clazz ).containsKey( group ) )
+            correctedCollection.get( clazz ).get( group ).remove( row.getValue().getMass() );
 
-         if( selectedFAanionMap.containsKey( group ) )
+         if ( selectedFAanionMap.containsKey( group ) )
             selectedFAanionMap.get( group ).removeIf( c -> c.getMass().equals( row.getValue().getMass() ) );
 
-         if( faanionHashMap.containsKey( group ) )
-            faanionHashMap.get(group).remove( row );
+         if ( faanionHashMap.containsKey( group ) )
+            faanionHashMap.get( group ).remove( row );
 
          groupItem.getChildren().remove( row );
-         if(groupItem.getChildren().size() == 0)
+         if ( groupItem.getChildren().size() == 0 )
          {
             clazzItem.getChildren().remove( groupItem );
             faanionHashMap.remove( group );
@@ -186,14 +187,15 @@ public class PolynomialCalibrationTab extends CalibrationTab
       }
    }
 
-   void makeFAAnionTree() {
+   void makeFAAnionTree()
+   {
       uncheckNode( root );
 
       root.getChildren().forEach( c -> c.getChildren().clear() );
       root.getChildren().clear();
       root.setExpanded( true );
 
-      if(!selectedFAanionMap.isEmpty())
+      if ( !selectedFAanionMap.isEmpty() )
          selectedFAanionMap.values().forEach( TreeSet::clear );
 
       selectedFAanionMap.clear();
@@ -202,31 +204,35 @@ public class PolynomialCalibrationTab extends CalibrationTab
 
       calibrateFragmentCollection = new TreeMap< String, TreeMap< String, TreeMap< String, Fragment > > >();
 
-      String[] classes = new String[] {"PA", "PC", "PCO", "PCO-FANL", "PCO-M-60", "PCO-PR", "PE", "PEO", "PG", "PI", "PS"};
+      String[] classes = new String[] { "PA", "PC", "PCO", "PCO-FANL", "PCO-M-60", "PCO-PR", "PE", "PEO", "PG", "PI",
+              "PS" };
 
-      for(final String clazz : classes)
+      for ( final String clazz : classes )
       {
-         calibrateFragmentCollection.put( clazz, new TreeMap<>(  ) );
+         calibrateFragmentCollection.put( clazz, new TreeMap<>() );
 
          //System.out.println(clazz);
-         final TreeItem<FAAnionRow> clazzNode = new TreeItem<>(new FAAnionRow( clazz ));
+         final TreeItem< FAAnionRow > clazzNode = new TreeItem<>( new FAAnionRow( clazz ) );
          clazzNode.setExpanded( true );
 
-         TreeSet<FAAnion> candidates = new TreeSet< FAAnion >(  );
+         TreeSet< FAAnion > candidates = new TreeSet< FAAnion >();
 
-         for(FAAnion faAnion : mFaAnionsList) {
+         for ( FAAnion faAnion : mFaAnionsList )
+         {
             candidates.add( faAnion );
 
             String group = faAnion.getKey();
 
-            calibrateFragmentCollection.get( clazz ).put( group, new TreeMap<>(  ) );
+            calibrateFragmentCollection.get( clazz ).put( group, new TreeMap<>() );
 
-            final TreeItem<FAAnionRow> groupNode = new TreeItem<>(new FAAnionRow( group, clazz ));
+            final TreeItem< FAAnionRow > groupNode = new TreeItem<>( new FAAnionRow( group, clazz ) );
             groupNode.setExpanded( true );
 
             // Consider SN1, SN2, SYM here
-            for(Pos pos : Pos.values()) {
-               if((clazz.startsWith( "PCO" ) || clazz.equals( "PEO" )) && !pos.equals( Pos.SN2 )) continue;
+            for ( Pos pos : Pos.values() )
+            {
+               if ( ( clazz.startsWith( "PCO" ) || clazz.equals( "PEO" ) ) && !pos.equals( Pos.SN2 ) )
+                  continue;
 
                Fragment fragment = new Fragment( faAnion.getMass() );
 
@@ -235,33 +241,36 @@ public class PolynomialCalibrationTab extends CalibrationTab
                fragment.setIsomer( faAnion.getFAIsomer() );
                fragment.setPosition( pos );
 
-               NewtonPolynomialFunction newt = getNewtonFunction( clazz, pos,false );
+               NewtonPolynomialFunction newt = getNewtonFunction( clazz, pos, false );
 
                double[] nce = newt.getXvals();
-               double[] point = new double[] { 10,  fragment.getCarbon(), fragment.getDoubleBond(), fragment.getIsomer() };
+               double[] point = new double[] { 10, fragment.getCarbon(), fragment.getDoubleBond(),
+                       fragment.getIsomer() };
 
-               for(double ce : nce)
+               for ( double ce : nce )
                {
-                  point[0] = ce;
-                  float a = (float) Math.pow( 2, newt.value( point ) );
+                  point[ 0 ] = ce;
+                  float a = ( float ) Math.pow( 2, newt.value( point ) );
                   // Limit the precision in order to avoid infinity value in CF
-                  if(a > 1e-35)
-                     fragment.put( (float) ce, a );
-                  else fragment.put( (float) ce, 0f );
+                  if ( a > 1e-35 )
+                     fragment.put( ( float ) ce, a );
+                  else
+                     fragment.put( ( float ) ce, 0f );
                }
 
                calibrateFragmentCollection.get( clazz ).get( group ).put( faAnion.getMass() + "-" + pos, fragment );
 
                FAAnionRow row = new FAAnionRow( faAnion.getMass() + "-" + pos, faAnion );
 
-               final TreeItem<FAAnionRow> mzNode = new TreeItem<>(row);
+               final TreeItem< FAAnionRow > mzNode = new TreeItem<>( row );
 
-               if( !faanionHashMap.containsKey( group ) )
+               if ( !faanionHashMap.containsKey( group ) )
                   faanionHashMap.put( group, new ArrayList<>() );
-               faanionHashMap.get(group).add( row );
+               faanionHashMap.get( group ).add( row );
 
                // Consider CO2 loss item
-               if( faAnion.getFADoubleBonds() > 2 && !clazz.startsWith( "PCO-" ) ){
+               if ( faAnion.getFADoubleBonds() > 2 && !clazz.startsWith( "PCO-" ) )
+               {
                   double co2 = Precision.round( faAnion.getMass() - Precision.round( 43.99, 2 ), 2 );
 
                   Double mz = co2;
@@ -269,21 +278,21 @@ public class PolynomialCalibrationTab extends CalibrationTab
                   co2fragment.setMz( mz );
                   co2fragment.setCo2loss( true );
 
-                  newt = getNewtonFunction( clazz, pos,true );
+                  newt = getNewtonFunction( clazz, pos, true );
 
                   nce = newt.getXvals();
-                  point = new double[] { 10,  fragment.getCarbon(), fragment.getDoubleBond(), fragment.getIsomer() };
+                  point = new double[] { 10, fragment.getCarbon(), fragment.getDoubleBond(), fragment.getIsomer() };
 
-                  for(double ce : nce)
+                  for ( double ce : nce )
                   {
-                     point[0] = ce;
+                     point[ 0 ] = ce;
                      float a;
-                     if(ce > 50)
+                     if ( ce > 50 )
                         a = 0f;
                      else
-                        a = (float) Math.pow( 2, newt.value( point ) );
+                        a = ( float ) Math.pow( 2, newt.value( point ) );
 
-                     co2fragment.put( (float) ce, a );
+                     co2fragment.put( ( float ) ce, a );
                   }
 
                   String co2name = co2 + "-" + pos;
@@ -292,7 +301,7 @@ public class PolynomialCalibrationTab extends CalibrationTab
 
                   calibrateFragmentCollection.get( clazz ).get( group ).put( co2name, co2fragment );
 
-                  mzNode.getValue().setCo2mass( new CO2(co2) );
+                  mzNode.getValue().setCo2mass( new CO2( co2 ) );
 
                   mzNode.getValue().getCo2MassProperty().addListener( new ChangeListener< Boolean >()
                   {
@@ -301,7 +310,7 @@ public class PolynomialCalibrationTab extends CalibrationTab
                         // Setup the seriesName
                         String seriesName = mzNode.getValue().getName() + ":" + pos + ":" + co2;
 
-                        if(newValue)
+                        if ( newValue )
                         {
                            createSeries( chart,
                                    co2fragment,
@@ -315,7 +324,8 @@ public class PolynomialCalibrationTab extends CalibrationTab
                   } );
                }
 
-               switch ( pos ) {
+               switch ( pos )
+               {
                   case SN1:
                      mzNode.getValue().getSn1().set( true );
                      break;
@@ -333,7 +343,7 @@ public class PolynomialCalibrationTab extends CalibrationTab
                   // Setup the seriesName
                   String seriesName = mzNode.getValue().getName() + ":" + pos + ":" + faAnion.getMass();
 
-                  if(newValue)
+                  if ( newValue )
                   {
                      createSeries( chart,
                              fragment,
@@ -346,13 +356,13 @@ public class PolynomialCalibrationTab extends CalibrationTab
 
                } );
 
-               groupNode.getChildren().add(mzNode);
+               groupNode.getChildren().add( mzNode );
             }
 
-            selectedFAanionMap.put(group, candidates);
+            selectedFAanionMap.put( group, candidates );
 
-            if(groupNode.getChildren().size() > 0)
-               clazzNode.getChildren().add(groupNode);
+            if ( groupNode.getChildren().size() > 0 )
+               clazzNode.getChildren().add( groupNode );
          }
 
          root.getChildren().add( clazzNode );
@@ -363,78 +373,85 @@ public class PolynomialCalibrationTab extends CalibrationTab
 
    @Override protected void handleProcessEvent( ProcessEvent event )
    {
-      if(event.getEventType() == ProcessEvent.MZ_CALIBRATION)
+      if ( event.getEventType() == ProcessEvent.MZ_CALIBRATION )
       {
-         System.out.println(event.getEventType());
+         System.out.println( event.getEventType() );
          event.consume();
       }
    }
 
-   public void mergeMakeTree(TreeMap<String, TreeMap<String, TreeMap< String, Fragment > > > collection)
+   public void mergeMakeTree( TreeMap< String, TreeMap< String, TreeMap< String, Fragment > > > collection )
    {
-      mergeMakeTree(collection, true);
+      mergeMakeTree( collection, true );
    }
 
-   public void mergeMakeTree(TreeMap<String, TreeMap<String, TreeMap< String, Fragment > > > collection, boolean correct)
+   public void mergeMakeTree( TreeMap< String, TreeMap< String, TreeMap< String, Fragment > > > collection, boolean correct )
    {
-      uncheckNode(root);
+      uncheckNode( root );
 
-      TreeMap<String, TreeMap<String, TreeMap< String, Fragment > > > calibratedCollection = new TreeMap<>(  );
+      TreeMap< String, TreeMap< String, TreeMap< String, Fragment > > > calibratedCollection = new TreeMap<>();
 
-      for(String clazz : collection.keySet())
+      for ( String clazz : collection.keySet() )
       {
-         calibratedCollection.put( clazz, new TreeMap<>(  ) );
+         calibratedCollection.put( clazz, new TreeMap<>() );
 
-         for(String group : collection.get(clazz).keySet())
+         for ( String group : collection.get( clazz ).keySet() )
          {
-            calibratedCollection.get(clazz).put( group, new TreeMap<>(  ));
+            calibratedCollection.get( clazz ).put( group, new TreeMap<>() );
 
             TreeMap< String, Fragment > treeMap = collection.get( clazz ).get( group );
 
             // Create calibrated collection
-            for( String item : treeMap.keySet() )
+            for ( String item : treeMap.keySet() )
             {
                Fragment originalFragment = treeMap.get( item );
                Fragment fragment = new Fragment( originalFragment );
 
                calibratedCollection.get( clazz ).get( group ).put( item, fragment );
 
-               for(Float ce : treeMap.get( item ).keys())
+               for ( Float ce : treeMap.get( item ).keys() )
                   calibratedCollection.get( clazz ).get( group ).get( item ).put( ce, treeMap.get( item ).get( ce ) );
             }
          }
       }
 
       // correction factor
-      if( correct )
+      if ( correct )
       {
          correctionFactor = correct( collection, calibratedCollection );
          correctedCollection = calibratedCollection;
-         System.out.println("Corrected.");
+         System.out.println( "Corrected." );
       }
 
       String msg;
-      if( correct ) {
+      if ( correct )
+      {
          msg = ".xPol";
          makeTree( root, calibratedCollection, msg, correctionFactor );
       }
    }
 
-   public static void setupNormBasis(String clazz, Fragment[] fragments) {
+   public static void setupNormBasis( String clazz, Fragment[] fragments )
+   {
       NewtonPolynomialFunction newt = new NewtonPolynomialFunction();
 
       double[] nce = newt.getXvals();
       double[] point = new double[] { 10, 16, 0, 0 };
 
-      for(Fragment fragment : fragments) {
-         if (clazz.equals( "PCO-FANL" ) || clazz.equals( "PCO-M-60" ) || clazz.equals( "PCO-PR" )) {
+      for ( Fragment fragment : fragments )
+      {
+         if ( clazz.equals( "PCO-FANL" ) || clazz.equals( "PCO-M-60" ) || clazz.equals( "PCO-PR" ) )
+         {
             // For the cases of PCO-sn2_FANL_poly, PCO-sn2_M-60_poly, PCO-sn2_PR_poly
             newt.loadParameters( "PCO/sn2_FA_poly.json" );
-         } else {
-            if(fragment.isCo2loss()) {
-               point[1] = 22.0;
-               point[2] = 6.0;
-               point[3] = 4.0;
+         }
+         else
+         {
+            if ( fragment.isCo2loss() )
+            {
+               point[ 1 ] = 22.0;
+               point[ 2 ] = 6.0;
+               point[ 3 ] = 4.0;
 
                switch ( fragment.getPosition() )
                {
@@ -448,7 +465,9 @@ public class PolynomialCalibrationTab extends CalibrationTab
                      newt.loadParameters( clazz + "/sym_CO2_poly.json" );
                      break;
                }
-            } else {
+            }
+            else
+            {
                switch ( fragment.getPosition() )
                {
                   case SN1:
@@ -463,37 +482,41 @@ public class PolynomialCalibrationTab extends CalibrationTab
                }
             }
          }
-         for(double ce : nce)
+         for ( double ce : nce )
          {
-            point[0] = ce;
+            point[ 0 ] = ce;
             float a;
-            if(fragment.isCo2loss() && ce > 50)
+            if ( fragment.isCo2loss() && ce > 50 )
                a = 0f;
             else
-               a = (float) Math.pow( 2, newt.value( point ) );
-//            System.out.println( Arrays.toString(point) + ":" + a );
-            fragment.put( (float) ce, a );
+               a = ( float ) Math.pow( 2, newt.value( point ) );
+            //            System.out.println( Arrays.toString(point) + ":" + a );
+            fragment.put( ( float ) ce, a );
          }
 
-         if( clazz.equals( "PI" ) && fragment.isCo2loss()){
-            System.out.println(clazz + ", " + fragment.getPosition());
-            for(double ce : nce)
+         if ( clazz.equals( "PI" ) && fragment.isCo2loss() )
+         {
+            System.out.println( clazz + ", " + fragment.getPosition() );
+            for ( double ce : nce )
             {
-               point[0] = ce;
-//               float a = (float) Math.pow( 2, newt.value( point ) );
-               System.out.println( Arrays.toString(point) + ":" + fragment.get((float) ce) );
-//               System.out.println(ce + "," + fragment.get((float) ce));
+               point[ 0 ] = ce;
+               //               float a = (float) Math.pow( 2, newt.value( point ) );
+               System.out.println( Arrays.toString( point ) + ":" + fragment.get( ( float ) ce ) );
+               //               System.out.println(ce + "," + fragment.get((float) ce));
             }
          }
       }
    }
 
-   private NewtonPolynomialFunction getNewtonFunction(String clazz, Pos pos, boolean co2loss) {
+   private NewtonPolynomialFunction getNewtonFunction( String clazz, Pos pos, boolean co2loss )
+   {
       NewtonPolynomialFunction newt = new NewtonPolynomialFunction();
 
-      if (clazz.equals( "PCO-FANL" ) || clazz.equals( "PCO-M-60" ) || clazz.equals( "PCO-PR" )) {
+      if ( clazz.equals( "PCO-FANL" ) || clazz.equals( "PCO-M-60" ) || clazz.equals( "PCO-PR" ) )
+      {
          // For the cases of PCO-sn2_FANL_poly, PCO-sn2_M-60_poly, PCO-sn2_PR_poly
-         switch ( clazz ) {
+         switch ( clazz )
+         {
             case "PCO-FANL":
                newt.loadParameters( "PCO/sn2_FANL_poly.json" );
                break;
@@ -504,11 +527,15 @@ public class PolynomialCalibrationTab extends CalibrationTab
                newt.loadParameters( "PCO/sn2_PR_poly.json" );
                break;
             default:
-               throw new IllegalArgumentException("Cannot find Newton Polynomial Parameter");
+               throw new IllegalArgumentException( "Cannot find Newton Polynomial Parameter" );
          }
-      } else {
-         if(co2loss) {
-            switch ( pos ) {
+      }
+      else
+      {
+         if ( co2loss )
+         {
+            switch ( pos )
+            {
                case SYM:
                   newt.loadParameters( clazz + "/sym_CO2_poly.json" );
                   break;
@@ -519,12 +546,13 @@ public class PolynomialCalibrationTab extends CalibrationTab
                   newt.loadParameters( clazz + "/sn2_CO2_poly.json" );
                   break;
                default:
-                  throw new IllegalArgumentException("Cannot find Newton Polynomial Parameter");
+                  throw new IllegalArgumentException( "Cannot find Newton Polynomial Parameter" );
             }
          }
          else
          {
-            switch ( pos ) {
+            switch ( pos )
+            {
                case SYM:
                   newt.loadParameters( clazz + "/sym_FA_poly.json" );
                   break;
@@ -535,7 +563,7 @@ public class PolynomialCalibrationTab extends CalibrationTab
                   newt.loadParameters( clazz + "/sn2_FA_poly.json" );
                   break;
                default:
-                  throw new IllegalArgumentException("Cannot find Newton Polynomial Parameter");
+                  throw new IllegalArgumentException( "Cannot find Newton Polynomial Parameter" );
             }
          }
       }
@@ -543,13 +571,13 @@ public class PolynomialCalibrationTab extends CalibrationTab
       return newt;
    }
 
-   public TreeMap<String, TreeMap< String, Fragment > > correct(
-           TreeMap<String, TreeMap<String, TreeMap< String, Fragment > > > originalCollection,
-           TreeMap<String, TreeMap<String, TreeMap< String, Fragment > > > calibratedCollection )
+   public TreeMap< String, TreeMap< String, Fragment > > correct(
+           TreeMap< String, TreeMap< String, TreeMap< String, Fragment > > > originalCollection,
+           TreeMap< String, TreeMap< String, TreeMap< String, Fragment > > > calibratedCollection )
    {
-      TreeMap<String, TreeMap< String, Fragment > > correctionFactorMap = new TreeMap<>(  );
+      TreeMap< String, TreeMap< String, Fragment > > correctionFactorMap = new TreeMap<>();
 
-      for(String clazz : originalCollection.keySet())
+      for ( String clazz : originalCollection.keySet() )
       {
          // Normalization basis fragment
          final Fragment symNormBasis;
@@ -566,50 +594,62 @@ public class PolynomialCalibrationTab extends CalibrationTab
 
          symCO2NormBasis = new Fragment( 327.23d, Pos.SYM, true );
          sn1CO2NormBasis = new Fragment( 327.23d, Pos.SN1, true );
-         sn2CO2NormBasis = new Fragment( 327.23d, Pos.SN2, true);
+         sn2CO2NormBasis = new Fragment( 327.23d, Pos.SN2, true );
 
-         if(clazz.startsWith( "PCO" ) || clazz.equals( "PEO" ))
-            setupNormBasis(clazz, new Fragment[] { sn2NormBasis, sn2CO2NormBasis});
+         if ( clazz.startsWith( "PCO" ) || clazz.equals( "PEO" ) )
+            setupNormBasis( clazz, new Fragment[] { sn2NormBasis, sn2CO2NormBasis } );
          else
-            setupNormBasis(clazz, new Fragment[] { symNormBasis, sn1NormBasis, sn2NormBasis, symCO2NormBasis, sn1CO2NormBasis, sn2CO2NormBasis});
+            setupNormBasis( clazz, new Fragment[] { symNormBasis, sn1NormBasis, sn2NormBasis, symCO2NormBasis,
+                    sn1CO2NormBasis, sn2CO2NormBasis } );
 
          for ( String group : originalCollection.get( clazz ).keySet() )
          {
             TreeMap< String, Fragment > treeMap = originalCollection.get( clazz ).get( group );
-            correctionFactorMap.put(group, new TreeMap<>(  ));
+            correctionFactorMap.put( group, new TreeMap<>() );
 
-            for( String item : treeMap.keySet() )
+            for ( String item : treeMap.keySet() )
             {
-               correctionFactorMap.get(group).put(item, new Fragment( treeMap.get( item ) ));
+               correctionFactorMap.get( group ).put( item, new Fragment( treeMap.get( item ) ) );
 
-               Fragment correctedFragment = calibratedCollection.get(clazz).get(group).get( item );
+               Fragment correctedFragment = calibratedCollection.get( clazz ).get( group ).get( item );
 
-               if(correctedFragment.getPosition() != null) {
+               if ( correctedFragment.getPosition() != null )
+               {
                   Fragment normBasis = null;
-                  if(correctedFragment.isCo2loss()) {
-                     switch ( correctedFragment.getPosition() ) {
-                        case SYM: normBasis = symCO2NormBasis;
+                  if ( correctedFragment.isCo2loss() )
+                  {
+                     switch ( correctedFragment.getPosition() )
+                     {
+                        case SYM:
+                           normBasis = symCO2NormBasis;
                            break;
-                        case SN1: normBasis = sn1CO2NormBasis;
+                        case SN1:
+                           normBasis = sn1CO2NormBasis;
                            break;
-                        case SN2: normBasis = sn2CO2NormBasis;
+                        case SN2:
+                           normBasis = sn2CO2NormBasis;
                            break;
                      }
-                  } else {
-                     switch ( correctedFragment.getPosition() ) {
-                        case SYM: normBasis = symNormBasis;
+                  }
+                  else
+                  {
+                     switch ( correctedFragment.getPosition() )
+                     {
+                        case SYM:
+                           normBasis = symNormBasis;
                            break;
-                        case SN1: normBasis = sn1NormBasis;
+                        case SN1:
+                           normBasis = sn1NormBasis;
                            break;
-                        case SN2: normBasis = sn2NormBasis;
+                        case SN2:
+                           normBasis = sn2NormBasis;
                            break;
                      }
                   }
 
-
-                  for(Float ce : normBasis.keys())
+                  for ( Float ce : normBasis.keys() )
                   {
-                     if(correctedFragment.get( ce ) != 0)
+                     if ( correctedFragment.get( ce ) != 0 )
                      {
                         // Correction factor calculation
                         float factor = normBasis.get( ce ) / correctedFragment.get( ce );
@@ -618,7 +658,7 @@ public class PolynomialCalibrationTab extends CalibrationTab
                         correctionFactorMap.get( group ).get( item ).put( ce, factor );
 
                         // Apply the factor to the actual experimental data
-//                        correctedFragment.put( ce, correctedFragment.get( ce ) * factor);
+                        //                        correctedFragment.put( ce, correctedFragment.get( ce ) * factor);
 
                         // Store correction factor in Fragment
                         correctedFragment.putCF( ce, factor );
@@ -634,19 +674,19 @@ public class PolynomialCalibrationTab extends CalibrationTab
          }
       }
 
-      Event.fireEvent( masterXmlPane, new ProcessEvent( ProcessEvent.UPDATE_XML_MASTER, calibratedCollection, mFaAnionsList, 4 ));
+      Event.fireEvent( masterXmlPane, new ProcessEvent( ProcessEvent.UPDATE_XML_MASTER, calibratedCollection, mFaAnionsList, 4 ) );
 
       return correctionFactorMap;
    }
 
-   public void makeTree( TreeItem<FAAnionRow> rootNode,
-           TreeMap<String, TreeMap<String, TreeMap< String, Fragment > > > calibratedCollection,
+   public void makeTree( TreeItem< FAAnionRow > rootNode,
+           TreeMap< String, TreeMap< String, TreeMap< String, Fragment > > > calibratedCollection,
            String postFix,
-           TreeMap<String, TreeMap< String, Fragment > > correctionFactorMap)
+           TreeMap< String, TreeMap< String, Fragment > > correctionFactorMap )
    {
-      HashMap<String, Float> maxFitMap = new HashMap<>();
+      HashMap< String, Float > maxFitMap = new HashMap<>();
 
-      for(TreeItem<FAAnionRow> classNode : rootNode.getChildren())
+      for ( TreeItem< FAAnionRow > classNode : rootNode.getChildren() )
       {
          String clazz = classNode.getValue().getName();
 
@@ -665,21 +705,22 @@ public class PolynomialCalibrationTab extends CalibrationTab
 
          symCO2NormBasis = new Fragment( 327.23d, Pos.SYM, true );
          sn1CO2NormBasis = new Fragment( 327.23d, Pos.SN1, true );
-         sn2CO2NormBasis = new Fragment( 327.23d, Pos.SN2, true);
+         sn2CO2NormBasis = new Fragment( 327.23d, Pos.SN2, true );
 
-         if(clazz.startsWith( "PCO" ) || clazz.equals( "PEO" ))
-            setupNormBasis(clazz, new Fragment[] { sn2NormBasis, sn2CO2NormBasis});
+         if ( clazz.startsWith( "PCO" ) || clazz.equals( "PEO" ) )
+            setupNormBasis( clazz, new Fragment[] { sn2NormBasis, sn2CO2NormBasis } );
          else
-            setupNormBasis(clazz, new Fragment[] { symNormBasis, sn1NormBasis, sn2NormBasis, symCO2NormBasis, sn1CO2NormBasis, sn2CO2NormBasis});
+            setupNormBasis( clazz, new Fragment[] { symNormBasis, sn1NormBasis, sn2NormBasis, symCO2NormBasis,
+                    sn1CO2NormBasis, sn2CO2NormBasis } );
 
-         for(TreeItem<FAAnionRow> groupNode : classNode.getChildren())
+         for ( TreeItem< FAAnionRow > groupNode : classNode.getChildren() )
          {
             String group = groupNode.getValue().getName();
 
-            for(TreeItem<FAAnionRow> mzNode : groupNode.getChildren())
+            for ( TreeItem< FAAnionRow > mzNode : groupNode.getChildren() )
             {
-               Float fitMaxInt = calibratedCollection.get( clazz ).get( group ).get(mzNode.getValue().getName()).getMaxMz().floatValue();
-               maxFitMap.put( mzNode.getValue().getName(), fitMaxInt);
+               Float fitMaxInt = calibratedCollection.get( clazz ).get( group ).get( mzNode.getValue().getName() ).getMaxMz().floatValue();
+               maxFitMap.put( mzNode.getValue().getName(), fitMaxInt );
 
                mzNode.getValue().newTitle( mzNode.getValue().getTitle() );
 
@@ -696,12 +737,16 @@ public class PolynomialCalibrationTab extends CalibrationTab
 
                      Fragment normBasis = null;
 
-                     switch ( actualFragment.getPosition() ) {
-                        case SYM: normBasis = symNormBasis;
+                     switch ( actualFragment.getPosition() )
+                     {
+                        case SYM:
+                           normBasis = symNormBasis;
                            break;
-                        case SN1: normBasis = sn1NormBasis;
+                        case SN1:
+                           normBasis = sn1NormBasis;
                            break;
-                        case SN2: normBasis = sn2NormBasis;
+                        case SN2:
+                           normBasis = sn2NormBasis;
                            break;
                      }
 
@@ -710,12 +755,12 @@ public class PolynomialCalibrationTab extends CalibrationTab
                              seriesName + ".Norm" );
 
                      updateChartsWithMzFactor( newValue, chart, correctionFactorChart, errorChart,
-                             treeMap, maxFitMap, correctionFactorMap.get(group),
+                             treeMap, maxFitMap, correctionFactorMap.get( group ),
                              actualFragment.getMaxMz(), seriesName, postFix );
                   }
                } );
 
-               if( mzNode.getValue().getCo2MassProperty() instanceof CheckBoxNamedBoolean )
+               if ( mzNode.getValue().getCo2MassProperty() instanceof CheckBoxNamedBoolean )
                {
                   mzNode.getValue().newCo2Mass( mzNode.getValue().getCo2MassProperty() );
 
@@ -724,22 +769,26 @@ public class PolynomialCalibrationTab extends CalibrationTab
 
                   String seriesName = mzNode.getValue().getCo2name();
 
-                  maxFitMap.put( seriesName, treeMap.get(seriesName).getMaxMz().floatValue() );
+                  maxFitMap.put( seriesName, treeMap.get( seriesName ).getMaxMz().floatValue() );
 
                   mzNode.getValue().getCo2MassProperty().addListener( new ChangeListener< Boolean >()
                   {
                      @Override public void changed( ObservableValue< ? extends Boolean > observable, Boolean oldValue, Boolean newValue )
                      {
-                        Fragment actualFragment = calibrateFragmentCollection.get(clazz).get(group).get( seriesName );
+                        Fragment actualFragment = calibrateFragmentCollection.get( clazz ).get( group ).get( seriesName );
 
                         Fragment normBasis = null;
 
-                        switch ( actualFragment.getPosition() ) {
-                           case SYM: normBasis = symCO2NormBasis;
+                        switch ( actualFragment.getPosition() )
+                        {
+                           case SYM:
+                              normBasis = symCO2NormBasis;
                               break;
-                           case SN1: normBasis = sn1CO2NormBasis;
+                           case SN1:
+                              normBasis = sn1CO2NormBasis;
                               break;
-                           case SN2: normBasis = sn2CO2NormBasis;
+                           case SN2:
+                              normBasis = sn2CO2NormBasis;
                               break;
                         }
 
@@ -748,7 +797,7 @@ public class PolynomialCalibrationTab extends CalibrationTab
                                 seriesName + ".Norm" );
 
                         updateChartsWithMzFactor( newValue, chart, correctionFactorChart, errorChart,
-                                treeMap, maxFitMap, correctionFactorMap.get(group),
+                                treeMap, maxFitMap, correctionFactorMap.get( group ),
                                 actualFragment.getMaxMz(), seriesName, postFix );
                      }
                   } );
@@ -763,13 +812,13 @@ public class PolynomialCalibrationTab extends CalibrationTab
 
    protected void clearChart()
    {
-      if(faanionHashMap != null)
+      if ( faanionHashMap != null )
       {
-         for(String group : faanionHashMap.keySet())
+         for ( String group : faanionHashMap.keySet() )
          {
-            for(FAAnionRow row : faanionHashMap.get(group))
+            for ( FAAnionRow row : faanionHashMap.get( group ) )
             {
-               if(row.getCo2MassProperty() != null)
+               if ( row.getCo2MassProperty() != null )
                   row.getCo2MassProperty().set( false );
             }
          }

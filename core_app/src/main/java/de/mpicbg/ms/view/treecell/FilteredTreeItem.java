@@ -13,31 +13,33 @@ import java.util.function.Predicate;
  * Organization: MPI-CBG Dresden
  * Date: November 2016
  */
-public class FilteredTreeItem<T> extends TreeItem<T>
+public class FilteredTreeItem< T > extends TreeItem< T >
 {
-	final private ObservableList<FilteredTreeItem<T>> sourceList;
-	private FilteredList<FilteredTreeItem<T>> filteredList;
+   final private ObservableList< FilteredTreeItem< T > > sourceList;
+   private FilteredList< FilteredTreeItem< T > > filteredList;
 
-	public FilteredTreeItem(T value) {
-		super(value);
-		this.sourceList = FXCollections.observableArrayList();
-		this.filteredList = new FilteredList<>(this.sourceList);
+   public FilteredTreeItem( T value )
+   {
+      super( value );
+      this.sourceList = FXCollections.observableArrayList();
+      this.filteredList = new FilteredList<>( this.sourceList );
 
-		this.filteredList.addListener( new ListChangeListener< TreeItem< T > >()
-		{
-			@Override public void onChanged( Change< ? extends TreeItem< T > > c )
-			{
-				getChildren().setAll( filteredList );
-			}
-		} );
-	}
+      this.filteredList.addListener( new ListChangeListener< TreeItem< T > >()
+      {
+         @Override public void onChanged( Change< ? extends TreeItem< T > > c )
+         {
+            getChildren().setAll( filteredList );
+         }
+      } );
+   }
 
-	public final void setPredicate(Predicate<? super TreeItem<T>> predicate) {
-		filteredList.setPredicate(predicate);
-	}
+   public final void setPredicate( Predicate< ? super TreeItem< T > > predicate )
+   {
+      filteredList.setPredicate( predicate );
+   }
 
-	public final void add(FilteredTreeItem<T> item)
-	{
-		sourceList.add( item );
-	}
+   public final void add( FilteredTreeItem< T > item )
+   {
+      sourceList.add( item );
+   }
 }

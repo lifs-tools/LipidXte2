@@ -5,5 +5,5 @@ package de.mpicbg.ms.model;
  */
 public enum AliphaticMoiety
 {
-	Diacyl, Ether, Monoacyl
+   Diacyl, Ether, Monoacyl
 }

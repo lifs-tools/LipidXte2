@@ -7,13 +7,13 @@ package de.mpicbg.ms.model.data;
  */
 public class CO extends BA
 {
-	public CO( double mass )
-	{
-		super( mass, 0, 0);
-	}
+   public CO( double mass )
+   {
+      super( mass, 0, 0 );
+   }
 
-	public boolean validCO()
-	{
-		return null != samples;
-	}
+   public boolean validCO()
+   {
+      return null != samples;
+   }
 }

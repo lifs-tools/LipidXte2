@@ -7,28 +7,28 @@ import de.mpicbg.ms.model.Fragment;
  */
 public class CO2
 {
-	Double mass;
-	Integer CO2Carbon;
-	Integer CO2DoubleBonds;
-	Fragment fragment;
+   Double mass;
+   Integer CO2Carbon;
+   Integer CO2DoubleBonds;
+   Fragment fragment;
 
-	public CO2()
-	{
+   public CO2()
+   {
 
-	}
+   }
 
-	public CO2(double mass)
-	{
-		this.mass = mass;
-	}
+   public CO2( double mass )
+   {
+      this.mass = mass;
+   }
 
-	public Double getMass()
-	{
-		return mass;
-	}
+   public Double getMass()
+   {
+      return mass;
+   }
 
-	@Override public String toString()
-	{
-		return mass.toString();
-	}
+   @Override public String toString()
+   {
+      return mass.toString();
+   }
 }

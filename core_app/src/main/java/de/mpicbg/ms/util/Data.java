@@ -24,167 +24,166 @@ import java.util.stream.Collectors;
  */
 public class Data
 {
-	List< String > headers;
-	List< CSVRecord > records = null;
+   List< String > headers;
+   List< CSVRecord > records = null;
 
-	public Data( InputStream inputStream )
-	{
-		try
-		{
-			Reader in = new InputStreamReader( inputStream );
-			records = CSVFormat.EXCEL.parse( in ).getRecords();
-		}
-		catch ( FileNotFoundException e )
-		{
-			e.printStackTrace();
-		}
-		catch ( IOException e )
-		{
-			e.printStackTrace();
-		}
+   public Data( InputStream inputStream )
+   {
+      try
+      {
+         Reader in = new InputStreamReader( inputStream );
+         records = CSVFormat.EXCEL.parse( in ).getRecords();
+      }
+      catch ( FileNotFoundException e )
+      {
+         e.printStackTrace();
+      }
+      catch ( IOException e )
+      {
+         e.printStackTrace();
+      }
 
-		for ( CSVRecord record : records )
-		{
-			// Get the column headers
-			for ( int i = 0; i < record.size(); i++ )
-			{
-				if ( i == 0 )
-					headers = new ArrayList<>( record.size() );
+      for ( CSVRecord record : records )
+      {
+         // Get the column headers
+         for ( int i = 0; i < record.size(); i++ )
+         {
+            if ( i == 0 )
+               headers = new ArrayList<>( record.size() );
 
-				headers.add( record.get( i ) );
-				//System.out.println( headers[i] );
-			}
-			break;
-			//			String colEnergy = record.get(6);
-			//			System.out.println(colEnergy);
-		}
-	}
+            headers.add( record.get( i ) );
+            //System.out.println( headers[i] );
+         }
+         break;
+         //			String colEnergy = record.get(6);
+         //			System.out.println(colEnergy);
+      }
+   }
 
-	public Data( String fileName )
-	{
-		try
-		{
-			Reader in = new FileReader( fileName );
-			records = CSVFormat.EXCEL.parse( in ).getRecords();
-		}
-		catch ( FileNotFoundException e )
-		{
-			e.printStackTrace();
-		}
-		catch ( IOException e )
-		{
-			e.printStackTrace();
-		}
+   public Data( String fileName )
+   {
+      try
+      {
+         Reader in = new FileReader( fileName );
+         records = CSVFormat.EXCEL.parse( in ).getRecords();
+      }
+      catch ( FileNotFoundException e )
+      {
+         e.printStackTrace();
+      }
+      catch ( IOException e )
+      {
+         e.printStackTrace();
+      }
 
-		for ( CSVRecord record : records )
-		{
-			// Get the column headers
-			for ( int i = 0; i < record.size(); i++ )
-			{
-				if ( i == 0 )
-					headers = new ArrayList<>( record.size() );
+      for ( CSVRecord record : records )
+      {
+         // Get the column headers
+         for ( int i = 0; i < record.size(); i++ )
+         {
+            if ( i == 0 )
+               headers = new ArrayList<>( record.size() );
 
-				headers.add( record.get( i ) );
-				//System.out.println( headers[i] );
-			}
-			break;
-			//			String colEnergy = record.get(6);
-			//			System.out.println(colEnergy);
-		}
-	}
+            headers.add( record.get( i ) );
+            //System.out.println( headers[i] );
+         }
+         break;
+         //			String colEnergy = record.get(6);
+         //			System.out.println(colEnergy);
+      }
+   }
 
-	public Data( File file )
-	{
-		final InputStream is;
-		try
-		{
-			is = new FileInputStream( file );
-			final Reader in = new InputStreamReader( is );
-			CSVParser parser = CSVFormat.EXCEL.withHeader().parse( in );
+   public Data( File file )
+   {
+      final InputStream is;
+      try
+      {
+         is = new FileInputStream( file );
+         final Reader in = new InputStreamReader( is );
+         CSVParser parser = CSVFormat.EXCEL.withHeader().parse( in );
 
-			records = parser.getRecords();
-			headers = parser.getHeaderMap().keySet().stream().collect( Collectors.toList() );
-		}
-		catch ( FileNotFoundException e )
-		{
-			e.printStackTrace();
-		}
-		catch ( IOException e )
-		{
-			e.printStackTrace();
-		}
-	}
+         records = parser.getRecords();
+         headers = parser.getHeaderMap().keySet().stream().collect( Collectors.toList() );
+      }
+      catch ( FileNotFoundException e )
+      {
+         e.printStackTrace();
+      }
+      catch ( IOException e )
+      {
+         e.printStackTrace();
+      }
+   }
 
-	public static Set<String> getHeaders( File file )
-	{
-		final InputStream is;
-		try
-		{
-			is = new FileInputStream( file );
-			final Reader in = new InputStreamReader( is );
-			CSVParser parser = CSVFormat.EXCEL.withHeader().parse( in );
-			return parser.getHeaderMap().keySet();
-		}
-		catch ( FileNotFoundException e )
-		{
-			e.printStackTrace();
-		}
-		catch ( IOException e )
-		{
-			e.printStackTrace();
-		}
+   public static Set< String > getHeaders( File file )
+   {
+      final InputStream is;
+      try
+      {
+         is = new FileInputStream( file );
+         final Reader in = new InputStreamReader( is );
+         CSVParser parser = CSVFormat.EXCEL.withHeader().parse( in );
+         return parser.getHeaderMap().keySet();
+      }
+      catch ( FileNotFoundException e )
+      {
+         e.printStackTrace();
+      }
+      catch ( IOException e )
+      {
+         e.printStackTrace();
+      }
 
-		return null;
-	}
+      return null;
+   }
 
+   public List< String > getHeaders()
+   {
+      return headers;
+   }
 
-	public List< String > getHeaders()
-	{
-		return headers;
-	}
+   public static String getFirstLine( File file )
+   {
+      String ret = "";
+      try
+      {
+         final BufferedReader in = new BufferedReader( new FileReader( file ) );
 
-	public static String getFirstLine( File file )
-	{
-		String ret = "";
-		try
-		{
-			final BufferedReader in = new BufferedReader( new FileReader( file ) );
+         ret = in.readLine();
 
-			ret = in.readLine();
+         in.close();
+      }
+      catch ( FileNotFoundException e )
+      {
+         e.printStackTrace();
+      }
+      catch ( IOException e )
+      {
+         e.printStackTrace();
+      }
 
-			in.close();
-		}
-		catch ( FileNotFoundException e )
-		{
-			e.printStackTrace();
-		}
-		catch ( IOException e )
-		{
-			e.printStackTrace();
-		}
+      return ret;
+   }
 
-		return ret;
-	}
+   public ArrayList< Double > getValues( int i )
+   {
+      ArrayList< Double > result = new ArrayList<>();
 
-	public ArrayList< Double > getValues( int i )
-	{
-		ArrayList< Double > result = new ArrayList<>();
+      for ( CSVRecord record : records )
+      {
+         if ( record.getRecordNumber() == 1 )
+            continue;
+         if ( StringUtils.isEmpty( record.get( i ) ) )
+            result.add( 0d );
+         else
+            result.add( Double.parseDouble( record.get( i ) ) );
+      }
 
-		for ( CSVRecord record : records )
-		{
-			if ( record.getRecordNumber() == 1 )
-				continue;
-			if ( StringUtils.isEmpty( record.get( i ) ) )
-				result.add( 0d );
-			else
-				result.add( Double.parseDouble( record.get( i ) ) );
-		}
+      return result;
+   }
 
-		return result;
-	}
-
-	public List< CSVRecord > getRecords()
-	{
-		return records;
-	}
+   public List< CSVRecord > getRecords()
+   {
+      return records;
+   }
 }

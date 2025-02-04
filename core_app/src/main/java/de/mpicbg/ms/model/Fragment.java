@@ -16,297 +16,304 @@ import java.util.TreeMap;
  */
 public class Fragment
 {
-	Double mz;
-	TreeMap<Float, Float> map;
-	TreeMap<Float, Float> cfMap;
+   Double mz;
+   TreeMap< Float, Float > map;
+   TreeMap< Float, Float > cfMap;
 
-	Float isomer;
+   Float isomer;
    Integer carbon;
    Integer doubleBond;
-	Integer faIndex;
+   Integer faIndex;
 
    Pos position;
    Boolean co2loss = false;
 
-	public Fragment()
-	{
-		this.map = new TreeMap<>();
-	}
+   public Fragment()
+   {
+      this.map = new TreeMap<>();
+   }
 
-	public Fragment(Fragment fragment) {
-	   this();
+   public Fragment( Fragment fragment )
+   {
+      this();
 
-	   this.mz = fragment.getMz();
-	   this.isomer = fragment.getIsomer();
-	   this.carbon = fragment.getCarbon();
-	   this.doubleBond = fragment.getDoubleBond();
+      this.mz = fragment.getMz();
+      this.isomer = fragment.getIsomer();
+      this.carbon = fragment.getCarbon();
+      this.doubleBond = fragment.getDoubleBond();
       this.position = fragment.getPosition();
       this.co2loss = fragment.isCo2loss();
 
-      for(Float ce : fragment.keys() )
+      for ( Float ce : fragment.keys() )
          put( ce, fragment.get( ce ) );
    }
 
-	public Fragment(Double mz, List<Float> collisionList)
-	{
-		this(mz);
-		for(Float f : collisionList)
-			map.put( f, 0f );
-	}
-
-	public Fragment(Double mz)
-	{
-		this();
-		this.mz = mz;
-	}
-
-   public Fragment(Double mz, Pos position)
+   public Fragment( Double mz, List< Float > collisionList )
    {
-      this(mz);
+      this( mz );
+      for ( Float f : collisionList )
+         map.put( f, 0f );
+   }
+
+   public Fragment( Double mz )
+   {
+      this();
+      this.mz = mz;
+   }
+
+   public Fragment( Double mz, Pos position )
+   {
+      this( mz );
       this.position = position;
    }
 
-   public Fragment(Double mz, Pos position, boolean isCo2Loss)
+   public Fragment( Double mz, Pos position, boolean isCo2Loss )
    {
-      this(mz, position);
+      this( mz, position );
       this.co2loss = isCo2Loss;
    }
 
-	public void put(Float collisionEnergy, Float intensity)
-	{
-		map.put(collisionEnergy, intensity);
-	}
+   public void put( Float collisionEnergy, Float intensity )
+   {
+      map.put( collisionEnergy, intensity );
+   }
 
-	public Float get(Float collisionEnergy)
-	{
-		return map.get(collisionEnergy);
-	}
+   public Float get( Float collisionEnergy )
+   {
+      return map.get( collisionEnergy );
+   }
 
-	public void putCF( Float collisionEnergy, Float correctionFactor )
-	{
-		if(null == cfMap )
+   public void putCF( Float collisionEnergy, Float correctionFactor )
+   {
+      if ( null == cfMap )
          cfMap = new TreeMap<>();
       cfMap.put( collisionEnergy, correctionFactor );
-	}
+   }
 
-	public Float getCF(Float collisionEnergy)
-	{
-		if(null == cfMap || !cfMap.containsKey( collisionEnergy ))
-			return 0f;
-		else
-			return cfMap.get( collisionEnergy );
-	}
+   public Float getCF( Float collisionEnergy )
+   {
+      if ( null == cfMap || !cfMap.containsKey( collisionEnergy ) )
+         return 0f;
+      else
+         return cfMap.get( collisionEnergy );
+   }
 
-	public void addIntensity(Float collisionEnergy, Float intensity)
-	{
-		//			System.out.println(mz + ":" + collisionEnergy + "-" + intensity);
-		if(!map.containsKey( collisionEnergy )) map.put( collisionEnergy, 0f );
-		map.put( collisionEnergy, get( collisionEnergy ) + intensity );
-	}
+   public void addIntensity( Float collisionEnergy, Float intensity )
+   {
+      //			System.out.println(mz + ":" + collisionEnergy + "-" + intensity);
+      if ( !map.containsKey( collisionEnergy ) )
+         map.put( collisionEnergy, 0f );
+      map.put( collisionEnergy, get( collisionEnergy ) + intensity );
+   }
 
-	public Double getTotalIntensity()
-	{
-		return map.values().stream().mapToDouble( c -> c.doubleValue() ).sum();
-	}
+   public Double getTotalIntensity()
+   {
+      return map.values().stream().mapToDouble( c -> c.doubleValue() ).sum();
+   }
 
-	public Double getMaxMz() {
-		return map.values().stream().mapToDouble( c -> c.doubleValue() ).max().getAsDouble();
-	}
-	public Set<Float> keys()
-	{
-		return map.keySet();
-	}
-	public Collection<Float> values()
-	{
-		return map.values();
-	}
-	public void clear()
-	{
-		map.clear();
-	}
+   public Double getMaxMz()
+   {
+      return map.values().stream().mapToDouble( c -> c.doubleValue() ).max().getAsDouble();
+   }
 
-	public Double getMz()
-	{
-		return mz;
-	}
+   public Set< Float > keys()
+   {
+      return map.keySet();
+   }
 
-	public void setMz( Double mz )
-	{
-		this.mz = mz;
-	}
+   public Collection< Float > values()
+   {
+      return map.values();
+   }
 
-	public boolean contains(Float ce)
-	{
-		return map.containsKey( ce );
-	}
+   public void clear()
+   {
+      map.clear();
+   }
 
-	public void remove(Float ce)
-	{
-		map.remove( ce );
-	}
+   public Double getMz()
+   {
+      return mz;
+   }
 
-	public void extend()
-	{
-		Float[] ce = keys().toArray(new Float[]{});
-		Float[] rInt = values().toArray( new Float[] { } );
+   public void setMz( Double mz )
+   {
+      this.mz = mz;
+   }
 
-		// Extrapolate the values when the last intensity is above 5% by using exponential fit
-		int noZeroIndex = 0;
-		for(int idx = 1; idx <= rInt.length; idx++)
-		{
-			if(rInt[rInt.length - idx] > 0)
-			{
-				noZeroIndex = idx;
-				break;
-			}
-		}
+   public boolean contains( Float ce )
+   {
+      return map.containsKey( ce );
+   }
 
-		Float rightIntensity = (noZeroIndex == 0) ? 0f : rInt[rInt.length - noZeroIndex];
-		//System.out.println(getMz() + " : " + rightIntensity);
+   public void remove( Float ce )
+   {
+      map.remove( ce );
+   }
 
-		if(rightIntensity > 5f)
-		{
-			final WeightedObservedPoints obs = new WeightedObservedPoints();
+   public void extend()
+   {
+      Float[] ce = keys().toArray( new Float[] {} );
+      Float[] rInt = values().toArray( new Float[] {} );
 
-			for(int idx = noZeroIndex + 5; idx >= noZeroIndex; idx--)
-			{
-				obs.add( ce[rInt.length - idx], rInt[rInt.length - idx] );
-			}
+      // Extrapolate the values when the last intensity is above 5% by using exponential fit
+      int noZeroIndex = 0;
+      for ( int idx = 1; idx <= rInt.length; idx++ )
+      {
+         if ( rInt[ rInt.length - idx ] > 0 )
+         {
+            noZeroIndex = idx;
+            break;
+         }
+      }
 
-			Float lastCE = ce[rInt.length - noZeroIndex];
-			Float unit = ce[rInt.length - noZeroIndex] - ce[rInt.length - noZeroIndex - 1];
-			ExponentialFitter right = new ExponentialFitter( obs.toList() );
+      Float rightIntensity = ( noZeroIndex == 0 ) ? 0f : rInt[ rInt.length - noZeroIndex ];
+      //System.out.println(getMz() + " : " + rightIntensity);
 
-			for(int idx = 1; idx <= 5; idx++)
-			{
-				Float newCE = lastCE + unit * idx;
-				map.put( newCE, (float) right.value( newCE ) );
-			}
-		}
-//
-//		ce = keys().toArray(new Float[]{});
-//		rInt = values().toArray( new Float[] { } );
-//
-//		for(int idx = 0; idx < rInt.length; idx++)
-//		{
-//			if(rInt[idx] == 0f)
-//			{
-//				map.remove( ce[idx] );
-//			}
-//		}
-	}
+      if ( rightIntensity > 5f )
+      {
+         final WeightedObservedPoints obs = new WeightedObservedPoints();
 
-	public ArrayList<Float[]> interpolate()
-	{
-		extend();
-		// Compute the interpolation
-		ArrayList<Float[]> arrayList = new ArrayList<>(  );
+         for ( int idx = noZeroIndex + 5; idx >= noZeroIndex; idx-- )
+         {
+            obs.add( ce[ rInt.length - idx ], rInt[ rInt.length - idx ] );
+         }
 
-		int max = 0;
+         Float lastCE = ce[ rInt.length - noZeroIndex ];
+         Float unit = ce[ rInt.length - noZeroIndex ] - ce[ rInt.length - noZeroIndex - 1 ];
+         ExponentialFitter right = new ExponentialFitter( obs.toList() );
 
-		Float[] ce = keys().toArray(new Float[]{});
-		Float[] rInt = values().toArray( new Float[] { } );
-		Float maxMz = 0f;
+         for ( int idx = 1; idx <= 5; idx++ )
+         {
+            Float newCE = lastCE + unit * idx;
+            map.put( newCE, ( float ) right.value( newCE ) );
+         }
+      }
+      //
+      //		ce = keys().toArray(new Float[]{});
+      //		rInt = values().toArray( new Float[] { } );
+      //
+      //		for(int idx = 0; idx < rInt.length; idx++)
+      //		{
+      //			if(rInt[idx] == 0f)
+      //			{
+      //				map.remove( ce[idx] );
+      //			}
+      //		}
+   }
 
-		for(int i = 0; i < ce.length; i++)
-		{
-			if( get( ce[ i ] ) > maxMz ){
-				max = i;
-				maxMz = get( ce[ i ] );
-			}
-			rInt[i] = get( ce[ i ] );
-		}
+   public ArrayList< Float[] > interpolate()
+   {
+      extend();
+      // Compute the interpolation
+      ArrayList< Float[] > arrayList = new ArrayList<>();
 
-		int size = ce.length;
+      int max = 0;
 
-		float x1=0, x2=0;
-		float y1=0, y2, grad, idx=0;
+      Float[] ce = keys().toArray( new Float[] {} );
+      Float[] rInt = values().toArray( new Float[] {} );
+      Float maxMz = 0f;
 
-		for(float p = 1; p <= 100; p += 1f)
-		{
-			float perr = 100000f;
+      for ( int i = 0; i < ce.length; i++ )
+      {
+         if ( get( ce[ i ] ) > maxMz )
+         {
+            max = i;
+            maxMz = get( ce[ i ] );
+         }
+         rInt[ i ] = get( ce[ i ] );
+      }
 
-			float iInt=0f, point=0f, diff;
+      int size = ce.length;
 
-			for(int i = 0; i <= max; i++)
-			{
-				x2 = ce[i];
-				y2 = rInt[i];
+      float x1 = 0, x2 = 0;
+      float y1 = 0, y2, grad, idx = 0;
 
-				grad = (y2 - y1)  / (x2 - x1);
+      for ( float p = 1; p <= 100; p += 1f )
+      {
+         float perr = 100000f;
 
-				for(float w = x1; w <= x2; w += 0.001)
-				{
-					float a = grad * (w - x1) + y1;
-					float b = 100 * (a) / maxMz;
-					diff = Math.abs( p - b );
+         float iInt = 0f, point = 0f, diff;
 
-					if(diff < perr)
-					{
-						iInt = a;
-						point = b;
-						idx = w;
-						perr = diff;
-					}
-				}
+         for ( int i = 0; i <= max; i++ )
+         {
+            x2 = ce[ i ];
+            y2 = rInt[ i ];
 
-				x1 = ce[i];
-				y1 = rInt[i];
-			}
+            grad = ( y2 - y1 ) / ( x2 - x1 );
 
-//			System.out.println(idx + "," + iInt + "," + Precision.round( point, 0 ));
+            for ( float w = x1; w <= x2; w += 0.001 )
+            {
+               float a = grad * ( w - x1 ) + y1;
+               float b = 100 * ( a ) / maxMz;
+               diff = Math.abs( p - b );
 
-			arrayList.add( new Float[] { idx, iInt, Precision.round( point, 0 ) } );
-		}
+               if ( diff < perr )
+               {
+                  iInt = a;
+                  point = b;
+                  idx = w;
+                  perr = diff;
+               }
+            }
 
-		for(float p = 99; p > 0; p -= 1.0f)
-		{
-			float perr = 100000f;
+            x1 = ce[ i ];
+            y1 = rInt[ i ];
+         }
 
-			float iInt=0f, point=0f, diff;
+         //			System.out.println(idx + "," + iInt + "," + Precision.round( point, 0 ));
 
-			for(int i = max; i < size; i++)
-			{
-				x2 = ce[i];
-				y2 = rInt[i];
+         arrayList.add( new Float[] { idx, iInt, Precision.round( point, 0 ) } );
+      }
 
-				grad = (y2 - y1)  / (x2 - x1);
+      for ( float p = 99; p > 0; p -= 1.0f )
+      {
+         float perr = 100000f;
 
-				for(float w = x1; w <= x2; w += 0.001)
-				{
-					float a = grad * (w - x1) + y1;
-					float b = 100 * (a) / maxMz;
-					diff = Math.abs( p - b );
+         float iInt = 0f, point = 0f, diff;
 
-					if(diff < perr)
-					{
-						iInt = a;
-						point = b;
-						idx = w;
-						perr = diff;
-					}
-				}
-				x1 = ce[i];
-				y1 = rInt[i];
-			}
+         for ( int i = max; i < size; i++ )
+         {
+            x2 = ce[ i ];
+            y2 = rInt[ i ];
 
-//			System.out.println(idx + "," + iInt + "," + Precision.round(point, 0));
+            grad = ( y2 - y1 ) / ( x2 - x1 );
 
-			arrayList.add( new Float[] { idx, iInt, Precision.round( point, 0 ) } );
-		}
+            for ( float w = x1; w <= x2; w += 0.001 )
+            {
+               float a = grad * ( w - x1 ) + y1;
+               float b = 100 * ( a ) / maxMz;
+               diff = Math.abs( p - b );
 
-		return arrayList;
-	}
+               if ( diff < perr )
+               {
+                  iInt = a;
+                  point = b;
+                  idx = w;
+                  perr = diff;
+               }
+            }
+            x1 = ce[ i ];
+            y1 = rInt[ i ];
+         }
 
-	public Float getIsomer()
-	{
-		return isomer;
-	}
+         //			System.out.println(idx + "," + iInt + "," + Precision.round(point, 0));
 
-	public void setIsomer( Float isomer )
-	{
-		this.isomer = isomer;
-	}
+         arrayList.add( new Float[] { idx, iInt, Precision.round( point, 0 ) } );
+      }
+
+      return arrayList;
+   }
+
+   public Float getIsomer()
+   {
+      return isomer;
+   }
+
+   public void setIsomer( Float isomer )
+   {
+      this.isomer = isomer;
+   }
 
    public Integer getCarbon()
    {
@@ -328,25 +335,25 @@ public class Fragment
       this.doubleBond = doubleBond;
    }
 
-	public Integer getFaIndex()
-	{
-		return faIndex;
-	}
+   public Integer getFaIndex()
+   {
+      return faIndex;
+   }
 
-	public void setFaIndex( Integer faIndex )
-	{
-		this.faIndex = faIndex;
-	}
+   public void setFaIndex( Integer faIndex )
+   {
+      this.faIndex = faIndex;
+   }
 
-	public TreeMap< Float, Float > getMap()
-	{
-		return map;
-	}
+   public TreeMap< Float, Float > getMap()
+   {
+      return map;
+   }
 
-	public void setMap( TreeMap< Float, Float > map )
-	{
-		this.map = map;
-	}
+   public void setMap( TreeMap< Float, Float > map )
+   {
+      this.map = map;
+   }
 
    public Pos getPosition()
    {
