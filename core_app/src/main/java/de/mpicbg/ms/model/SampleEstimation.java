@@ -169,8 +169,6 @@ import static de.mpicbg.ms.view.pipeline.validation.TxCorrectionTab.tryParseTxFu
             if ( bError )
                continue;
 
-            //            if(key.startsWith( "PI" )) continue;
-
             final FAAnion faAnion = masterDBSet.get( clazz ).get( index );
             // Get multiple faanions for having different isomer values
             List< FAAnion > faAnions = getMassIndexes( masterDBSet.get( clazz ).values(), faAnion );
@@ -192,7 +190,6 @@ import static de.mpicbg.ms.view.pipeline.validation.TxCorrectionTab.tryParseTxFu
                   updateCorrectionFactorsWithPosition( specieId, masterDatabase, speciesMap, sampleTreeMap, estSampleTreeMap );
                }
 
-               //               if(!refPRIMap.containsKey( specieName ))
                estimate2ndPosition( referenceFAIMap, clazz, sample.getKeys(), speciesMap.get( specieId ), estSampleTreeMap );
                estimate3rdPosition( masterDatabase, masterDBSet, referenceFAIMap, clazz, sample.getKeys(), speciesMap.get( specieId ), sampleTreeMap, estSampleTreeMap );
             }
