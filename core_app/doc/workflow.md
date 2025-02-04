@@ -127,7 +127,7 @@ graph TD;
   end
 ```
 
-## 3. Correction Factor Calculation and Application
+## 3. Correction Factor Calculation and Application Description
 
 ### Purpose:
 
