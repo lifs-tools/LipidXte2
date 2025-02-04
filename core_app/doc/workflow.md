@@ -1,52 +1,59 @@
 Workflow
 ==
 
-## 1. Machine performance check
+## 1. Summary Description
 
-### Purpose:
-* LipidXte2 evaluates the mass spectrometer performance by comparing fragment intensity ratios CO2 neutral loss (COI) and fatty acid anion (FAI) for measurements and theoretical reference data.
-* Identifies ideal instrument settings for accurate lipid quantification.
+The main process automates the complex process of lipid identification and quantification from mass spectrometry data. It takes raw data, reference databases, and user-defined parameters to generate estimated sample information, ultimately enabling researchers to understand the lipid composition of their samples.
 
-### Key Actions:
+### Key Functionalities:
 
-1. Retrieves data:
-   1. Accesses experimental data, reference database, and user-defined parameters.
+#### 1. Data Input and Preparation:
 
-1. Iterates through samples and parameter combinations:
-   1. Processes samples in groups based on user-defined criteria.
-   1. Iterates through different NCE (normalized collision energy) offsets for each group.
+Takes as input:
+- Raw mass spectrometry data (represented by TreeItem<BARow>, BA, Sample objects).
+- A master database of known lipids (MasterDatabase, FAAnion).
+- User-defined parameters (e.g., collision energy (CE), transmission correction function).
+- Organizes and prepares the input data for processing. This includes creating maps of species, fractions, and estimated samples.
 
-1. Calculates COI/FAI ratios for estimated samples:
-   1. Calls a helper function to process estimated samples and extract relevant COI/FAI data.
-   1. Organizes COI/FAI ratios for each NCE offset.
+#### 2. Lipid Identification and Quantification:
 
-1. Retrieves theoretical COI/FAI ratios:
-   1. Retrieves reference COI/FAI ratios for specific lipid classes and NCE values from a master database.
+- Iterates through different lipid species and collision energies (CEs).
+- For each lipid and CE combination:
+   - Retrieves theoretical intensities from the master database.
+   - Calculates various lipid-related parameters (e.g., CF (correction factor), isomer ratios, relative FAI (fatty acid intensity)).
+   - Applies transmission correction if specified.
+   - Estimates the position of fatty acids within the lipid molecule (SN1, SN2).
+   - Performs complex calculations to correct for various factors influencing the measurements
 
-1. Compares estimated and theoretical ratios:
-   1. Calculates R-squared values to assess the correlation between estimated and theoretical COI/FAI ratios for each NCE offset.
+#### 3. Correction Factor Calculation and Application:
 
-1. Stores and analyzes results:
-   1. Saves performance scores (R-squared values and averages) for each combination of group and NCE offset.
-   1. Identifies the best-performing NCE offset for each group.
-   1. Exports final results to a file, including the best-performing settings overall.
+- Calculates correction factors (CFs) to account for variations in ionization efficiency and other experimental artifacts.
+  Applies these correction factors to the estimated FAI values. This is a multi-step process, with different CFs calculated and applied at different stages of the analysis.
 
-### SRS Considerations:
-1. Emphasize the importance of machine performance evaluation for accurate lipidomics results.
-1. Define key terms like NCE, COI/FAI ratios, and R-squared for clarity.
-1. Include a glossary or appendix for specialized terms if the SRS audience is diverse.
-1. Describe the potential impact of machine performance on experimental outcomes.
+#### 4. Isomer Estimation:
 
-```mermaid
-graph TD;
-  A[Samples]-->B["createEstSample()"];
-  B-->C["processEstSample()"];
-  C-->D[Compare the CO2 ratio with the theoretical model];
-  D-->E[Find the best matched CE];
-  E-->F[Use the found CE for further data processing];
-```
+- Estimates the relative abundance of different isomers of a given lipid. This is a crucial step, as isomers can have different biological activities.
 
-## 2. Create estimated samples **<Title could be a bit more specific/explainatory>**
+#### 5. Data Normalization:
+
+- Normalizes the data to account for variations in sample size and other factors.
+
+#### 6. Data Output and Visualization Preparation:
+
+- Prepares the processed data for visualization and further analysis. This includes generating data structures that can be used by charting and analysis tools.
+- Provides a ChartControl interface to allow for custom visualization implementations.
+
+#### 7. Helper Functions:
+
+- Contains numerous helper functions for specific tasks, including:
+   - Retrieving data from the database.
+   - Calculating regression parameters.
+   - Estimating isomer ratios.
+   - Applying transmission correction.
+   - Performing data normalization.
+
+
+## 2. Lipid Identification and Quantification Description
 
 ### Purpose:
 
@@ -55,13 +62,12 @@ graph TD;
 
 ### Key Inputs:
 
-* MasterDatabase: A database containing reference data.
+* MasterDatabase: A database containing reference data generated by the polynomials.
 * groupKey: A string representing a group identifier.
 * sampleId: A string identifying the sample being processed.
 * species: A collection of TreeItem<BARow> objects, containing information about species and their fractions.
 * baMap: A map associating TreeItem<BARow> objects with their corresponding BA (Base Anion) objects.
 * mFaAnionsList: An observable list of FAAnion objects, likely containing information about fatty acid anions.
-* noCorrection: A boolean flag indicating whether TXCF (Transmission Correction Factor) should be applied.
 
 ### Key Outputs:
 
@@ -69,23 +75,29 @@ graph TD;
 
 ### General Functionality:
 
-1. Prepares Reference Data:
+1. Intialization:
    1. Creates a referenceFAIMap if needed, likely used for reference FAI values.
 
-1. Iterates through Species and Fractions:
+1. Data iteration and Fraction Splitting:
    1. Loops through input species and their fractions.
    1. Processes symmetric and non-symmetric cases differently.
    1. Identifies relevant information (mass, class, etc.).
-   1. Creates EstSample objects for each combination of species, fraction, and NCE.
+   1. Creates `EstSample` objects for each combination of species, fraction, and NCE.
    1. Retrieves theoretical intensities for CO2 and FA fragments from the Master Database.
    1. Applies TX CF if required.
    1. Calculates CO2 to FA fragment intensity ratios.
 
-1. Estimates FA-Isomers and Updates Correction Factors: **<is FA isomer correct here?>**
+1. Sample Estimation:
    1. Performs initial FA isomer estimation.
    1. Updates correction factors based on calculations by using polynomial data.
    1. Handles cases with multiple fragments (for sn-1 and sn-2 FA).
    1. Estimates positions for symmetric cases.
+
+1. Isomer Estimation and Correction Factor Calculation:
+   1. Calls estimateIsomer to estimate the relative abundance of different isomers of the lipid.
+   1. Calls updateCorrectionFactor to calculate and apply correction factors.
+   1. For lipids with multiple fatty acid components, calls updateCorrectionFactorsWithPosition, estimate2ndPosition, and estimate3rdPosition to refine the correction factors and estimate the positions of the fatty acids within the lipid molecule (SN1, SN2).
+   1. For symmetric lipids, sets the relative FAI and position information directly.
 
 1. Returns Estimated Samples:
     1. Returns the estSampleTreeMap containing the generated estimated samples.
@@ -104,7 +116,7 @@ graph TD;
      G-->H["2nd FA intensity correction"];
      H-->I["Sum of FA"];
      I-->J["Normalization to internal standard / \nMost abundant species"];
-     J-->K["Result oupput / plot"];
+     J-->K["Result output / plot"];
  
   end
   subgraph polyDB [Polynomial data]
@@ -115,13 +127,13 @@ graph TD;
   end
 ```
 
-## 3. Process estimated samples
+## 3. Correction Factor Calculation and Application
 
 ### Purpose:
 
-* Processes a sample for a lipidomics experiment, calculating various metrics and preparing data for display.
+* This method refines the lipid quantification results by applying normalization, transmission correction, and preparing the data for visualization.  It takes the estimated sample data, reference data, and user-defined parameters to generate normalized and corrected lipid abundances, which are then passed to a final output for display.
 
-### Key Steps:
+### Key Steps
 
 1. Computes reference PRI (precursor ion intensity) sums:
    1. Iterates through species and samples.
