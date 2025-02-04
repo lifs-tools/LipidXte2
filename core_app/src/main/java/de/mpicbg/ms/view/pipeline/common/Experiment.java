@@ -52,7 +52,7 @@ public class Experiment
 
 				String[] split = firstLine.split( "\t" );
 
-				if( !split[2].equals( "-Infinity" ) && split[0].equals( "BEST" ) )
+				if( !split[2].equals( "-Infinity" ) && !split[2].equals( "null" ) && split[0].equals( "BEST" ) )
 				{
 					System.out.println( split[1] );
 					//					System.out.println( split[1].split( "\\[|\\]|,|\\s" ).length );
@@ -258,14 +258,14 @@ public class Experiment
 						faanion.setCO( new CO( parseDouble( record, Header.FACO2M ) ) );
 
 					co = "FACO2I:";
-				} else if( clazz.equals( "PCO" ) ) {
+				} else if( clazz.equals( "PCO" ) || clazz.equals( "PEO" ) ) {
 					Double faM = parseDouble( record, Header.FA1M );
 					faanion = precursor.getFA( faM );
 
-					if(faanion.getCO() == null && !record.get(Header.FACO2M).equals( "None" ) )
-						faanion.setCO( new CO( parseDouble( record, Header.FACO2M ) ) );
+					if(faanion.getCO() == null && !record.get(Header.FACO1M).equals( "None" ) )
+						faanion.setCO( new CO( parseDouble( record, Header.FACO1M ) ) );
 
-					co = "FACO2I:";
+					co = "FACO1I:";
 				}
 
 				for(String s : headers)

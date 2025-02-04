@@ -11,16 +11,10 @@ import de.mpicbg.ms.model.data.Fraction;
 import de.mpicbg.ms.model.data.Sample;
 import de.mpicbg.ms.model.fitter.ExponentialDecayFunction;
 import de.mpicbg.ms.model.fitter.SimpleExponentialFunction;
-import de.mpicbg.ms.model.regression.Bicubic;
-import de.mpicbg.ms.model.regression.Percent;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
 import org.apache.commons.lang3.Range;
-import org.apache.commons.math3.analysis.BivariateFunction;
 import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
-import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
-import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
-import org.apache.commons.math3.exception.NumberIsTooSmallException;
 import org.apache.commons.math3.util.Precision;
 
 import java.util.ArrayList;
@@ -72,12 +66,14 @@ public class SampleEstimation
 		final HashMap< String, ArrayList< String > > speciesMap = new HashMap<>();
 		final TreeMap< Integer, Fraction > fractionTreeMap = new TreeMap<>();
 
+      // Create reference data
 		if ( masterDBSet == null )
 		{
 			referenceFAIMap = new TreeMap<>();
 			masterDBSet = createReferenceFAIMap( masterDatabase, mFaAnionsList, referenceFAIMap );
 		}
 
+      // Iterate all the species and split fractions
 		for ( TreeItem< BARow > baRowTreeItem : species )
 		{
 			final String specieName = baRowTreeItem.getValue().getTitle();
@@ -137,9 +133,11 @@ public class SampleEstimation
 
 				for ( Float ce : sample.getKeys() )
 				{
+               // Create sample estimation
 					EstSample estSample = new EstSample( sampleId, groupKey, specieName, faMz, ce, getTxCF( priMass, ce ) );
 
-					List<String[]> details = clazz.equals( "PCO" ) || clazz.equals( "PEO" ) ? masterDatabase.getDetails( index, clazz, "0", "1.0", "0" ) : masterDatabase.getDetails( index, clazz, "0", "0", "1.0" );
+               // Retrieve theoretical intensities with given information
+					List<String[]> details = isSym ? (clazz.equals( "PCO" ) || clazz.equals( "PEO" ) ? masterDatabase.getDetails( index, clazz, "0", "1.0", "0" ) : masterDatabase.getDetails( index, clazz, "0", "0", "1.0" )) : masterDatabase.getDetails( index, clazz, "0", "1.0", "0" );
 
 					for ( String[] detailRow : details )
 					{
@@ -156,14 +154,13 @@ public class SampleEstimation
 								sampleTreeMap.get( key ).put( ce, "Sample:CO2", cCoi );
 							}
 
-                     if(noCorrection)
-							   estSample.setcFAI( cInt );
-                     else estSample.setcFAI( cInt * estSample.getTxCF() );
+                     // Apply TX CF or not
+                     estSample.setcFAI( cInt );
                      estSample.addCFRange( Float.parseFloat( detailRow[ 2 ] ) );
                      estSample.setSecondaryCF( estSample.getCF() );
 							estSample.setcCOI( cCoi );
 
-                     // Calculate co2 loss
+                     // Calculate co2 ratio
 							estSample.setFaCoRatio( cInt == 0 ? 0 : cCoi / cInt  );
 
 							break;
@@ -178,78 +175,189 @@ public class SampleEstimation
 //            if(key.startsWith( "PI" )) continue;
 
 				final FAAnion faAnion = masterDBSet.get( clazz ).get( index );
+            // Get multiple faanions for having different isomer values
 				List< FAAnion > faAnions = getMassIndexes( masterDBSet.get( clazz ).values(), faAnion );
 
-				for ( Float ce : sample.getKeys() )
-				{
-					estimateIsomer( masterDatabase, fractionTreeMap, estSampleTreeMap, clazz, faAnions, ce, isSym, key );
-				}
+            // Initial isomer estimation
+            estimateIsomer( masterDatabase, clazz, sample.getKeys(), fractionTreeMap, estSampleTreeMap, faAnions, isSym, key );
 
-            updateDBCF( key, masterDatabase, sampleTreeMap, estSampleTreeMap, fractionTreeMap, clazz, faAnions, isSym );
+            // Initial correction factor
+            updateCorrectionFactor( key, masterDatabase, sampleTreeMap, estSampleTreeMap, fractionTreeMap, faAnions, isSym );
 
-            // Complement check from here
+            // Complement check and update correction factors for both SN1 and SN2
             if ( speciesMap.get( specieId ).size() > 1 )
             {
                String sn2Key = speciesMap.get( specieId ).get( 1 );
 
-               // When the key is the secondary key of the fragments
+               // When the key is the secondary key of the fragments, we assume sn1 is already built
                if (sn2Key.equals( key )) {
-                  String sn1Key = speciesMap.get( specieId ).get( 0 );
-
-                  // SN1 Fraction
-                  Fraction fraction = sampleTreeMap.get( sn1Key );
-
-                  for ( Float ce : fraction.keySet() )
-                  {
-                     Range<Float> range = estSampleTreeMap.get( sn2Key + ce ).getPosition();
-                     estSampleTreeMap.get( sn1Key + ce ).setPosition( Range.between( 1f - range.getMaximum(), 1f - range.getMinimum() ) );
-                  }
-
-                  // There is no isomer specific values, estimate CF based on the position
-                  int refIndex = fraction.getIndex();
-
-                  for ( Float ce : fraction.keySet() )
-                  {
-                     TreeMap< Float, Float > cf = new TreeMap<>();
-                     String[][] scopes = new String[][] { { "1.0", "0", "0" }, { "0.5", "0.5", "0" },
-                             { "0", "1.0", "0" } };
-
-                     for ( String[] scope : scopes )
-                     {
-                        for ( String[] detailRow : masterDatabase.getDetails( refIndex, fraction.getClazz(), scope[ 0 ], scope[ 1 ], scope[ 2 ] ) )
-                        {
-                           if ( ce == Float.parseFloat( detailRow[ 0 ] ) )
-                           {
-                              float sn2 = Float.parseFloat( scope[ 1 ] );
-                              float ret = Float.parseFloat( detailRow[ 2 ] );
-
-                              cf.put( sn2, ret );
-
-                              break;
-                           }
-                        }
-                     }
-
-                     if ( cf.size() > 2 )
-                     {
-                        Range< Float > posRange = estSampleTreeMap.get( sn1Key + ce ).getPosition();
-                        Range< Float > cfRange = getCFValue( cf, posRange );
-                        estSampleTreeMap.get( sn1Key + ce ).setCF( cfRange );
-                        estSampleTreeMap.get( sn1Key + ce ).setSecondaryCF( cfRange );
-                     }
-                  }
+                  updateCorrectionFactorsWithPosition(specieId, masterDatabase, speciesMap, sampleTreeMap, estSampleTreeMap);
                }
 
 //               if(!refPRIMap.containsKey( specieName ))
                estimate2ndPosition( referenceFAIMap, clazz, sample.getKeys(), speciesMap.get( specieId ), estSampleTreeMap );
-//               estimate3rdPosition( masterDatabase, masterDBSet, referenceFAIMap, clazz, sample.getKeys(), speciesMap.get( specieId ),
-//                       sampleTreeMap, estSampleTreeMap );
+               estimate3rdPosition( masterDatabase, masterDBSet, referenceFAIMap, clazz, sample.getKeys(), speciesMap.get( specieId ),
+                       sampleTreeMap, estSampleTreeMap );
+            }
+            else
+            {
+               // for symmetric cases
+               for( Float ce : sample.getKeys() )
+               {
+                  Range<Float> pos = Range.between( 0.5f, 0.5f );
+                  estSampleTreeMap.get( key + ce ).setRel_FAI( pos );
+                  estSampleTreeMap.get( key + ce ).setSecondaryPosition( pos );
+                  estSampleTreeMap.get( key + ce ).setSecondaryRel_FAI( pos );
+                  estSampleTreeMap.get( key + ce ).setThirdPosition( pos );
+               }
             }
 			}
 		}
 
 		return estSampleTreeMap;
 	}
+
+   public static void updateCorrectionFactorsWithPosition(String specieId, MasterDatabase masterDatabase,
+           HashMap< String, ArrayList< String > > speciesMap, TreeMap< String, Fraction > sampleTreeMap,
+           TreeMap< String, EstSample > estSampleTreeMap)
+   {
+      String sn1Key = speciesMap.get( specieId ).get( 0 );
+      String sn2Key = speciesMap.get( specieId ).get( 1 );
+
+      // Update SN1 Fraction position
+      Fraction fraction = sampleTreeMap.get( sn1Key );
+
+      for ( Float ce : fraction.keySet() )
+      {
+         Range<Float> range = estSampleTreeMap.get( sn2Key + ce ).getPosition();
+         estSampleTreeMap.get( sn1Key + ce ).setPosition( Range.between( 1f - range.getMaximum(), 1f - range.getMinimum() ) );
+      }
+
+      // Update SN1 and SN2 correction factors according to the updated position
+      for (String snKey : speciesMap.get( specieId )) {
+         Fraction snFraction = sampleTreeMap.get( snKey );
+         String clazz = snFraction.getClazz();
+         int refIndex = snFraction.getIndex();
+
+         final FAAnion faAnion = masterDBSet.get( clazz ).get( refIndex );
+         // Get multiple faanions for having different isomer values
+         List< FAAnion > faAnions = getMassIndexes( masterDBSet.get( clazz ).values(), faAnion );
+         final int FA_db = faAnions.stream().findFirst().get().getFADoubleBonds();
+
+         // TODO: Ask if this logic is correct
+         // If sn1 has multiple isomers, the CF needs to be recalculated
+         if( FA_db > 0 )
+         {
+            Float isoMin = null, isoMax = null;
+
+            for ( Float ce : fraction.keySet() )
+            {
+               Range< Float > isoRange = estSampleTreeMap.get( snKey + ce ).getIsomer();
+
+               if ( null == isoMin )
+               {
+                  isoMin = isoRange.getMinimum();
+                  isoMax = isoRange.getMaximum();
+               }
+
+               isoMin = Float.min( isoMin, isoRange.getMinimum() );
+               isoMax = Float.max( isoMax, isoRange.getMaximum() );
+            }
+
+            for ( Float ce : fraction.keySet() )
+            {
+               // 3rd method
+               TreeMap< Float, TreeMap< Float, Float > > cfMap = new TreeMap<>();
+               cfMap.put(0f, new TreeMap<>());
+               cfMap.put(0.5f, new TreeMap<>());
+               cfMap.put(1f, new TreeMap<>());
+
+               String[][] scopes = new String[][] { { "1.0", "0", "0" }, { "0.5", "0.5", "0" },
+                       { "0", "1.0", "0" } };
+
+               for ( FAAnion faItem : faAnions )
+               {
+                  for ( String[] scope : scopes )
+                  {
+                     String[] detailRow = masterDatabase.getDetail( ce, faItem.getIndex(), fraction.getClazz(), scope[ 0 ], scope[ 1 ], scope[ 2 ] );
+
+                     float sn2 = Float.parseFloat( scope[ 1 ] );
+                     float isomer = faItem.getFAIsomer();
+                     float ret = Float.parseFloat( detailRow[ 2 ] );
+
+                     cfMap.get( sn2 ).put( isomer, ret );
+                  }
+               }
+
+               if( isoMin.equals( isoMax ) ) {
+                  // One iso value
+                  String[] sn1Row = masterDatabase.getDetail( ce, refIndex, fraction.getClazz(), "1.0", "0", "0" );
+                  String[] sn2Row = masterDatabase.getDetail( ce, refIndex, fraction.getClazz(), "0", "1.0", "0" );
+
+                  float cf1 = Float.parseFloat( sn1Row[ 2 ] );
+                  float cf2 = Float.parseFloat( sn2Row[ 2 ] );
+
+                  float a = cf2 - cf1;
+                  float b = cf1;
+
+                  Range< Float > posRange = estSampleTreeMap.get( snKey + ce ).getPosition();
+
+                  float min = a * posRange.getMinimum() + b;
+                  float max = a * posRange.getMaximum() + b;
+
+                  Range< Float > range = Range.between( min, max );
+                  //                  System.out.println( "2nd CF:" + nextCfRange + " at " + ce );
+                  estSampleTreeMap.get( snKey + ce ).setCF( range );
+               }
+               else
+               {
+                  TreeMap< Float, Float > minCF = new TreeMap<>();
+                  TreeMap< Float, Float > maxCF = new TreeMap<>();
+
+                  Range< Float > isoRange = Range.between( isoMin, isoMax );
+
+                  for ( float i = 0f; i <= 1; i += 0.5f )
+                  {
+                     Range< Float > range = getCFValue( cfMap.get( i ), isoRange );
+                     minCF.put( i, range.getMinimum() );
+                     maxCF.put( i, range.getMaximum() );
+                  }
+
+                  Range< Float > posRange = estSampleTreeMap.get( snKey + ce ).getPosition();
+
+                  Range< Float > range = Range.between( getCFValue( minCF, posRange.getMinimum() ), getCFValue( maxCF, posRange.getMaximum() ) );
+
+                  estSampleTreeMap.get( snKey + ce ).setCF( range );
+               }
+            }
+         }
+         else
+         {
+            for ( Float ce : fraction.keySet() )
+            {
+               String[] sn1Row = masterDatabase.getDetail( ce, refIndex, fraction.getClazz(), "1.0", "0", "0" );
+               String[] sn2Row = masterDatabase.getDetail( ce, refIndex, fraction.getClazz(), "0", "1.0", "0" );
+
+               float cf1 = Float.parseFloat( sn1Row[ 2 ] );
+               float cf2 = Float.parseFloat( sn2Row[ 2 ] );
+
+               float a = cf2 - cf1;
+               float b = cf1;
+
+               Range< Float > posRange = estSampleTreeMap.get( snKey + ce ).getPosition();
+
+               float min = a * posRange.getMinimum() + b;
+               float max = a * posRange.getMaximum() + b;
+
+               Range< Float > cfRange = Range.between( min, max );
+
+               System.out.println( "1st CF:" + cfRange + " at " + ce );
+
+               estSampleTreeMap.get( snKey + ce ).setCF( cfRange );
+            }
+         }
+      }
+   }
 
 	public static TreeMap<String, TreeMap< Integer, FAAnion > > createReferenceFAIMap( MasterDatabase masterDatabase, ObservableList< FAAnion > mFaAnionsList, TreeMap< String, Fraction > referenceFAIMap )
 	{
@@ -313,6 +421,28 @@ public class SampleEstimation
       TreeMap<String, TreeMap< Float, Float >> faiReferenceMap = new TreeMap<>();
       TreeMap<String, TreeMap< Float, Float >> priSumMap = new TreeMap<>();
 
+      if (refPRIMap.isEmpty()) {
+         String maxBAItem = null;
+         Float maxSum = 0f;
+         for ( TreeItem< BARow > baRowTreeItem : species )
+         {
+            BA specie = baMap.get( baRowTreeItem );
+            Sample sample = specie.getSample( sampleId );
+            Float sum = 0f;
+            for ( Float ce : sample.getKeys() )
+            {
+               sum += sample.get(ce);
+            }
+
+            if (sum > maxSum) {
+               maxSum = sum;
+               maxBAItem = baRowTreeItem.getValue().getTitle();
+            }
+         }
+
+         refPRIMap.put( maxBAItem, 100f );
+      }
+
 		for ( TreeItem< BARow > baRowTreeItem : species )
 		{
 			final String specieName = baRowTreeItem.getValue().getTitle();
@@ -343,13 +473,8 @@ public class SampleEstimation
 
 				for ( Float ce : sample.getKeys() )
 				{
-					if(applyTXCF)
-					{
-						Float txcf = getTxCF( specie.getMass(), ce );
-
-						estSampleTreeMap.get( key + ce ).setcFAI( estSampleTreeMap.get( key + ce ).getCorrectedFAI() * txcf );
-						estSampleTreeMap.get( key + ce ).setcCOI( estSampleTreeMap.get( key + ce ).getCorrectedCOI() * txcf );
-					}
+					estSampleTreeMap.get( key + ce ).setcFAI( estSampleTreeMap.get( key + ce ).getCorrectedFAI() );
+					estSampleTreeMap.get( key + ce ).setcCOI( estSampleTreeMap.get( key + ce ).getCorrectedCOI() );
 				}
 			}
 
@@ -390,11 +515,14 @@ public class SampleEstimation
 
                   if(noCorrection)
                   {
-                     faiReferenceMap.get(clazz).put( ce, faiReferenceMap.get(clazz).get( ce ) + estSampleTreeMap.get( key + ce ).getCorrectedFAI());
+                     Float fai = applyTXCF ? estSampleTreeMap.get( key + ce ).getTxCorrectedFAI() : estSampleTreeMap.get( key + ce ).getCorrectedFAI();
+                     faiReferenceMap.get(clazz).put( ce, faiReferenceMap.get(clazz).get( ce ) + fai );
                   }
                   else
                   {
-                     Range< Float > range = estSampleTreeMap.get( key + ce ).getSecondCFCorrectedFAI();
+//                     Range< Float > range = applyTXCF ? estSampleTreeMap.get( key + ce ).get2ndCFTxCorrectedFAI() : estSampleTreeMap.get( key + ce ).getSecondCFCorrectedFAI();
+                     Range< Float > range = applyTXCF ? estSampleTreeMap.get( key + ce ).getCFTxCorrectedFAI() : estSampleTreeMap.get( key + ce ).getCFCorrectedFAI();
+
                      Float avg = ( range.getMaximum() + range.getMinimum() ) / 2f;
                      faiReferenceMap.get(clazz).put( ce, faiReferenceMap.get(clazz).get( ce ) + avg );
                   }
@@ -451,13 +579,14 @@ public class SampleEstimation
 
                if(noCorrection)
                {
-                  Float fai = estSampleTreeMap.get( key + ce ).getCorrectedFAI();
+                  Float fai = applyTXCF ? estSampleTreeMap.get( key + ce ).getTxCorrectedFAI() : estSampleTreeMap.get( key + ce ).getCorrectedFAI();
                   sum = Range.between( sum.getMinimum() + fai, sum.getMaximum() + fai);
                   faiSum.put( ce, sum );
                }
                else
                {
-                  Range<Float> fai = estSampleTreeMap.get( key + ce ).getSecondCFCorrectedFAI();
+//                  Range<Float> fai = applyTXCF ? estSampleTreeMap.get( key + ce ).get2ndCFTxCorrectedFAI() : estSampleTreeMap.get( key + ce ).getSecondCFCorrectedFAI();
+                  Range<Float> fai = applyTXCF ? estSampleTreeMap.get( key + ce ).getCFTxCorrectedFAI() : estSampleTreeMap.get( key + ce ).getCFCorrectedFAI();
                   sum = Range.between( sum.getMinimum() + fai.getMinimum(), sum.getMaximum() + fai.getMaximum() );
                   faiSum.put( ce, sum );
                }
@@ -508,17 +637,19 @@ public class SampleEstimation
 
                if(noCorrection)
                {
-                  Float fa = estSampleTreeMap.get( key + ce ).getCorrectedFAI();
+                  Float fa = applyTXCF ? estSampleTreeMap.get( key + ce ).getTxCorrectedFAI() : estSampleTreeMap.get( key + ce ).getCorrectedFAI();
                   min += fa;
                   max += fa;
                }
                else
                {
-                  Range< Float > faC = estSampleTreeMap.get( key + ce ).getSecondCFCorrectedFAI();
+//                  Range< Float > faC = applyTXCF ? estSampleTreeMap.get( key + ce ).get2ndCFTxCorrectedFAI() : estSampleTreeMap.get( key + ce ).getSecondCFCorrectedFAI();
+                  Range< Float > faC = applyTXCF ? estSampleTreeMap.get( key + ce ).getCFTxCorrectedFAI() : estSampleTreeMap.get( key + ce ).getCFCorrectedFAI();
+
                   min += faC.getMinimum();
                   max += faC.getMaximum();
                }
-					sum += estSampleTreeMap.get( key + ce ).getCorrectedFAI();
+					sum += applyTXCF ? estSampleTreeMap.get( key + ce ).getTxCorrectedFAI() : estSampleTreeMap.get( key + ce ).getCorrectedFAI();
 
 					if( faTreeItem.getValue().isCoValid() &&
 							!estSampleTreeMap.get( key + ce ).getCorrectedCOI().equals( 0f ) ) {
@@ -654,6 +785,8 @@ public class SampleEstimation
 						snKey = String.format( "%s %s-%s", clazz, samples[ 1 ].getKey(), samples[ 0 ].getKey() );
 					}
 
+               System.out.println( "\t" + snKey);
+
 					FASample newSample = new FASample(samples[0]);
 					newSample.setKey( snKey );
 
@@ -704,12 +837,8 @@ public class SampleEstimation
 
 				for( FASample sample : list )
 				{
-					String key = specie + "-" + sample.getMass();
 					for ( Float ce : pri.getNCE() )
 					{
-						//						Range< Float > fai = estSampleTreeMap.get( key + ce ).getNormFAI( sumMap.get( ce ) );
-						//
-						//						sample.get(ce).setFai( fai );
 						sample.get(ce).setSum( sumMap.get( ce ) );
 					}
 				}
@@ -730,105 +859,6 @@ public class SampleEstimation
 	{
 		void setup( TreeMap<String, TreeMap< Float, Float >> priReferenceMap, TreeMap<String, TreeMap< Double, Fragment >> computedPriFragmentMap, LinkedHashMap< FASample, FASample[] > faSampleMap, TreeMap< String, EstSample > estSampleTreeMap );
 	}
-
-   public static void estimate2ndPosition( TreeMap< String, EstSample > estSampleTreeMap, String clazz, Set<Float> ceSet, HashSet<String> keySet )
-   {
-      for( Float ce : ceSet )
-      {
-         Float sumMin = null, sumMax = null;
-         for( String key : keySet )
-         {
-            Range<Float> faiRange = estSampleTreeMap.get( key + ce ).getCFCorrectedFAI();
-
-            if( null == sumMin )
-            {
-               sumMin = faiRange.getMinimum();
-               sumMax = faiRange.getMaximum();
-            }
-            else
-            {
-               sumMin += faiRange.getMinimum();
-               sumMax += faiRange.getMaximum();
-            }
-         }
-
-         for( String key : keySet )
-         {
-            Range<Float> val = estSampleTreeMap.get( key + ce ).getCFCorrectedFAI();
-
-            Range<Float> pos = Range.between( val.getMinimum() / sumMin, val.getMaximum() / sumMax );
-
-            if( sumMin != 0 && sumMax != 0)
-               estSampleTreeMap.get( key + ce ).setRel_FAI( pos );
-         }
-      }
-
-      for( String key : keySet )
-      {
-         Float posMin = null, posMax = null;
-
-         for( Float ce : ceSet )
-         {
-            Range<Float> pos = estSampleTreeMap.get( key + ce ).getRel_FAI();
-
-            if( null == posMin )
-            {
-               posMin = pos.getMinimum();
-               posMax = pos.getMaximum();
-            }
-
-            posMin = Float.min( posMin, pos.getMinimum() );
-            posMax = Float.max( posMax, pos.getMaximum() );
-         }
-
-//         System.out.println( "[" + posMin + "..." + posMax + "]");
-
-         Float estPosMin = null, estPosMax = null;
-
-         for( Float ce : ceSet )
-         {
-            // Get the reference line from 255.23
-            Float position0 = referenceFAIMap.get( clazz ).get( ce, "rel0" );
-            Float position1 = referenceFAIMap.get( clazz ).get( ce, "rel1" );
-
-//            System.out.println( "SN2 0.0 : " + position0 + ", SN2 1.0 : " + position1 );
-
-            if(position0 == null) break;
-
-            Float min = ((posMin - position0) / (position1 - position0));
-            Float max = ((posMax - position0) / (position1 - position0));
-
-            if( null == estPosMin )
-            {
-               estPosMin = min;
-               estPosMax = max;
-            }
-
-            estPosMin = Float.min( estPosMin, min );
-            estPosMax = Float.max( estPosMax, max );
-         }
-
-         estPosMin = estPosMin == null ? posMin : estPosMin;
-         estPosMax = estPosMax == null ? posMax : estPosMax;
-
-         if(estPosMin < 0)
-            estPosMin = 0f;
-         else if(estPosMin > 1)
-            estPosMin = 1f;
-
-         if(estPosMax < 0)
-            estPosMax = 0f;
-         else if(estPosMax > 1)
-            estPosMax = 1f;
-
-         //								System.out.println( "[" + estPosMin + "..." + estPosMax + "]");
-
-         for( Float ce : ceSet )
-         {
-            estSampleTreeMap.get( key + ce ).setSecondaryPosition( Range.between( estPosMin, estPosMax ));
-         }
-      }
-   }
 
    public static void estimate2ndPosition( TreeMap<String, Fraction > referenceFAIMap, String clazz, Set<Float> ceSet, ArrayList<String> keyList, TreeMap< String, EstSample > estSampleTreeMap )
    {
@@ -855,11 +885,14 @@ public class SampleEstimation
          {
             Range<Float> val = estSampleTreeMap.get( key + ce ).getCFCorrectedFAI();
 
-            Range<Float> pos = Range.between( val.getMinimum() / sumMin, val.getMaximum() / sumMax );
+//            Range< Float > pos = Range.between( val.getMinimum() / sumMin, val.getMaximum() / sumMax );
+            float posAvg = val.getMinimum() / sumMin;
+
+            Range<Float> pos = posAvg > 0.5f ? Range.between( val.getMinimum() / sumMin, val.getMaximum() / sumMax ) :
+                    Range.between( val.getMaximum() / sumMax, val.getMinimum() / sumMin );
 
             if( sumMin != 0 && sumMax != 0) {
                estSampleTreeMap.get( key + ce ).setRel_FAI( pos );
-               estSampleTreeMap.get( key + ce ).setSecondaryRel_FAI( pos );
             }
          }
       }
@@ -867,8 +900,9 @@ public class SampleEstimation
 //      System.out.println(clazz + ":");
       for( String key : keyList )
       {
-         if(key.startsWith( "PI" ))
-            System.out.println(key);
+//         if(key.startsWith( "PG 32:0" ))
+//            System.out.println(key);
+
          Float posMin = null, posMax = null;
 
          for( Float ce : ceSet )
@@ -892,6 +926,8 @@ public class SampleEstimation
 
          for( Float ce : ceSet )
          {
+            Range<Float> pos = estSampleTreeMap.get( key + ce ).getRel_FAI();
+
             // Get the reference line from 255.23
             Float position0 = referenceFAIMap.get( clazz ).get( ce, "rel0" );
             Float position1 = referenceFAIMap.get( clazz ).get( ce, "rel1" );
@@ -901,8 +937,11 @@ public class SampleEstimation
 
             if(position0 == null) break;
 
-            float min = ((posMin - position0) / (position1 - position0));
-            Float max = ((posMax - position0) / (position1 - position0));
+            float a = position1 - position0;
+            float b = position0;
+
+            float min = (pos.getMinimum() - b) / a;
+            float max = (pos.getMaximum() - b) / a;
 
             if( null == estPosMin )
             {
@@ -933,7 +972,6 @@ public class SampleEstimation
          for( Float ce : ceSet )
          {
             estSampleTreeMap.get( key + ce ).setSecondaryPosition( Range.between( estPosMin, estPosMax ));
-            estSampleTreeMap.get( key + ce ).setThirdPosition( Range.between( estPosMin, estPosMax ));
          }
       }
    }
@@ -947,130 +985,126 @@ public class SampleEstimation
       {
          Fraction fraction = sampleTreeMap.get( key );
 
-         FAAnion faAnion = masterDBSet.get( clazz ).get( fraction.getIndex());
-         List<FAAnion> faAnions = getMassIndexes( masterDBSet.get( clazz ).values(), faAnion );
-         final int FA_db = faAnions.stream().findFirst().get().getFADoubleBonds();
+         FAAnion faAnion = masterDBSet.get( clazz ).get( fraction.getIndex() );
 
-         if( FA_db > 2 )
-         {
-            Float isoMin = null, isoMax = null;
-            Float posMin = null, posMax = null;
-
+         if (faAnion.getMass().equals( 255.23d )) {
             for ( Float ce : fraction.keySet() )
             {
-               Range< Float > isoRange = estSampleTreeMap.get( key + ce ).getIsomer();
-               Range< Float > posRange = estSampleTreeMap.get( key + ce ).getSecondaryPosition();
-
-               if ( null == isoMin )
-               {
-                  isoMin = isoRange.getMinimum();
-                  isoMax = isoRange.getMaximum();
-
-                  posMin = posRange.getMinimum();
-                  posMax = posRange.getMaximum();
-               }
-
-               isoMin = Float.min( isoMin, isoRange.getMinimum() );
-               isoMax = Float.max( isoMax, isoRange.getMaximum() );
-
-               posMin = Float.min( posMin, posRange.getMinimum() );
-               posMax = Float.max( posMax, posRange.getMaximum() );
+               estSampleTreeMap.get( key + ce ).setSecondaryCF( Range.between( 1f, 1f ) );
             }
+         } else {
+            List<FAAnion> faAnions = getMassIndexes( masterDBSet.get( clazz ).values(), faAnion );
+            final int FA_db = faAnions.stream().findFirst().get().getFADoubleBonds();
 
-            for ( Float ce : fraction.keySet() )
+            if( FA_db > 0 )
             {
-               // 3rd method
-               TreeMap< Float, TreeMap< Float, Float > > cfMap = new TreeMap<>();
-               cfMap.put(0f, new TreeMap<>());
-               cfMap.put(0.5f, new TreeMap<>());
-               cfMap.put(1f, new TreeMap<>());
+               Float isoMin = null, isoMax = null;
+               Float posMin = null, posMax = null;
 
-               String[][] scopes = new String[][] { { "1.0", "0", "0" }, { "0.5", "0.5", "0" },
-                       { "0", "1.0", "0" } };
-
-               for ( FAAnion faItem : faAnions )
+               for ( Float ce : fraction.keySet() )
                {
-                  for ( String[] scope : scopes )
-                  {
-                     for ( String[] detailRow : masterDatabase.getDetails( faItem.getIndex(), fraction.getClazz(), scope[ 0 ], scope[ 1 ], scope[ 2 ] ) )
-                     {
-                        if ( ce == Float.parseFloat( detailRow[ 0 ] ) )
-                        {
-                           float sn2 = Float.parseFloat( scope[ 1 ] );
-                           float isomer = faItem.getFAIsomer();
-                           float ret = Float.parseFloat( detailRow[ 2 ] );
-
-                           cfMap.get( sn2 ).put( isomer, ret );
-
-                           break;
-                        }
-                     }
-                  }
-               }
-
-               if( isoMin.equals( isoMax ) ) {
-                  // One iso value
-//                  System.out.println( "1st CF used for 2nd CF due to only one isomer" );
-                  Range< Float > range = estSampleTreeMap.get( key + ce ).getCF();
-
-//                  System.out.println( "2nd CF:" + range + " at " + ce );
-                  estSampleTreeMap.get( key + ce ).setSecondaryCF( range );
-               }
-               else
-               {
-
-                  TreeMap< Float, Float > minCF = new TreeMap<>();
-                  TreeMap< Float, Float > maxCF = new TreeMap<>();
-
-                  Range< Float > isoRange = Range.between( isoMin, isoMax );
-
-                  for ( float i = 0f; i <= 1; i += 0.5f )
-                  {
-                     Range< Float > range = getCFValue( cfMap.get( i ), isoRange );
-                     minCF.put( i, range.getMinimum() );
-                     maxCF.put( i, range.getMaximum() );
-                  }
-
+                  Range< Float > isoRange = estSampleTreeMap.get( key + ce ).getIsomer();
                   Range< Float > posRange = estSampleTreeMap.get( key + ce ).getSecondaryPosition();
 
-                  Range< Float > range = Range.between( getCFValue( minCF, posRange.getMinimum() ), getCFValue( maxCF, posRange.getMaximum() ) );
-
-//                  System.out.println( "Second CF:" + range + " at " + ce );
-                  estSampleTreeMap.get( key + ce ).setSecondaryCF( range );
-               }
-            }
-         }
-         else
-         {
-            for ( Float ce : fraction.keySet() )
-            {
-               TreeMap<Float, Float> dbcf = new TreeMap<>(  );
-
-
-               //										String[][] scopes = new String[][] { {"1.0", "0", "0"}, {"0.75", "0.25", "0"}, {"0.5", "0.5", "0"}, {"0.25", "0.75", "0"}, {"0", "1.0", "0"} };
-
-               String[][] scopes = new String[][] { {"1.0", "0", "0"}, {"0.5", "0.5", "0"}, {"0", "1.0", "0"} };
-
-               for(String[] scope : scopes)
-               {
-                  for ( String[] detailRow : masterDatabase.getDetails( faAnion.getIndex(), fraction.getClazz(), scope[ 0 ], scope[ 1 ], scope[ 2 ] ) )
+                  if ( null == isoMin )
                   {
-                     if ( ce == Float.parseFloat( detailRow[ 0 ] ) )
+                     isoMin = isoRange.getMinimum();
+                     isoMax = isoRange.getMaximum();
+
+                     posMin = posRange.getMinimum();
+                     posMax = posRange.getMaximum();
+                  }
+
+                  isoMin = Float.min( isoMin, isoRange.getMinimum() );
+                  isoMax = Float.max( isoMax, isoRange.getMaximum() );
+
+                  posMin = Float.min( posMin, posRange.getMinimum() );
+                  posMax = Float.max( posMax, posRange.getMaximum() );
+               }
+
+               for ( Float ce : fraction.keySet() )
+               {
+                  // 3rd method
+                  TreeMap< Float, TreeMap< Float, Float > > cfMap = new TreeMap<>();
+                  cfMap.put(0f, new TreeMap<>());
+                  cfMap.put(0.5f, new TreeMap<>());
+                  cfMap.put(1f, new TreeMap<>());
+
+                  String[][] scopes = new String[][] { { "1.0", "0", "0" }, { "0.5", "0.5", "0" },
+                          { "0", "1.0", "0" } };
+
+                  for ( FAAnion faItem : faAnions )
+                  {
+                     for ( String[] scope : scopes )
                      {
+                        String[] detailRow = masterDatabase.getDetail( ce, faItem.getIndex(), fraction.getClazz(), scope[ 0 ], scope[ 1 ], scope[ 2 ] );
+
                         float sn2 = Float.parseFloat( scope[ 1 ] );
+                        float isomer = faItem.getFAIsomer();
                         float ret = Float.parseFloat( detailRow[ 2 ] );
 
-                        dbcf.put( sn2, ret );
-
-                        break;
+                        cfMap.get( sn2 ).put( isomer, ret );
                      }
                   }
-               }
 
-               if( dbcf.size() > 2 )
+                  if( isoMin.equals( isoMax ) ) {
+                     // One iso value
+//                  System.out.println( "1st CF used for 2nd CF due to only one isomer" );
+                     Range< Float > cfRange = estSampleTreeMap.get( key + ce ).getCF();
+
+                     float a = cfRange.getMaximum() - cfRange.getMinimum();
+                     float b = cfRange.getMinimum();
+
+                     Range< Float > posRange = estSampleTreeMap.get( key + ce ).getSecondaryPosition();
+
+                     float min = a * posRange.getMinimum() + b;
+                     float max = a * posRange.getMaximum() + b;
+
+                     Range< Float > nextCfRange = Range.between( min, max );
+//                  System.out.println( "2nd CF:" + nextCfRange + " at " + ce );
+                     estSampleTreeMap.get( key + ce ).setSecondaryCF( nextCfRange );
+                  }
+                  else
+                  {
+
+                     TreeMap< Float, Float > minCF = new TreeMap<>();
+                     TreeMap< Float, Float > maxCF = new TreeMap<>();
+
+                     Range< Float > isoRange = Range.between( isoMin, isoMax );
+
+                     for ( float i = 0f; i <= 1; i += 0.5f )
+                     {
+                        Range< Float > range = getCFValue( cfMap.get( i ), isoRange );
+                        minCF.put( i, range.getMinimum() );
+                        maxCF.put( i, range.getMaximum() );
+                     }
+
+                     Range< Float > posRange = estSampleTreeMap.get( key + ce ).getSecondaryPosition();
+
+                     Range< Float > range = Range.between( getCFValue( minCF, posRange.getMinimum() ), getCFValue( maxCF, posRange.getMaximum() ) );
+
+                     //                  System.out.println( "Second CF:" + range + " at " + ce );
+                     estSampleTreeMap.get( key + ce ).setSecondaryCF( range );
+                  }
+               }
+            }
+            else
+            {
+               // There is no isomer specific values, estimate CF based on the position
+               for ( Float ce : fraction.keySet() )
                {
+                  Range< Float > cfRange = estSampleTreeMap.get( key + ce ).getCF();
+
+                  float a = cfRange.getMaximum() - cfRange.getMinimum();
+                  float b = cfRange.getMinimum();
+
                   Range< Float > posRange = estSampleTreeMap.get( key + ce ).getSecondaryPosition();
-                  estSampleTreeMap.get( key + ce ).setSecondaryCF( getCFValue( dbcf, posRange ) );
+
+                  float min = a * posRange.getMinimum() + b;
+                  float max = a * posRange.getMaximum() + b;
+
+                  Range< Float > nextCfRange = Range.between( min, max );
+                  estSampleTreeMap.get( key + ce ).setSecondaryCF( nextCfRange );
                }
             }
          }
@@ -1100,7 +1134,11 @@ public class SampleEstimation
          {
             Range< Float > val = estSampleTreeMap.get( key + ce ).getSecondCFCorrectedFAI();
 
-            Range< Float > pos = Range.between( val.getMinimum() / sumMin, val.getMaximum() / sumMax );
+//            Range< Float > pos = Range.between( val.getMinimum() / sumMin, val.getMaximum() / sumMax );
+            float posAvg = val.getMinimum() / sumMin;
+
+            Range<Float> pos = posAvg > 0.5f ? Range.between( val.getMinimum() / sumMin, val.getMaximum() / sumMax ) :
+                    Range.between( val.getMaximum() / sumMax, val.getMinimum() / sumMin );
 
             if( sumMin != 0 && sumMax != 0)
                estSampleTreeMap.get( key + ce ).setSecondaryRel_FAI( pos );
@@ -1129,14 +1167,19 @@ public class SampleEstimation
 
          for( Float ce : ceSet )
          {
+            Range<Float> pos = estSampleTreeMap.get( key + ce ).getRel_FAI();
+
             // Get the reference line from 255.23
             Float position0 = referenceFAIMap.get( clazz ).get( ce, "rel0" );
             Float position1 = referenceFAIMap.get( clazz ).get( ce, "rel1" );
 
             if(position0 == null) break;
 
-            Float min = ( ( posMin - position0 ) / ( position1 - position0 ) );
-            Float max = ( ( posMax - position0 ) / ( position1 - position0 ) );
+            float a = position1 - position0;
+            float b = position0;
+
+            float min = (pos.getMinimum() - b) / a;
+            float max = (pos.getMaximum() - b) / a;
 
             if( null == estPosMin )
             {
@@ -1166,18 +1209,19 @@ public class SampleEstimation
       }
    }
 
-   public static void updateDBCF( String key, MasterDatabase masterDatabase, TreeMap< String, Fraction > sampleTreeMap,
-           TreeMap< String, EstSample > estSampleTreeMap, TreeMap< Integer, Fraction > fractionTreeMap,
-           String clazz, List< FAAnion > faAnions, boolean isSym )
+   public static void updateCorrectionFactor( String key, MasterDatabase masterDatabase, TreeMap< String, Fraction > sampleTreeMap,
+           TreeMap< String, EstSample > estSampleTreeMap, TreeMap< Integer, Fraction > fractionTreeMap, List< FAAnion > faAnions, boolean isSym )
    {
       //		final float faIndex = faAnions.stream().findFirst().get().getCq();
       final FAAnion faAnion = faAnions.stream().findFirst().get();
-      final int refIndex = faAnion.getIndex();
 
       // Initial Position Estimation
-      final int FA_db = faAnions.stream().findFirst().get().getFADoubleBonds();
+      final int FA_db = faAnion.getFADoubleBonds();
 
-      if( FA_db > 2 )
+//      if(key.startsWith( "PG 36:4" ))
+//         System.out.println(key);
+
+      if( FA_db > 0 )
       {
          Fraction fraction = sampleTreeMap.get(key);
          fraction.getMax( "Sample" );
@@ -1190,7 +1234,7 @@ public class SampleEstimation
 
             for( Float ce : fraction.keySet() )
             {
-               estSampleTreeMap.get( key + ce ).setPosition( Range.between( 0f, 0f ) );
+               estSampleTreeMap.get( key + ce ).setPosition( Range.between( avgPosition, avgPosition ) );
 
                if( estSampleTreeMap.get( key + ce ).getCorrectedCOI().equals( 0f ) )
                   continue;
@@ -1219,25 +1263,6 @@ public class SampleEstimation
                {
                   estSampleTreeMap.get( key + ce ).setIsomer( Range.between( isoMin, isoMax ) );
                }
-            }
-
-//            System.out.println( Range.between( isoMin, isoMax ) + " is used for computing DB correction factor for symmetric.");
-
-            // In case of FAAnion Index=36	327.23 Mz	22:6(4z)	Faindex=0,
-            // There is only 1 item with the same mass
-            // Do not skip the below process! @moon : [22/1/2017]
-            //				if(faAnions.size() > 1)
-            for( Float ce : fraction.keySet() )
-            {
-               Float dbcfMin = (float) computeDBCFcurve( masterDatabase, clazz, faAnions, isSym, FA_db, ce, isoMin, avgPosition );
-               Float dbcfMax = (float) computeDBCFcurve( masterDatabase, clazz, faAnions, isSym, FA_db, ce, isoMax, avgPosition );
-
-               Range<Float> range = Range.between( dbcfMin, dbcfMax );
-
-//               System.out.println( range + " at " + ce );
-
-               estSampleTreeMap.get( key + ce ).setCF( range );
-               estSampleTreeMap.get( key + ce ).setSecondaryCF( range );
             }
          }
          else
@@ -1291,322 +1316,34 @@ public class SampleEstimation
 //  				for( Float ce : fraction.keySet() )
 //                 estSampleTreeMap.get( key + ce ).setPosition( Range.between( posMin, posMax ) );
 
-            // If the first isomer has value
-//            float avgPosition = (posMin + posMax) / 2f;
-//
-//            if( avgPosition == 0.5f )
-//            {
-//               // Estimate DBCF based on the isomer
-//               Float isoMin = null, isoMax = null;
-//
-//               for ( Float ce : fraction.keySet() )
-//               {
-//                  if( estSampleTreeMap.get( key + ce ).getCorrectedCOI().equals( 0f ) )
-//                     continue;
-//
-//                  Range< Float > isoRange = estSampleTreeMap.get( key + ce ).getIsomer();
-//
-//                  if ( null == isoMin )
-//                  {
-//                     isoMin = isoRange.getMinimum();
-//                     isoMax = isoRange.getMaximum();
-//                  }
-//
-//                  isoMin = Float.min( isoMin, isoRange.getMinimum() );
-//                  isoMax = Float.max( isoMax, isoRange.getMaximum() );
-//               }
-//
-//               if( isoMin == null )
-//               {
-//                  isoMax = getMaxIsomer( faAnions );
-//                  isoMin = getMinIsomer( faAnions );
-//               }
-//
-//               for( Float ce : fraction.keySet() )
-//               {
-//                  if( estSampleTreeMap.get( key + ce ).getCorrectedCOI().equals( 0f ) )
-//                  {
-//                     estSampleTreeMap.get( key + ce ).setIsomer( Range.between( isoMin, isoMax ) );
-//                  }
-//               }
-//
-//               System.out.println( Range.between( isoMin, isoMax ) + " is used for computing DB correction factor for asymmetric." );
-//
-//               for ( Float ce : fraction.keySet() )
-//               {
-//                  // 3rd
-//                  TreeMap< Float, TreeMap< Float, Float > > cfMap = new TreeMap<>();
-//                  cfMap.put(0f, new TreeMap<>());
-//                  cfMap.put(0.5f, new TreeMap<>());
-//                  cfMap.put(1f, new TreeMap<>());
-//
-//                  String[][] scopes = new String[][] { { "1.0", "0", "0" }, { "0.5", "0.5", "0" },
-//                          { "0", "1.0", "0" } };
-//
-//                  for ( FAAnion faItem : faAnions )
-//                  {
-//                     for ( String[] scope : scopes )
-//                     {
-//                        for ( String[] detailRow : masterDatabase.getDetails( faItem.getIndex(), fraction.getClazz(), scope[ 0 ], scope[ 1 ], scope[ 2 ] ) )
-//                        {
-//                           if ( ce == Float.parseFloat( detailRow[ 0 ] ) )
-//                           {
-//                              float sn2 = Float.parseFloat( scope[ 1 ] );
-//                              float isomer = faItem.getFAIsomer();
-//                              float ret = Float.parseFloat( detailRow[ 2 ] );
-//
-//                              cfMap.get(sn2).put( isomer, ret );
-//
-//                              break;
-//                           }
-//                        }
-//                     }
-//                  }
-//
-//                  ArrayList< Float > list = new ArrayList<>();
-//
-//                  Range< Float > isoRange = Range.between( isoMin, isoMax );
-//
-//                  for(float i = 0f; i <= 1; i += 0.5f)
-//                  {
-//                     Range< Float > range = getCFValue( cfMap.get( i ), isoRange );
-//                     list.add( range.getMinimum() );
-//                     list.add( range.getMaximum() );
-//                  }
-//
-//                  Range< Float > range = Range.between( Collections.min( list ), Collections.max( list ) );
-//
-//                  System.out.println( "1st CF:" + range + " at " + ce );
-//
-//                  estSampleTreeMap.get( key + ce ).setCF( range );
-//                  estSampleTreeMap.get( key + ce ).setSecondaryCF( range );
-//               }
-//            }
-//            else
-//            {
-//               faAnions.stream().forEach( c ->
-//               {
-//                  if( c.getFADoubleBonds() != 0 )
-//                  {
-//                     for( Float ce : fraction.keySet() )
-//                     {
-//                        //estSampleTreeMap.get( key + ce ).addDbCFRange( dbcf );
-//                        Float dbcf = ( float ) computeDBCFcurve( masterDatabase, clazz, faAnions, isSym, FA_db, ce, c.getFAIsomer(), avgPosition );
-//
-//                        estSampleTreeMap.get( key + ce ).addCF( c.getFAIsomer(), dbcf );
-//                     }
-//                  }
-//               });
-//
-//               // There is no isomer specific values, estimate DBCF based on the position
-//               for ( Float ce : fraction.keySet() )
-//               {
-//                  TreeMap< Float, Float > dbcf = new TreeMap<>();
-//                  String[][] scopes = new String[][] { { "1.0", "0", "0" }, { "0.5", "0.5", "0" },
-//                          { "0", "1.0", "0" } };
-//
-//                  for ( String[] scope : scopes )
-//                  {
-//                     for ( String[] detailRow : masterDatabase.getDetails( refIndex, fraction.getClazz(), scope[ 0 ], scope[ 1 ], scope[ 2 ] ) )
-//                     {
-//                        if ( ce == Float.parseFloat( detailRow[ 0 ] ) )
-//                        {
-//                           float sn2 = Float.parseFloat( scope[ 1 ] );
-//                           float ret = Float.parseFloat( detailRow[ 2 ] );
-//
-//                           dbcf.put( sn2, ret );
-//
-//                           break;
-//                        }
-//                     }
-//                  }
-//
-//                  if ( dbcf.size() > 2 )
-//                  {
-//                     Range< Float > posRange = estSampleTreeMap.get( key + ce ).getPosition();
-//                     Range< Float > cfRange = getCFValue( dbcf, posRange );
-//                     estSampleTreeMap.get( key + ce ).setCF( cfRange );
-//                     estSampleTreeMap.get( key + ce ).setSecondaryCF( cfRange );
-//                  }
-//               }
-//            }
-         }
-      }
-   }
-
-	// The 1st isomer estimation
-	public static void estimateIsomer( final MasterDatabase masterDatabase, final TreeMap< Integer, Fraction > fractionTreeMap,
-			TreeMap< String, EstSample > estSampleTreeMap, final String clazz,	final List<FAAnion> faAnions,
-			final float ce, final boolean isSym, final String key )
-	{
-		// Decide if the given fragment is symmetric or asymmetric
-		String[][] scopes = isSym ? (
-				clazz.equals( "PCO" ) || clazz.equals( "PEO" ) ? new String[][] { {"0", "1.0", "0"} } : new String[][] { {"0", "0", "1.0"} }) :
-				new String[][] { {"1.0", "0", "0"}, {"0.5", "0.5", "0"}, {"0", "1.0", "0"} };
-		List<Float> estIsomer = new ArrayList<>(  );
-
-		for(String[] scope : scopes)
-		{
-			TreeMap<Float, Float> isomer = new TreeMap<>(  );
-
-//         System.out.println(faAnions);
-
-			for( FAAnion faAnion : faAnions )
-			{
-				if( !fractionTreeMap.containsKey( faAnion.getIndex() ) )
-					fractionTreeMap.put( faAnion.getIndex(), new Fraction(clazz, faAnion.getIndex()) );
-
-				for ( String[] detailRow : masterDatabase.getDetails( faAnion.getIndex(), clazz, scope[ 0 ], scope[ 1 ], scope[2] ) )
-				{
-					if ( ce == Float.parseFloat( detailRow[ 0 ] ) )
-					{
-						final float ratio = detailRow[ 3 ].isEmpty() || detailRow[ 1 ].isEmpty() ? 0f : Float.parseFloat( detailRow[ 3 ] ) / Float.parseFloat( detailRow[ 1 ] );
-
-//                  System.out.println(ratio);
-
-						// Add FAI
-						fractionTreeMap.get( faAnion.getIndex() ).put( ce, "SN2-" + Float.parseFloat( scope[1] ), Float.parseFloat( detailRow[1] ) );
-
-						if( ratio > 0 )
-						{
-							// We assume there is CO2Loss
-							// Add COI
-							fractionTreeMap.get( faAnion.getIndex() ).setContainsCo2Loss( true );
-
-							fractionTreeMap.get( faAnion.getIndex() ).put( ce, "CO2:SN2-" + Float.parseFloat( scope[1] ), Float.parseFloat( detailRow[3] ) );
-						}
-
-						isomer.put( ratio, faAnion.getFAIsomer() );
-
-						break;
-					}
-				}
-			}
-
-//         System.out.println(isomer);
-
-			// Suggest isomer value for the sample with ce
-			if(isomer.size() == 1)
-			{
-				estIsomer.add( isomer.get( isomer.firstKey() ) );
-			}
-			else
-			{
-//            estIsomer.addAll( isomer.values() );
-//				System.out.println( key + ce + " -- " + isomer + ":" + estSampleTreeMap.get( key + ce ).getFaCoRatio() );
-				if( null == estSampleTreeMap.get( key + ce ).getFaCoRatio() || estSampleTreeMap.get( key + ce ).getFaCoRatio().equals( 0f ) )
-					estIsomer.addAll( isomer.values() );
-				else {
-               estIsomer.add( getIsomerValue( isomer, estSampleTreeMap.get( key + ce ).getFaCoRatio() ) );
-            }
-			}
-		}
-
-		Range isomerRange = Range.between( Collections.min( estIsomer ), Collections.max( estIsomer ) );
-//		System.out.println( key + ce + " : " + isomerRange );
-
-		if( estSampleTreeMap.containsKey( key + ce ) )
-			estSampleTreeMap.get( key + ce ).setIsomer( isomerRange );
-	}
-
-   public static void updateSecondaryDBCF( MasterDatabase masterDatabase, ObservableList< FAAnion > mFaAnionsList, ArrayList< TreeMap< String, EstSample > > estSampleList, Set< Float > keySet, String clazz, String key, double mass, int carbon, int db )
-   {
-      List< FAAnion > faAnions = getMassIndexes( mFaAnionsList, clazz, mass, carbon, db );
-
-      for( final TreeMap< String, EstSample > estSampleTreeMap : estSampleList )
-      {
-         Float isoMin = null, isoMax = null;
-         Float posMin = null, posMax = null;
-
-         for ( Float ce : keySet )
-         {
-            Range< Float > isoRange = estSampleTreeMap.get( key + ce ).getIsomer();
-            Range< Float > posRange = estSampleTreeMap.get( key + ce ).getSecondaryPosition();
-
-            if ( null == isoMin )
+            for ( Float ce : fraction.keySet() )
             {
-               isoMin = isoRange.getMinimum();
-               isoMax = isoRange.getMaximum();
+               TreeMap< Float, TreeMap< Float, Float > > cfMap = new TreeMap<>();
+               cfMap.put( 0f, new TreeMap<>() );
+               cfMap.put( 0.5f, new TreeMap<>() );
+               cfMap.put( 1f, new TreeMap<>() );
 
-               posMin = posRange.getMinimum();
-               posMax = posRange.getMaximum();
-            }
+               String[][] scopes = new String[][] { { "1.0", "0", "0" }, { "0.5", "0.5", "0" },
+                       { "0", "1.0", "0" } };
 
-            isoMin = Float.min( isoMin, isoRange.getMinimum() );
-            isoMax = Float.max( isoMax, isoRange.getMaximum() );
-
-            posMin = Float.min( posMin, posRange.getMinimum() );
-            posMax = Float.max( posMax, posRange.getMaximum() );
-         }
-
-//         for ( Float ce : keySet )
-//         {
-//            ArrayList< Float > list = new ArrayList<>();
-//
-//            // min isomer / min position
-//            list.add( ( float ) computeDBCFcurve( masterDatabase, clazz, faAnions, false,
-//                    db, ce, isoMin, posMin ) );
-//
-//            // max isomer / min position
-//            list.add( ( float ) computeDBCFcurve( masterDatabase, clazz, faAnions, false,
-//                    db, ce, isoMax, posMin ) );
-//
-//            // min isomer / max position
-//            list.add( ( float ) computeDBCFcurve( masterDatabase, clazz, faAnions, false,
-//                    db, ce, isoMin, posMax ) );
-//
-//            // max isomer / max position
-//            list.add( ( float ) computeDBCFcurve( masterDatabase, clazz, faAnions, false,
-//                    db, ce, isoMax, posMax ) );
-//
-//            estSampleTreeMap.get( key + ce ).setSecondaryCF( Range.between( Collections.min( list ), Collections.max( list ) ) );
-//         }
-         for ( Float ce : keySet )
-         {
-            // 3rd method
-            TreeMap< Float, TreeMap< Float, Float > > cfMap = new TreeMap<>();
-            cfMap.put( 0f, new TreeMap<>() );
-            cfMap.put( 0.5f, new TreeMap<>() );
-            cfMap.put( 1f, new TreeMap<>() );
-
-            String[][] scopes = new String[][] { { "1.0", "0", "0" }, { "0.5", "0.5", "0" },
-                    { "0", "1.0", "0" } };
-
-            for ( FAAnion faItem : faAnions )
-            {
-               for ( String[] scope : scopes )
+               for ( FAAnion faItem : faAnions )
                {
-                  for ( String[] detailRow : masterDatabase.getDetails( faItem.getIndex(), clazz, scope[ 0 ], scope[ 1 ], scope[ 2 ] ) )
+                  for ( String[] scope : scopes )
                   {
-                     if ( ce == Float.parseFloat( detailRow[ 0 ] ) )
-                     {
-                        float sn2 = Float.parseFloat( scope[ 1 ] );
-                        float isomer = faItem.getFAIsomer();
-                        float ret = Float.parseFloat( detailRow[ 2 ] );
+                     String[] row = masterDatabase.getDetail( ce, faItem.getIndex(), fraction.getClazz(), scope[ 0 ], scope[ 1 ], scope[ 2 ] );
 
-                        cfMap.get( sn2 ).put( isomer, ret );
+                     float sn2 = Float.parseFloat( scope[ 1 ] );
+                     float isomer = faItem.getFAIsomer();
+                     float ret = Float.parseFloat( row[ 2 ] );
 
-                        break;
-                     }
+                     cfMap.get( sn2 ).put( isomer, ret );
                   }
                }
-            }
-
-            if( isoMin.equals( isoMax ) ) {
-               // One iso value
-               System.out.println( "1st CF used for 2nd CF due to only one isomer" );
-               Range< Float > range = estSampleTreeMap.get( key + ce ).getCF();
-
-               System.out.println( "2nd CF:" + range + " at " + ce );
-               estSampleTreeMap.get( key + ce ).setSecondaryCF( range );
-            }
-            else
-            {
 
                TreeMap< Float, Float > minCF = new TreeMap<>();
                TreeMap< Float, Float > maxCF = new TreeMap<>();
 
-               Range< Float > isoRange = Range.between( isoMin, isoMax );
+               Range< Float > isoRange = estSampleTreeMap.get( key + ce ).getIsomer();
 
                for ( float i = 0f; i <= 1; i += 0.5f )
                {
@@ -1615,16 +1352,95 @@ public class SampleEstimation
                   maxCF.put( i, range.getMaximum() );
                }
 
-               Range< Float > posRange = estSampleTreeMap.get( key + ce ).getSecondaryPosition();
+               Range< Float > range = Range.between( getCFValue( minCF, posMin ), getCFValue( maxCF, posMax ) );
 
-               Range< Float > range = Range.between( getCFValue( minCF, posRange.getMinimum() ), getCFValue( maxCF, posRange.getMaximum() ) );
+               System.out.println( "1st CF:" + range + " at " + ce );
 
-               System.out.println( "2nd CF:" + range + " at " + ce );
-               estSampleTreeMap.get( key + ce ).setSecondaryCF( range );
+               estSampleTreeMap.get( key + ce ).setCF( range );
+            }
+         }
+      }
+      else {
+         if( isSym )
+         {
+            Fraction fraction = sampleTreeMap.get(key);
+
+            for ( Float ce : fraction.keySet() )
+            {
+               estSampleTreeMap.get( key + ce ).setPosition( Range.between( 0.5f, 0.5f ) );
             }
          }
       }
    }
+
+	// The 1st isomer estimation
+	public static void estimateIsomer( final MasterDatabase masterDatabase, final String clazz, Set<Float> ceSet,
+           final TreeMap< Integer, Fraction > fractionTreeMap, TreeMap< String, EstSample > estSampleTreeMap,
+           final List<FAAnion> faAnions, final boolean isSym, final String key )
+	{
+      for(Float ce : ceSet) {
+         // Decide if the given fragment is symmetric or asymmetric
+         String[][] scopes = isSym ? (
+                 clazz.equals( "PCO" ) || clazz.equals( "PEO" ) ? new String[][] { {"0", "1.0", "0"} } : new String[][] { {"0", "0", "1.0"} }) :
+                 new String[][] { {"1.0", "0", "0"}, {"0.5", "0.5", "0"}, {"0", "1.0", "0"} };
+         List<Float> estIsomer = new ArrayList<>(  );
+
+         for(String[] scope : scopes)
+         {
+            TreeMap<Float, Float> isomer = new TreeMap<>(  );
+
+            for( FAAnion faAnion : faAnions )
+            {
+               if( !fractionTreeMap.containsKey( faAnion.getIndex() ) )
+                  fractionTreeMap.put( faAnion.getIndex(), new Fraction(clazz, faAnion.getIndex()) );
+
+               for ( String[] detailRow : masterDatabase.getDetails( faAnion.getIndex(), clazz, scope[ 0 ], scope[ 1 ], scope[2] ) )
+               {
+                  if ( ce == Float.parseFloat( detailRow[ 0 ] ) )
+                  {
+                     final float ratio = detailRow[ 3 ].isEmpty() || detailRow[ 1 ].isEmpty() ? 0f : Float.parseFloat( detailRow[ 3 ] ) / Float.parseFloat( detailRow[ 1 ] );
+
+                     // Add FAI
+                     fractionTreeMap.get( faAnion.getIndex() ).put( ce, "SN2-" + Float.parseFloat( scope[1] ), Float.parseFloat( detailRow[1] ) );
+
+                     if( ratio > 0 )
+                     {
+                        // We assume there is CO2Loss
+                        // Add COI
+                        fractionTreeMap.get( faAnion.getIndex() ).setContainsCo2Loss( true );
+
+                        fractionTreeMap.get( faAnion.getIndex() ).put( ce, "CO2:SN2-" + Float.parseFloat( scope[1] ), Float.parseFloat( detailRow[3] ) );
+                     }
+
+                     isomer.put( ratio, faAnion.getFAIsomer() );
+
+                     break;
+                  }
+               }
+            }
+
+            // Suggest isomer value for the sample with ce
+            if(isomer.size() == 1)
+            {
+               estIsomer.add( isomer.get( isomer.firstKey() ) );
+            }
+            else
+            {
+               if( null == estSampleTreeMap.get( key + ce ).getFaCoRatio() || estSampleTreeMap.get( key + ce ).getFaCoRatio().equals( 0f ) )
+                  estIsomer.addAll( isomer.values() );
+               else {
+                  estIsomer.add( getIsomerValue( isomer, estSampleTreeMap.get( key + ce ).getFaCoRatio() ) );
+               }
+            }
+         }
+
+         Range isomerRange = Range.between( Collections.min( estIsomer ), Collections.max( estIsomer ) );
+         //		System.out.println( key + ce + " : " + isomerRange );
+
+         if( estSampleTreeMap.containsKey( key + ce ) )
+            estSampleTreeMap.get( key + ce ).setIsomer( isomerRange );
+      }
+	}
 
    public static float getSN2Value( TreeMap< Float, Float > data, float ratio )
 	{
@@ -1672,160 +1488,16 @@ public class SampleEstimation
 		}
 	}
 
-	/**
-	 *
-	 * @param masterDatabase
-	 * @param faAnions
-	 * @param FA_db
-	 * @param ce
-	 * @param avgIsomer
-	 * @param avgPosition
-	 * @return
-	 */
-	public static double computeDBCFcurve(
-			final MasterDatabase masterDatabase, String clazz, final List<FAAnion> faAnions, boolean isSym, int FA_db, float ce,
-			double avgIsomer, double avgPosition )
-	{
-		String[][] scopes = FA_db < 3 ? new String[][] { {"0.5", "0.5", "0"} } :
-				new String[][] { {"1.0", "0", "0"}, {"0.75", "0.25", "0"}, {"0.5", "0.5", "0"}, {"0.25", "0.75", "0"}, {"0", "1.0", "0"} };
-
-		scopes = isSym ? (
-				clazz.equals( "PCO" ) || clazz.equals( "PEO" ) ? new String[][] { {"0", "1.0", "0"} } : new String[][] { {"0", "0", "1.0"} }) : scopes;
-
-		double[] xval = new double[scopes.length];
-		for(int i = 0; i < xval.length; i++)
-			xval[i] = Float.parseFloat( scopes[i][1] );
-
-		double[] yval = faAnions.stream().mapToDouble( FAAnion::getFAIsomer ).toArray();
-
-		double[][] fval = new double[xval.length][yval.length];
-
-		double ret = 0;
-
-		if( isSym )
-		{
-			for(String[] scope : scopes)
-			{
-				int j = 0;
-				for ( FAAnion faAnion : faAnions )
-				{
-					for ( String[] detailRow : masterDatabase.getDetails( faAnion.getIndex(), clazz, scope[ 0 ], scope[ 1 ], scope[ 2 ] ) )
-					{
-						if ( ce == Float.parseFloat( detailRow[ 0 ] ) )
-						{
-							fval[0][j] = Float.parseFloat( detailRow[ 2 ] );
-
-							break;
-						}
-					}
-					j++;
-				}
-			}
-
-			LinearInterpolator interpolator = new LinearInterpolator();
-
-			xval = new double[yval.length];
-
-			for( int i = 0; i < yval.length; i++)
-				xval[i] = fval[0][i];
-
-			try
-			{
-				PolynomialSplineFunction func = interpolator.interpolate( yval, xval );
-
-//				System.out.println( "SN2: 0.5 Isomer: " + avgIsomer + " -> DBCF. = " + func.value( avgIsomer ) );
-
-				ret = func.value( avgIsomer );
-			}
-			// If there are not enought data points, we assume the only one value for return
-			catch (NumberIsTooSmallException exp)
-			{
-				ret = xval[0];
-			}
-		}
-		else
-		{
-			if( xval.length == 1 )
-			{
-				for(String[] scope : scopes)
-				{
-					for ( FAAnion faAnion : faAnions )
-					{
-						for ( String[] detailRow : masterDatabase.getDetails( faAnion.getIndex(), clazz, scope[ 0 ], scope[ 1 ], scope[ 2 ] ) )
-						{
-							if ( ce == Float.parseFloat( detailRow[ 0 ] ) )
-							{
-								ret = Float.parseFloat( detailRow[ 2 ] );
-
-								break;
-							}
-						}
-					}
-				}
-			}
-			else
-			{
-				int i = 0;
-				for(String[] scope : scopes)
-				{
-					int j = 0;
-					for ( FAAnion faAnion : faAnions )
-					{
-						for ( String[] detailRow : masterDatabase.getDetails( faAnion.getIndex(), clazz, scope[ 0 ], scope[ 1 ], scope[ 2 ] ) )
-						{
-							if ( ce == Float.parseFloat( detailRow[ 0 ] ) )
-							{
-								float dbcf = Float.parseFloat( detailRow[ 2 ] );
-
-								fval[i][j] = dbcf;
-
-								break;
-							}
-						}
-						j++;
-					}
-					i++;
-				}
-
-				if( yval.length == 1 )
-				{
-					LinearInterpolator interpolator = new LinearInterpolator();
-
-					yval = new double[xval.length];
-
-					for( i = 0; i < yval.length; i++)
-						yval[i] = fval[i][0];
-
-					PolynomialSplineFunction func = interpolator.interpolate( xval, yval );
-
-					//					System.out.println( "SN2: " + avgPosition + " Isomer: " + avgIsomer + " -> DBCF. = " + func.value( avgPosition ) );
-
-					ret = func.value( avgPosition );
-				}
-				else
-				{
-					BivariateFunction func = Bicubic.createBivariateFunction( xval, yval, fval );
-
-					//					System.out.println( "SN2: " + avgPosition + " Isomer: " + avgIsomer + " -> DBCF. = " + func.value( avgPosition, avgIsomer ) );
-
-					ret = func.value( avgPosition, avgIsomer );
-				}
-			}
-		}
-
-		return ret;
-	}
-
-   public static Range<Float> getCFValue( TreeMap< Float, Float > dbcf, Range<Float> ratio )
+   public static Range<Float> getCFValue( TreeMap< Float, Float > cf, Range<Float> ratio )
    {
-      if( dbcf.size() < 2 )
+      if( cf.size() < 2 )
       {
          System.err.println( "CF: Data set does not have enough items to extract a function." );
          return Range.between( 1f, 1f );
       }
       else
       {
-         double[] params = computeRegressionParameters( false, dbcf );
+         double[] params = computeRegressionParameters( false, cf );
 
          if( params.length  == 2)
          {
@@ -2144,25 +1816,25 @@ public class SampleEstimation
 							noCorrectedSumMap.get( ce ) :
 							estSampleTreeMap.get( key + ce ).getCorrectedFAI();
 
-               TreeMap< Float, Float > dbcfMap = estSampleTreeMap.get( key + ce ).getCfMap();
+               TreeMap< Float, Float > cfMap = estSampleTreeMap.get( key + ce ).getCfMap();
 
 					Range< Float > originalFai = estSampleTreeMap.get( key + ce ).getPosition();
 
-					faSample.add( ce, sn2, fai, sumMap.get( ce ), noCorrectedFai, noCorrectedSumMap.get(ce), dbcfMap, originalFai );
+					faSample.add( ce, sn2, fai, sumMap.get( ce ), noCorrectedFai, noCorrectedSumMap.get(ce), cfMap, originalFai );
 				}
 
 				BARow baRow = faTreeItem.getValue();
 //				System.out.println( "Key: " + baRow.toString() );
 				faSample.setKey( baRow.toString() );
 
-				if ( sn2.getMinimum() < 0.5f )
+				if ( sn2.getMinimum() <= 0.5f )
 				{
 					if( samples[ 0 ] == null )
 						samples[ 0 ] = faSample;
 					else
 						samples[ 1 ] = faSample;
 				}
-				else if ( sn2.getMinimum() >= 0.5f )
+				else if ( sn2.getMinimum() > 0.5f )
 				{
 					if( samples[ 1 ] == null )
 						samples[ 1 ] = faSample;
@@ -3080,14 +2752,14 @@ public class SampleEstimation
 
 			NCE.forEach( ce ->
 			{
-//				System.out.println( getKey() + ": sum = "  + faSample.get(ce).getNoCorrectedSum() + ", a + b = " + (faSample.get(ce).getNoCorrectedFAI() + faSample2.get(ce).getNoCorrectedFAI() ) );
-				data.put( ce, new FASampleData( faSample.get(ce).getPos(),
-						add(faSample.get(ce).getFai(), faSample2.get(ce).getFai()),
+				data.put( ce, new FASampleData(
+                  merge( faSample.get(ce).getPos(), faSample2.get(ce).getPos() ),
+                  faSample.get(ce).getSum(),
 						faSample.get(ce).getSum(),
-						faSample.get(ce).getNoCorrectedFAI() + faSample2.get(ce).getNoCorrectedFAI(),
+                  faSample.get(ce).getNoCorrectedSum(),
 						faSample.get(ce).getNoCorrectedSum(),
                   faSample.get(ce).getDbcfMap(),
-						add( faSample.get(ce).getOrgFAI(), faSample2.get(ce).getOrgFAI() ) ) );
+                  merge( faSample.get(ce).getOrgFAI(), faSample2.get(ce).getOrgFAI() ) ) );
 			});
 		}
 

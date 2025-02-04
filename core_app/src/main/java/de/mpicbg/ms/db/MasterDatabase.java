@@ -371,6 +371,46 @@ import java.util.TreeMap;
 		 return list;
 	 }
 
+    public String[] getDetail( Float ce, Integer ref, String clazz, String sn1, String sn2, String sym )
+    {
+       String[] ret = null;
+
+       if ( conn.isPresent() )
+       {
+          try
+          {
+             Statement stat = conn.get().createStatement();
+             ResultSet rs;
+             rs = stat.executeQuery( "SELECT CE, INT, CF, CO2INT FROM detail WHERE REF=" + ref +
+                     " AND GRP = '" + clazz + "' AND SN1=" + sn1 + " AND SN2=" + sn2 + " AND SYM=" + sym + " AND CE=" + ce );
+             while ( rs.next() )
+             {
+                double co2mz = rs.getDouble( "CO2INT" );
+                if( co2mz == 0d )
+                {
+                   ret = new String[]{
+                           rs.getString( "CE" ), rs.getString( "INT" ), rs.getString( "CF" ), "", ""
+                   };
+                }
+                else
+                {
+                   ret = new String[]{
+                           rs.getString( "CE" ), rs.getString( "INT" ), rs.getString( "CF" ),
+                           rs.getString( "CO2INT" )
+                   };
+                }
+             }
+             stat.close();
+          }
+          catch ( SQLException e )
+          {
+             e.printStackTrace();
+          }
+       }
+
+       return ret;
+    }
+
 	 public void checkNames()
 	 {
 		 if ( conn.isPresent() )

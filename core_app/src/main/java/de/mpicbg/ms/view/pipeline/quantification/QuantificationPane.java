@@ -196,7 +196,7 @@ public class QuantificationPane extends BorderPane
 
 					StringBuilder sb = new StringBuilder(  );
 
-					sb.append( "Group\tSpecie\tMz\tSample\tCE\tC.FAI\tC.COI\tFA-CO.ratio\tFA_Isomer\t1st Pos\t1st CF\t1st C.FAI\t1st rel_FAI\t2nd Pos\t2nd CF\t2nd C.FAI\t2nd rel_FAI\t3rd Pos\tTX.CF\n" );
+					sb.append( "Group\tSpecie\tMz\tSample\tCE\tC.FAI\tC.COI\tFA-CO.ratio\tFA_Isomer\t1st Pos\t1st CF\t1st C.FAI\t1st rel_FAI\t2nd Pos\t2nd CF\t2nd C.FAI\t2nd rel_FAI\t3rd Pos\tTX.CF\tC.FAI with TX.CF\n" );
 
 					for ( String groupKey : groupMap.keySet() )
 					{
@@ -783,35 +783,6 @@ public class QuantificationPane extends BorderPane
 						maxMap.get(clazz).put( ce, maxMap.get(clazz).get( ce ) + sum.getMaximum() );
 					}
 				}
-
-//				if( processOption.equals( Quant.Option.Quantity ) && qty != 0f)
-//				{
-//					for ( Float ce : pri.getNCE() )
-//					{
-//						if ( !minMap.containsKey( ce ) )
-//						{
-//							minMap.put( ce, 0f );
-//							maxMap.put( ce, 0f );
-//						}
-//
-//						Range< Float > sum = faiSumMap.get( species + sampleId ).get( ce );
-//						minMap.put( ce, minMap.get( ce ) + sum.getMinimum() );
-//						maxMap.put( ce, maxMap.get( ce ) + sum.getMaximum() );
-//					}
-//				} else {
-//					for ( Float ce : pri.getNCE() )
-//					{
-//						if ( !minMap.containsKey( ce ) )
-//						{
-//							minMap.put( ce, 0f );
-//							maxMap.put( ce, 0f );
-//						}
-//
-//						Range< Float > sum = faiSumMap.get( species + sampleId ).get( ce );
-//						minMap.put( ce, minMap.get( ce ) + sum.getMinimum() );
-//						maxMap.put( ce, maxMap.get( ce ) + sum.getMaximum() );
-//					}
-//				}
 			}
 
          for ( String clazz : faiSumHashMap.keySet() ) {
@@ -887,7 +858,7 @@ public class QuantificationPane extends BorderPane
 									{
 										Range< Float > fai = faSampleMap.get( priKey + sample ).get( fragmentName ).get( ce ).getFai();
 										Range< Float > sum = faiSum.get( sample ).get(clazz).get( ce );
-										profile = Range.between( fai.getMinimum() / sum.getMaximum() * 100, fai.getMaximum() / sum.getMinimum() * 100 );
+										profile = Range.between( fai.getMinimum() / sum.getMinimum() * 100, fai.getMaximum() / sum.getMaximum() * 100 );
 									}
 									else
 									{
@@ -911,7 +882,7 @@ public class QuantificationPane extends BorderPane
 										Range< Float > fai = faSampleMap.get( priKey + sample ).get( fragmentName ).get( ce ).getFai();
 										Range< Float > sum = faiSum.get( sample ).get(clazz).get( ce );
 
-										quantity = sum == null ? Range.between( Float.NaN, Float.NaN ) : Range.between( fai.getMinimum() / sum.getMaximum(), fai.getMaximum() / sum.getMinimum() );
+										quantity = sum == null ? Range.between( Float.NaN, Float.NaN ) : Range.between( fai.getMinimum() / sum.getMinimum(), fai.getMaximum() / sum.getMaximum() );
 									}
 									else
 									{

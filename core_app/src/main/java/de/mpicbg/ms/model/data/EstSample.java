@@ -115,6 +115,11 @@ public class EstSample
 		return cFAI;
 	}
 
+   public Float getTxCorrectedFAI()
+   {
+      return cFAI * txcf;
+   }
+
 	public void setcFAI( Float cFAI )
 	{
 		this.cFAI = cFAI;
@@ -181,8 +186,13 @@ public class EstSample
 	{
 		return convert( Range.between( cFAI * getCF().getMinimum(), cFAI * getCF().getMaximum() ), 3 );
 	}
+   public Range< Float > getCFTxCorrectedFAI()
+   {
+      return Range.between( txcf * cFAI * getCF().getMinimum(), txcf * cFAI * getCF().getMaximum() );
+   }
 
-	public Range< Float > getRel_FAI()
+
+   public Range< Float > getRel_FAI()
 	{
 		return rel_FAI;
 	}
@@ -230,9 +240,9 @@ public class EstSample
 		return Range.between( cFAI * getSecondaryCF().getMinimum(), cFAI * getSecondaryCF().getMaximum() );
 	}
 
-	public Range< Float > get2ndCFCorrectedFAI()
+	public Range< Float > get2ndCFTxCorrectedFAI()
 	{
-		return convert( Range.between( cFAI * getSecondaryCF().getMinimum(), cFAI * getSecondaryCF().getMaximum() ), 3 );
+		return Range.between( txcf * cFAI * getSecondaryCF().getMinimum(), txcf * cFAI * getSecondaryCF().getMaximum() );
 	}
 
 	public void setSecondaryRel_FAI( Range< Float > secondaryRel_FAI )
@@ -257,9 +267,9 @@ public class EstSample
 
 	public Range<Float> getFinalFAI()
 	{
-		Range<Float> secondDbCFAI = getSecondCFCorrectedFAI();
+		Range<Float> secondCFAI = getSecondCFCorrectedFAI();
 		Range<Float> thirdPos = getThirdPosition();
-		return Range.between( secondDbCFAI.getMinimum() * thirdPos.getMinimum(), secondDbCFAI.getMaximum() * thirdPos.getMaximum() );
+		return Range.between( txcf * secondCFAI.getMinimum() * thirdPos.getMinimum(), txcf * secondCFAI.getMaximum() * thirdPos.getMaximum() );
 	}
 
 	public Range<Float> getNormFAI( Range<Float> basis )
@@ -279,12 +289,6 @@ public class EstSample
 		return txcf;
 	}
 
-	public void setTxCF( Float txcf )
-	{
-		this.txcf = txcf;
-	}
-
-
 	public void addCF( Float isomer, Float cf )
 	{
 		if( cfMap == null) cfMap = new TreeMap<>(  );
@@ -302,6 +306,6 @@ public class EstSample
 		return group + '\t' + specie + '\t' + mz + '\t' + name + '\t' + ce + '\t' + cFAI + '\t' + cCOI +
 				'\t' + faCoRatio + '\t' + isomer + '\t' + position + '\t' + getCF() + '\t' + getCFCorrectedFAI() +
 				'\t' + rel_FAI + '\t' + secondaryPosition + '\t' + getSecondaryCF() + '\t' + getSecondCFCorrectedFAI() +
-				'\t' + secondaryRel_FAI + '\t' + thirdPosition + '\t' + getTxCF();
+				'\t' + secondaryRel_FAI + '\t' + thirdPosition + '\t' + getTxCF() + '\t' + getCFTxCorrectedFAI();
 	}
 }

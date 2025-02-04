@@ -506,11 +506,16 @@ public class TransmissionCorrectionPane extends MasterDetailPane
 		// Asymmetric
 		TreeMap<Float, Float> co2AsymFaiRatioMap = new TreeMap<>(  );
 
-		// 36 is 22:6 fragment
-		for ( String[] detailRow : masterDatabase.getDetails( 36, clazz, "0.5", "0.5", "0" ) )
+		// 49 is 22:6 fragment
+		for ( String[] detailRow : masterDatabase.getDetails( 49, clazz, "0.5", "0.5", "0" ) )
 		{
+         String co2Int = detailRow[ 3 ];
+         if (co2Int.isEmpty()) {
+            co2Int = "0";
+         }
+
 			co2AsymFaiRatioMap.put( Float.parseFloat( detailRow[ 0 ] ),
-					Float.parseFloat( detailRow[ 3 ] ) / Float.parseFloat( detailRow[ 1 ] ));
+					Float.parseFloat( co2Int ) / Float.parseFloat( detailRow[ 1 ] ));
 		}
 
 		//				co2AsymFaiRatioMap.forEach( (c, v) -> System.out.println(c + "->" + v) );
@@ -518,13 +523,17 @@ public class TransmissionCorrectionPane extends MasterDetailPane
 		// Symmetric
 		TreeMap<Float, Float> co2SymFaiRatioMap = new TreeMap<>(  );
 
-		// 36 is 22:6 fragment
-		List<String[]> details = clazz.equals( "PCO" ) || clazz.equals( "PEO" )  ? masterDatabase.getDetails( 36, clazz, "0", "1.0", "0" ) : masterDatabase.getDetails( 36, clazz, "0", "0", "1.0" );
+		// 49 is 22:6 fragment
+		List<String[]> details = clazz.equals( "PCO" ) || clazz.equals( "PEO" )  ? masterDatabase.getDetails( 49, clazz, "0", "1.0", "0" ) : masterDatabase.getDetails( 49, clazz, "0", "0", "1.0" );
 
 		for ( String[] detailRow : details )
 		{
+         String co2Int = detailRow[ 3 ];
+         if (co2Int.isEmpty()) {
+            co2Int = "0";
+         }
 			co2SymFaiRatioMap.put( Float.parseFloat( detailRow[ 0 ] ),
-					Float.parseFloat( detailRow[ 3 ] ) / Float.parseFloat( detailRow[ 1 ] ));
+					Float.parseFloat( co2Int ) / Float.parseFloat( detailRow[ 1 ] ));
 		}
 
 		//				co2SymFaiRatioMap.forEach( (c, v) -> System.out.println(c + "->" + v) );
@@ -571,7 +580,7 @@ public class TransmissionCorrectionPane extends MasterDetailPane
 
 										for ( Double mass : computedPriFragmentMap.get(className).keySet() )
 										{
-											Float txcf = computedPriFragmentMap.get( mass ).get(className).getCF( ce );
+											Float txcf = computedPriFragmentMap.get(className).get(mass).getCF( ce );
 
 											if ( validMasses.contains( mass ) )
 												ref.add( new WeightedObservedPoint( 1, mass, txcf ) );
@@ -583,20 +592,26 @@ public class TransmissionCorrectionPane extends MasterDetailPane
 											refMap.get( ce ).addAll( ref );
 
 										// Find 22:6 nodes
+                              //
+                              // use the highest abundance intensity!
 										estSampleTreeMap.keySet().stream().forEach( c -> {
 											if(c.contains( "44:12:0-327.23" + ce ))
 											{
 												if ( !obsSymFaCoMap.containsKey( ce ) )
 													obsSymFaCoMap.put( ce, new ArrayList<>() );
 
-												obsSymFaCoMap.get( ce ).add( estSampleTreeMap.get( c ).getFaCoRatio() );
+//                                    System.out.println("Sym:" + estSampleTreeMap.get( c ).getCorrectedFAI());
+                                    if (estSampleTreeMap.get( c ).getFaCoRatio() > 0f)
+												   obsSymFaCoMap.get( ce ).add( estSampleTreeMap.get( c ).getFaCoRatio() );
 											}
 											else if(c.contains( "-327.23" + ce))
 											{
 												if ( !obsAsymFaCoMap.containsKey( ce ) )
 													obsAsymFaCoMap.put( ce, new ArrayList<>() );
 
-												obsAsymFaCoMap.get( ce ).add( estSampleTreeMap.get( c ).getFaCoRatio() );
+//                                    System.out.println("Asym(" + ce + "):" + estSampleTreeMap.get( c ).getFaCoRatio() );
+                                    if (estSampleTreeMap.get( c ).getFaCoRatio() > 0f)
+												   obsAsymFaCoMap.get( ce ).add( estSampleTreeMap.get( c ).getFaCoRatio() );
 											}
 										} );
 									}
@@ -610,15 +625,16 @@ public class TransmissionCorrectionPane extends MasterDetailPane
 				{
 					rMap.put( ce, checkRSquared( refMap.get(ce) ) );
 
-					//							Double avg = obsFaCoMap.get( ce ).stream().mapToDouble( c -> c ).average().getAsDouble();
-					//							faCoMap.put( ce, avg / co2FaiRatioMap.get(ce) );
-
 					ArrayList<Double> list = new ArrayList<>(  );
-					if(obsAsymFaCoMap.containsKey( ce ))
-						list.add( Validation.computeRsquared( obsAsymFaCoMap.get( ce ), co2AsymFaiRatioMap.get(ce) ) );
+					if(obsAsymFaCoMap.containsKey( ce )) {
+//                  System.out.println("Sample_Co2_ratio: " + obsAsymFaCoMap.get( ce ) + "\tTheoretical_Co2_ratio: " + co2AsymFaiRatioMap.get(ce));
+                  list.add( Validation.computeRsquared( obsAsymFaCoMap.get( ce ), co2AsymFaiRatioMap.get(ce) ) );
+               }
 
-					if(obsSymFaCoMap.containsKey( ce ))
-						list.add( Validation.computeRsquared( obsSymFaCoMap.get( ce ), co2SymFaiRatioMap.get(ce) ) );
+					if(obsSymFaCoMap.containsKey( ce )) {
+//                  System.out.println("Sample_Co2_ratio: " + obsSymFaCoMap.get( ce ) + "\tTheoretical_Co2_ratio: " + co2SymFaiRatioMap.get(ce));
+                  list.add( Validation.computeRsquared( obsSymFaCoMap.get( ce ), co2SymFaiRatioMap.get(ce) ) );
+               }
 
                System.out.println(list);
 
@@ -646,24 +662,24 @@ public class TransmissionCorrectionPane extends MasterDetailPane
 
 		for ( String groupId : machinePerformance.keySet() )
 		{
-			System.err.println( "Machine Performance check by TX.CF:" );
-			ArrayList< TreeMap< Float, Double > > list = machinePerformance.get( groupId );
-
-			for ( TreeMap< Float, Double > rMap : list )
-			{
-				Double avg = rMap.values().stream().mapToDouble( c -> c ).average().getAsDouble();
-
-				avgList.put( rMap.keySet().toString(), avg );
-
-				System.err.println( rMap.keySet() + " = " + rMap.values() + " -> " + avg );
-				export.append( "TX.CF" ).append( '\t' )
-						.append( rMap.keySet() ).append( '\t' )
-						.append( rMap.values() ).append( '\t' )
-						.append( avg ).append( '\n' );
-			}
+//			System.err.println( "Machine Performance check by TX.CF:" );
+//			ArrayList< TreeMap< Float, Double > > list = machinePerformance.get( groupId );
+//			for ( TreeMap< Float, Double > rMap : list )
+//			{
+//				Double avg = rMap.values().stream().mapToDouble( c -> c ).average().getAsDouble();
+//
+//				avgList.put( rMap.keySet().toString(), avg );
+//
+//				System.err.println( rMap.keySet() + " = " + rMap.values() + " -> " + avg );
+//				export.append( "TX.CF" ).append( '\t' )
+//						.append( rMap.keySet() ).append( '\t' )
+//						.append( rMap.values() ).append( '\t' )
+//						.append( avg ).append( '\n' );
+//			}
+//         list = machinePerformanceCo2.get( groupId );
 
 			System.err.println( "Machine Performance check by CO2/FAI ratio with 22:6 XML data:" );
-			list = machinePerformanceCo2.get( groupId );
+         ArrayList< TreeMap< Float, Double > > list = machinePerformanceCo2.get( groupId );
 
 			if(list.isEmpty()) System.err.println( "Skipped: 22:6 XML data are not present in the dataset." );
 
@@ -674,7 +690,8 @@ public class TransmissionCorrectionPane extends MasterDetailPane
 					Double avg = faCoMap.values().stream().mapToDouble( c -> c ).average().getAsDouble();
 
 					String key = faCoMap.keySet().toString();
-					avgList.put( key, ( avgList.get( key ) + avg ) / 2d );
+//					avgList.put( key, ( avgList.get( key ) + avg ) / 2d );
+               avgList.put( key, avg );
 
 					System.err.println( faCoMap.keySet() + " = " + faCoMap.values() + " -> " + avg );
 					export.append( "CO2/FAI" ).append( '\t' )
