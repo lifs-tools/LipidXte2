@@ -47,7 +47,7 @@ services:
           ignore:
             - node_modules/
         - action: rebuild
-          path: package.json
+          path: ../server/package.json
 
 networks:
   app-network:
