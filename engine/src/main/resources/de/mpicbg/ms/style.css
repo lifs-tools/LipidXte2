@@ -1,0 +1,24 @@
+/*
+Pseudo class 'valid' will change the row background
+ color to green when activated
+ */
+.tree-table-row-cell:valid
+{
+    -fx-background-color: #c8f9ef;
+}
+
+.tree-table-cell:valid
+{
+    -fx-background-color: #66e870;
+}
+
+.default-color0.chart-series-line-fill { -fx-stroke: #ff5700; -fx-fill: #ff570044 }
+.default-color1.chart-series-line-fill { -fx-stroke: #f9d900; -fx-fill: #f9d90044 }
+.default-color2.chart-series-line-fill { -fx-stroke: #a9e200; -fx-fill: #a9e20044 }
+.default-color3.chart-series-line-fill { -fx-stroke: #22bad9; -fx-fill: #22bad944 }
+.default-color4.chart-series-line-fill { -fx-stroke: #0181e2; -fx-fill: #0181e244 }
+.default-color5.chart-series-line-fill { -fx-stroke: #2f357f; -fx-fill: #2f357f44 }
+.default-color6.chart-series-line-fill { -fx-stroke: #860061; -fx-fill: #86006144 }
+.default-color7.chart-series-line-fill { -fx-stroke: #c62b00; -fx-fill: #c62b0044 }
+
+

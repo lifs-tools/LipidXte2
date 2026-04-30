@@ -1,0 +1,56 @@
+##########################################################
+# Identify PE SPCCIES #
+##########################################################
+
+QUERYNAME = PECO;
+	DEFINE pr = 'C[25..80] H[40..400] N[1] O[8] P[1]' WITH DBR = (2.5,14.5), CHG = -1;
+	DEFINE FA1 = 'C[10..40] H[20..100] O[2]' WITH DBR = (1.5,7.5), CHG = -1;
+	DEFINE FA2 = 'C[10..40] H[20..100] O[2]' WITH DBR = (1.5,7.5), CHG = -1;
+	DEFINE FACO1 = 'C[10..40] H[20..100]' WITH DBR = (0.5,6.5), CHG = -1;
+
+
+IDENTIFY
+	pr IN MS1- AND
+	FA1 IN MS2- AND
+	FA2 IN MS2- AND
+	FACO1 IN MS2-
+
+
+SUCHTHAT
+	isOdd(pr.chemsc[H]) AND
+	isOdd(pr.chemsc[db]*2) AND
+	FA1.chemsc + FA2.chemsc + 'C5 H11 O4 N1 P1' == pr.chemsc AND
+	FACO1.chemsc + 'C1 O2' == FA1.chemsc
+
+
+REPORT
+	PRM = pr.mass;
+	EC = pr.chemsc;
+	CLASS = "PE" % "()";
+	PRC = "%d" % "((pr.chemsc)[C] - 5)";
+	PRDB = "%d" % "((pr.chemsc)[db] - 2.5)";
+	PROH = "%d" % "((pr.chemsc)[O] - 8)";
+	SPECIE = "PE %d:%d:%d" % "((pr.chemsc)[C]-5, pr.chemsc[db] - 2.5, pr.chemsc[O]-8)";
+
+
+	PRERR = "%2.2f" % "(pr.errppm)";
+	PRI = pr.intensity;
+	FA1M = FA2.mass;
+	FA1C = "%d" % "((FA2.chemsc)[C])";
+	FA1DB = "%d" % "((FA2.chemsc)[db] - 1.5)";
+	FA1ERR = "%2.2f" % "(FA2.errppm)";
+	FA1I = FA2.intensity;
+	FA2M = FA1.mass;
+	FA2C = "%d" % "((FA1.chemsc)[C])";
+	FA2DB = "%d" % "((FA1.chemsc)[db] - 1.5)";
+	FA2ERR = "%2.2f" % "(FA1.errppm)";
+	FA2I = FA1.intensity;
+	FACO2M = FACO1.mass;
+	FACO2I = FACO1.intensity;
+	;
+
+
+
+
+
+################ end script ##################

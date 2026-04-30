@@ -1,1 +1,0 @@
-docker run -v download:/app/download -p 8090:8090 --name lipidserver-container lipid-server

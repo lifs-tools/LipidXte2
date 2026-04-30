@@ -1,0 +1,16 @@
+.DS_Store
+dist/electron/*
+dist/web/*
+build/*
+!build/icons
+coverage
+node_modules/
+npm-debug.log
+npm-debug.log.*
+thumbs.db
+!.gitkeep
+!/src/renderer/assets/PC_heart.zip
+!/src/renderer/assets/PC_ILIS.zip
+!/src/renderer/assets/PCO_heart.zip
+!/src/renderer/assets/PC_brain.zip
+!/src/renderer/assets/PC_egg.zip

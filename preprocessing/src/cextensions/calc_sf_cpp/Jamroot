@@ -1,0 +1,45 @@
+# Copyright David Abrahams 2006. Distributed under the Boost
+# Software License, Version 1.0. (See accompanying
+# file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+#
+
+using gcc ;
+
+using python : 3.6m ;
+
+# Make the definition of the python-extension rule available
+import python ;
+
+# Specify the path to the Boost project.  If you move this project,
+# adjust the path to refer to the Boost root directory.
+#use-project boost 
+#  : /home/user/Downloads/boost_1_63_0 ;
+
+lib python_boost : : <name>boost_python <search>/usr/lib/x86_64-linux-gnu ; 
+
+# Set up the project-wide requirements that everything uses the
+# boost_python library defined in the project whose global ID is
+
+project boost-python-quickstart
+	: requirements 
+    <define>BOOST_ALL_NO_LIB
+    <link>shared
+    <variant>release
+    <address-model>64
+    <python>3.6m
+    <library>python_boost
+    ;
+
+# Declare a Python extension
+python-extension calcsf 
+	: 
+	lipidxexception.cpp CalcSF.cpp
+	;
+
+install convenient_copy 
+  : calcsf
+  : <install-dependencies>on <install-type>SHARED_LIB <install-type>PYTHON_EXTENSION 
+#    <address-model>32:<location>c:/lipidxplorer/trunk/lx/mfql/calcsf27_64
+    <address-model>64:<location>calcsf27_64
+  ;
+

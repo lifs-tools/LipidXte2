@@ -1,0 +1,16 @@
+Lipid class	Aliphatic_moiety	FA_anions	sn2	sym	sn1
+PC	Diacyl	2	1	1	1
+PCO	Ether	1	1	0	0
+LPC	Monoacyl	1	1	0	1
+LPE	Monoacyl	1	1	0	1
+PE	Diacyl	2	1	1	1
+PEO	Ether	1	1	0	0
+PI	Diacyl	2	1	1	1
+PS	Diacyl	2	1	1	1
+PG	Diacyl	2	1	1	1
+PA	Diacyl	2	1	1	1
+PIP	Diacyl	2	1	1	1
+PSO	Ether	1	1	0	0
+LPS	Monoacyl	1	1	0	1
+LPI	Monoacyl	1	1	0	1
+LPA	Monoacyl	1	1	0	1

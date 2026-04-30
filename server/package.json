@@ -1,0 +1,32 @@
+{
+  "name": "LipidXteServer",
+  "version": "0.0.1",
+  "description": "LipidXte Server",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint index.js",
+    "prestart": "npm run lint",
+    "start": "node index.js",
+    "dev": "cross-env NODE_ENV=development PORT=8090 node index.js ",
+    "test": "cross-env NODE_ENV=test jest --testTimeout=10000"
+  },
+  "author": "HongKee Moon",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "connect-busboy": "^1.0.0",
+    "express": "^4.12.3",
+    "fs-extra": "^5.0.0",
+    "handlebars": "^3.0.1",
+    "sqlite3": "~5.1.7",
+    "xvfb": "^0.4.0"
+  },
+  "private": true,
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "eslint": "^7.10.0",
+    "jest": "^29.3.1",
+    "jest-junit": "^15.0.0",
+    "supertest": "^6.3.3"
+  }
+}

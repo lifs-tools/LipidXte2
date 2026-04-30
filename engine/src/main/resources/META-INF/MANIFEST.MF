@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Main-Class: de.mpicbg.ms.MainApplication
+Codebase: *
+Permissions: all-permissions
+Application-Name: PUFA
+Trusted-Only: false
+Trusted-Library: false
