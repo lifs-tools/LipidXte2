@@ -5,6 +5,8 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3483976.svg)](https://doi.org/10.5281/zenodo.3483976)
 # LipidXplorer
 
+> Note: this directory was previously named `LipidXplorer/`. It was renamed to `preprocessing/` during the public-release refactor. Inside the running Docker container the path is `/app/preprocessing`.
+
 LipidXplorer is a software that is designed to support bottom-up and top-down shotgun lipidomics experiments performed
 on all types of tandem mass spectrometers. Lipid identification does not rely on a database resource of reference
 or simulated mass spectra but uses user-defined molecular fragment queries. It supports accurate, isotope-corrected

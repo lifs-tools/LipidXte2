@@ -7,7 +7,7 @@ exports.default = {
     console.log('rawfile process called')
     try {
       exec('python3 src/peakStrainer.py ' + inputFolder, {
-        cwd: '/app/LipidXplorer'
+        cwd: '/app/preprocessing'
       }, function (error, stdout, stderr) {
         console.log('stdout: ', stdout)
         console.log('stderr: ', stderr)
@@ -26,7 +26,7 @@ exports.default = {
   reorder: function (inputFolder) {
     try {
       exec('python3 src/reorder.py ' + inputFolder, {
-        cwd: '/app/LipidXplorer'
+        cwd: '/app/preprocessing'
       }, function (error, stdout, stderr) {
         console.log('stdout: ', stdout)
         console.log('stderr: ', stderr)
@@ -43,7 +43,7 @@ exports.default = {
   lipidXplorer: function (inputFolder, className) {
     try {
       exec('python3 src/lipidXplorer2Lipidx.py ' + className + ' ' + inputFolder, {
-        cwd: '/app/LipidXplorer'
+        cwd: '/app/preprocessing'
       }, function (error, stdout, stderr) {
         console.log('stdout: ', stdout)
         console.log('stderr: ', stderr)

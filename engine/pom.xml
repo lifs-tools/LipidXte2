@@ -23,6 +23,9 @@
         <java.version>1.8</java.version>
         <jacoco.version>0.7.5.201505241946</jacoco.version>
         <commons-codec.version>1.10</commons-codec.version>
+
+        <!-- Override in ~/.m2/settings.xml or via -D for jarsigner runs -->
+        <pufa.keystore.password>changeme</pufa.keystore.password>
     </properties>
 
     <organization>
@@ -131,7 +134,7 @@
                         </bundleArguments>
                         <keyStore>pufa.jks</keyStore>
                         <keyStoreAlias>pufa</keyStoreAlias>
-                        <keyStorePassword>pufa12</keyStorePassword>
+                        <keyStorePassword>${pufa.keystore.password}</keyStorePassword>
                         <allPermissions>true</allPermissions>
                     </configuration>
                     <executions>
@@ -170,7 +173,7 @@
                                 <!-- these are required, please change them for your own requirements -->
                                 <keyStore>pufa.jks</keyStore>
                                 <keyStoreAlias>pufa</keyStoreAlias>
-                                <keyStorePassword>pufa12</keyStorePassword>
+                                <keyStorePassword>${pufa.keystore.password}</keyStorePassword>
 
                                 <!-- as this keystore is no file, please disable file-checks -->
                                 <skipKeyStoreChecking>true</skipKeyStoreChecking>

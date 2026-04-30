@@ -60,10 +60,10 @@ RUN python3 -m pip install --no-cache-dir \
     fisher-py
 
 VOLUME /tmp
-COPY LipidXplorer/src /app/LipidXplorer/src
-COPY docker-build /app
-COPY docker-build/LipidXteSqlite.db /root/
-COPY docker-build/pref /root/.massSpec
+COPY preprocessing/src /app/preprocessing/src
+COPY server /app
+COPY server/LipidXteSqlite.db /root/
+COPY server/pref /root/.massSpec
 
 WORKDIR /app
 RUN npm install -g corepack
