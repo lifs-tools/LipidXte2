@@ -1,0 +1,48 @@
+# Build outputs
+**/target/
+**/build/
+**/dist/
+**/node_modules/
+**/__pycache__/
+**/.ipynb_checkpoints/
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+
+# Virtual environments
+**/venv/
+**/.venv/
+**/env/
+
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+*.swp
+.DS_Store
+Thumbs.db
+
+# Backup and temp files
+*.bak
+*.orig
+*.tmp
+
+# Runtime data (written by the running container/server, not source)
+docker-build/download/
+download/
+docker-build/db.sqlite
+*.log
+log.txt
+
+# Sensitive — NEVER commit
+certs/
+docker-build/certs/
+*.key
+*.pem
+*.p12
+*.jks
+.env
+.env.*
+
+# macOS / system
+.cache/
