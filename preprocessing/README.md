@@ -1,58 +1,68 @@
-![pipeline](https://git.mpi-cbg.de/scicomp/scidev_team/lipidxplorer_legacy/badges/main/pipeline.svg)
-![coverage](https://git.mpi-cbg.de/scicomp/scidev_team/lipidxplorer_legacy/badges/main/coverage.svg)
-![pylint](https://git.mpi-cbg.de/scicomp/scidev_team/lipidxplorer_legacy/-/jobs/artifacts/main/raw/pylint/pylint.svg?job=lint-job)
+# preprocessing — LipidXplorer pre-processing scripts
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3483976.svg)](https://doi.org/10.5281/zenodo.3483976)
-# LipidXplorer
+> This directory was previously named `LipidXplorer/`. It was renamed to `preprocessing/` during the public-release refactor; inside the running Docker container the path is `/app/preprocessing`.
 
-> Note: this directory was previously named `LipidXplorer/`. It was renamed to `preprocessing/` during the public-release refactor. Inside the running Docker container the path is `/app/preprocessing`.
+[LipidXplorer](https://lifs.isas.de/wiki/index.php/LipidXplorer_Installation) is a tool for bottom-up and top-down shotgun-lipidomics experiments on tandem mass spectrometers. Lipid identification uses user-defined molecular fragment queries rather than a reference-spectrum database, and supports isotope-corrected quantification from MS1 or MS2 fragments.
 
-LipidXplorer is a software that is designed to support bottom-up and top-down shotgun lipidomics experiments performed
-on all types of tandem mass spectrometers. Lipid identification does not rely on a database resource of reference
-or simulated mass spectra but uses user-defined molecular fragment queries. It supports accurate, isotope-corrected
-quantification based on the identified MS1 or MS2 level fragments.
+In LipidXte2 it is used as the **first stage** of the pipeline. Three scripts in `src/` are invoked in sequence by the Node server (`server/lipidXte/process.js`):
 
-## Python3 and Docker
+| Script | Role |
+| --- | --- |
+| `peakStrainer.py` | Converts vendor `.RAW` / `.raw` files to `mzXML` (skipped if the input folder has no RAW files). |
+| `reorder.py` | Reorders mzXML spectra after RAW conversion. |
+| `lipidXplorer2Lipidx.py` | Runs the LipidXplorer batch and produces `merged.csv`, the input to the Java engine. |
 
-This version of source codes are converted for Python 3. We are trying to make it dockerized.
-Feel free to use it via Docker.
+## Install
 
-## Usage of Docker
+Dependencies are declared in [`pyproject.toml`](./pyproject.toml). Runtime: `numpy`, `ply`, `numba`, `lxml`, `pandas`, `fisher-py`. Dev extra: `pytest`, `pre-commit`.
 
-## Installation and Tutorials
+```bash
+cd preprocessing
+pip install -e ".[dev]"
+```
 
-Please see more detailed installation instructions on our [Wiki](https://lifs.isas.de/wiki/index.php/LipidXplorer_Installation).
-These also cover the case of working with the source code.
+The Docker image installs the same set explicitly in `deploy/Dockerfile`.
 
-[The Wiki](https://lifs.isas.de/wiki/index.php) also offers an overview of the concepts behind LipidXplorer, as well as tutorial and reference materials.
+## Run
 
-## Versioning
+```bash
+python3 src/peakStrainer.py <folder>                       # RAW -> mzXML
+python3 src/reorder.py <folder>                            # reorder spectra
+python3 src/lipidXplorer2Lipidx.py <className> <folder>    # batch -> merged.csv
+```
 
-We use [Semantic Versioning](http://semver.org/) for versioning of the software.
+On macOS, GUI scripts must be run with `pythonw`, not `python`.
 
-To browse available versions and releases, please see the [tags on this repository](https://gitlab.isas.de/lifs/lipidxplorer/tags).
+## Tests
 
-## Install for Development environment
-* Please install pre-commit package `pip install pre-commit`
-* Install pre-commit setup by `pre-commit install --install-hooks`
+```bash
+pytest                                                     # tests/
+```
+
+Test config is in `pytest.ini` (`pythonpath = src/`).
+
+## Pre-commit
+
+```bash
+pip install pre-commit
+pre-commit install --install-hooks
+```
+
+Tooling config (black `--preview`, line-length 79; ruff E4/E7/E9/F) lives in `pyproject.toml`.
+
 ## Authors
 
-* **Ronny Herzog** - *Initial work*
-* **Jacobo Miranda Ackermann** - *Current Developer*
-* **Fadi Al Machot** - *Contributor*
-* **Nils Hoffmann** - *Contributor*
-* **HongKee Moon** - *Developer*
+- **Ronny Herzog** — initial work
+- **Jacobo Miranda Ackermann** — current upstream developer
+- **Fadi Al Machot, Nils Hoffmann** — contributors
+- **HongKee Moon** — LipidXte2 integration
 
 ## License
 
-This project is licensed under the GNU GPL License, version 2 - see the [LICENSE.md](LICENSE.md) file for details
+GNU GPL v2 — see [`LICENSE.md`](./LICENSE.md). Third-party licenses in [`LICENSES-third-party.md`](./LICENSES-third-party.md).
 
-## Help and Support
+## Citing LipidXplorer
 
-Please check our [Wiki](https://lifs.isas.de/wiki/index.php) on details on how to contact us to receive help and report errors.
+Herzog R, Schwudke D, Shevchenko A. *LipidXplorer: Software for Quantitative Shotgun Lipidomics Compatible with Multiple Mass Spectrometry Platforms.* Current Protocols in Bioinformatics, 2013 Oct 15. [PUBMED](https://www.ncbi.nlm.nih.gov/pubmed/26270171)
 
-## known issues
-to run it in a virtual environment in on macOS use pythonw instead of python
-
-## Citing the Software
-Herzog R, Schwudke D, Shevchenko A: ***LipidXplorer: Software for Quantitative Shotgun Lipidomics Compatible with Multiple Mass Spectrometry Platforms***. **Current Protocols in Bioinformatics 2013 Oct 15** [PUBMED](https://www.ncbi.nlm.nih.gov/pubmed/26270171)
+For LipidXte2 itself, see [`CITATION.cff`](../CITATION.cff) at the repo root.

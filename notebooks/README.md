@@ -1,4 +1,10 @@
-# Overview of jupyter notebook
+# notebooks — regression notebooks for engine polynomials
+
+> This directory was previously named `minterpy/`. It holds the Jupyter notebooks that derive the polynomial coefficients in [`polynomials/*.json`](./polynomials), which the Java engine in [`../engine/`](../engine) loads at runtime to predict theoretical fragment intensities.
+
+These notebooks are **not part of the runtime pipeline**. They are run offline whenever the polynomial model needs to be regenerated (e.g. after changes to the reference standard set or the regression methodology). The output JSONs are committed and consumed by the engine at quantification time.
+
+The table below summarizes which fragment each notebook covers and the quick FA 22:6 sanity check used during validation.
 
 We are using PCO data for the other classes.
 

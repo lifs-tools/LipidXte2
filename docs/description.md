@@ -14,7 +14,7 @@ LipidXte2 reads this table together with the user's class definitions (PC, PE, P
 
 ### 2. Reference model — the polynomial database
 
-The `core_app` carries a **polynomial database** (`minterpy/polynomials/*.json`) derived from controlled measurements of pure standards. For every lipid class and every CE, the polynomials predict:
+The `engine` carries a **polynomial database** (`notebooks/polynomials/*.json`) derived from controlled measurements of pure standards. For every lipid class and every CE, the polynomials predict:
 
 - the theoretical sn-1, sn-2, and symmetric **FA and CO₂-NL intensities**, and
 - the corresponding **FA-specific correction factors** (CFs), which compensate for differences in ionization efficiency, chain length, and degree of unsaturation between fatty acids.
@@ -25,7 +25,7 @@ This is the model that lets the software interpret what the spectrometer measure
 
 For each species/CE pair the workflow then:
 
-1. **Estimates FA isomers** from the FA/CO₂-NL ratio (step D in `core_app/doc/workflow.md`), using the model's reference ratios to decide how the observed signal splits between possible FA combinations.
+1. **Estimates FA isomers** from the FA/CO₂-NL ratio (step D in [`docs/workflow.md`](./workflow.md)), using the model's reference ratios to decide how the observed signal splits between possible FA combinations.
 2. **Assigns the 1st FA to a sn-position** and applies its CF to recover the *true* fragment intensity (steps E–F).
 3. **Estimates the 2nd FA position** on the corrected residual signal and applies its CF in turn (steps G–H). Symmetric species (e.g. PC 18:1/18:1) skip the position search and use the symmetric polynomials directly.
 4. Optionally applies a **transmission correction** when a TX function has been provided, accounting for the m/z-dependent transmission of the instrument.
