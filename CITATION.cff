@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "LipidXte2"
+abstract: "A shotgun-lipidomics analysis pipeline that turns LipidXplorer fragment-intensity tables into quantified, position-resolved fatty-acid compositions per lipid species."
+type: software
+authors:
+  - family-names: "TBD"
+    given-names: "TBD"
+repository-code: "https://github.com/lifs-tools/LipidXte2"
+license: GPL-2.0
+preferred-citation:
+  type: article
+  title: "TBD — publication in preparation"
+  authors:
+    - family-names: "TBD"
+      given-names: "TBD"
+  year: 2026
+  doi: "TBD"
