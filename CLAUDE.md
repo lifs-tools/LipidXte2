@@ -11,7 +11,7 @@ LipidXte2 is a multi-component shotgun-lipidomics analysis pipeline. The repo is
 | `engine/` | Java 8 + JavaFX + Maven | CLI/GUI quantification & validation engine. Built as `LipidXte-1.0-SNAPSHOT-jfx.jar`. Main: `de.mpicbg.ms.MainApplication`. |
 | `preprocessing/` | Python 3 (numpy, ply, numba, lxml, pandas, fisher-py) | Pre-processing scripts: `peakStrainer.py` (RAW→mzXML), `reorder.py`, `lipidXplorer2Lipidx.py`. Tests under `tests/`, pytest config in `pytest.ini`. |
 | `server/` | Node + bundled jar + Python | The shipped artifact. Contains the built jar, the orchestrator (`lipidXte/process.js`), prebuilt sqlite db, the Node server (`index.js`), and the deployed web bundle under `server/web/`. |
-| `desktop/` | Electron-Vue (Vue 2) | Desktop UI + web build. `npm run build:web` rebuilds the static bundle into `server/web/`. |
+| `desktop/` | Electron-Vue (Vue 2) | **Optional for production.** Source of the Electron desktop app and the web bundle. The prebuilt `server/web/` is what's served — rebuild here only when modifying the UI. |
 | `notebooks/` | Jupyter + numpy/scipy/numba | Regression notebooks that derive the polynomials in `notebooks/polynomials/*.json` consumed by `engine/`. Not part of the runtime pipeline. |
 | `deploy/` | Docker + nginx | `Dockerfile`, `docker-compose.yml`, and `nginx/` config — the deployed stack lives here. |
 | `docs/` | Markdown | Chemist-oriented documentation (`description.md`, `workflow.md`) and the contributor guide (`contributing.md`). |
@@ -60,19 +60,22 @@ java -jar target/LipidXte-1.0-SNAPSHOT-jfx.jar --op=quant --standard-list=... --
 ```
 Java 8 is required (see `<java.version>1.8</java.version>` in `engine/pom.xml`). The `pom.xml` references EBI and `mvnrepository.com` over plain HTTP and a pinned snapshot of `javafx-maven-plugin 8.8.4-SNAPSHOT` from oss-sonatype-snapshots — fresh checkouts may need `~/.m2/settings.xml` tweaks for HTTP repos on modern Maven.
 
-### LipidXplorer / preprocessing (Python)
+### Preprocessing (Python)
 ```bash
 cd preprocessing
+pip install -e ".[dev]"                          # deps from pyproject.toml
 pytest                                           # see pytest.ini, runs tests/
 python3 src/peakStrainer.py <folder>
 python3 src/reorder.py <folder>
 python3 src/lipidXplorer2Lipidx.py <className> <folder>
 ```
-On macOS, GUI scripts must be run with `pythonw`, not `python` (per `preprocessing/README.md`). Inside the running container the path is `/app/preprocessing`.
+Runtime deps live in `preprocessing/pyproject.toml` (`numpy`, `ply`, `numba`, `lxml`, `pandas`, `fisher-py`). The old exhaustive `requirements.txt` was removed — pyproject.toml is now the single source of truth. On macOS, GUI scripts must be run with `pythonw`, not `python`. Inside the running container the path is `/app/preprocessing`.
 
-### Frontend (Electron-Vue)
+### Frontend (Electron-Vue) — optional
+The Node server serves `server/web/` (prebuilt). Only rebuild from `desktop/` when modifying the UI:
 ```bash
 cd desktop
+npm install            # cold install ~5 min (Electron deps)
 npm run dev            # hot-reload electron at localhost:9080
 npm run build          # electron build via electron-builder
 npm run build:web      # web build, rsyncs to ../server/web/

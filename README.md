@@ -11,7 +11,7 @@ A chemist-oriented overview of the data processing is in [`docs/description.md`]
 | [`engine/`](./engine) | Java 8 / JavaFX / Maven | Quantification & validation engine. Built as `LipidXte-1.0-SNAPSHOT-jfx.jar`. |
 | [`preprocessing/`](./preprocessing) | Python 3 | Pre-processing: `peakStrainer.py` (RAW → mzXML), `reorder.py`, `lipidXplorer2Lipidx.py`. |
 | [`server/`](./server) | Node + bundled jar + Python | The shipped artifact: orchestrator (`lipidXte/process.js`), prebuilt SQLite DB, deployed web bundle under `server/web/`. |
-| [`desktop/`](./desktop) | Electron-Vue (Vue 2) | Desktop UI and web build. `npm run build:web` rebuilds the static bundle into `server/web/`. |
+| [`desktop/`](./desktop) | Electron-Vue (Vue 2) | **Optional.** Electron desktop app + source for the web bundle. Production users don't need this — the prebuilt bundle in `server/web/` is what the Node server serves. Rebuild with `npm run build:web` only when modifying the UI. |
 | [`notebooks/`](./notebooks) | Jupyter / numpy / scipy | Regression notebooks that derive the polynomials in `notebooks/polynomials/*.json` consumed by `engine/`. |
 | [`deploy/`](./deploy) | Docker / nginx | `Dockerfile`, `docker-compose.yml`, and `nginx/` config for the deployed stack. |
 | [`docs/`](./docs) | Markdown | Chemist-oriented documentation and contributor guide. |
@@ -70,22 +70,26 @@ yarn start           # production (TLS certs read from /app/certs or /etc/pki/tl
 yarn test            # jest
 ```
 
-### LipidXplorer (Python)
+### Preprocessing (Python)
 
 ```bash
 cd preprocessing
+pip install -e ".[dev]"                         # runtime + dev deps from pyproject.toml
 pytest                                          # tests/
 python3 src/peakStrainer.py <folder>
 python3 src/reorder.py <folder>
 python3 src/lipidXplorer2Lipidx.py <className> <folder>
 ```
 
-On macOS, GUI scripts must be run with `pythonw`.
+Runtime deps: `numpy`, `ply`, `numba`, `lxml`, `pandas`, `fisher-py`. On macOS, GUI scripts must be run with `pythonw`.
 
-### Frontend (Electron-Vue)
+### Frontend (Electron-Vue) — optional
+
+The prebuilt static bundle in `server/web/` is what the Node server serves. The `desktop/` directory is only needed if you want to modify the UI:
 
 ```bash
 cd desktop
+npm install                # ~5 minutes (Electron deps)
 npm run dev                # hot-reload electron at localhost:9080
 npm run build              # electron build
 npm run build:web          # web build, rsynced into server/web/
