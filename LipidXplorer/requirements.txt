@@ -9,7 +9,7 @@ attrs==19.3.0
 autopep8==1.4.4
 backcall==0.1.0
 black==19.10b0
-bleach==3.1.0
+bleach==6.4.0
 certifi==2023.5.7
 charset-normalizer==3.3.2
 click==8.0.1
@@ -105,7 +105,7 @@ stack-data==0.6.3
 terminado==0.8.3
 testpath==0.4.4
 toml==0.10.2
-tornado==6.4
+tornado==6.5.7
 traitlets==5.14.3
 typed_ast==1.5.5
 typing_extensions==4.7.1
