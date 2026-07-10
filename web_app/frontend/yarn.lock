@@ -966,6 +966,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/babel-types@npm:*":
+  version: 7.0.16
+  resolution: "@types/babel-types@npm:7.0.16"
+  checksum: 10c0/76ed807d015acab692dca5b922418226e965f027cd054c3f8c0cc3a6931651f622cb978711b3fc71b033790b21af0aa925ba1ecb5836b45613864bdfbd90d3ae
+  languageName: node
+  linkType: hard
+
+"@types/babylon@npm:^6.16.2":
+  version: 6.16.9
+  resolution: "@types/babylon@npm:6.16.9"
+  dependencies:
+    "@types/babel-types": "npm:*"
+  checksum: 10c0/3dbe33a158b39d00e11ca4f53cad7ea02ed69c1c266221cabcc81596a03084706be007db698b254ad9689d040d77b9fd32b4b9956cf96dbb631572ea12e53b3a
+  languageName: node
+  linkType: hard
+
 "@types/body-parser@npm:*":
   version: 1.19.6
   resolution: "@types/body-parser@npm:1.19.6"
@@ -3791,7 +3807,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"babel-runtime@npm:^6.18.0, babel-runtime@npm:^6.22.0, babel-runtime@npm:^6.26.0":
+"babel-runtime@npm:^6.11.6, babel-runtime@npm:^6.18.0, babel-runtime@npm:^6.22.0, babel-runtime@npm:^6.26.0":
   version: 6.26.0
   resolution: "babel-runtime@npm:6.26.0"
   dependencies:
@@ -3831,7 +3847,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"babel-types@npm:^6.18.0, babel-types@npm:^6.19.0, babel-types@npm:^6.24.1, babel-types@npm:^6.26.0":
+"babel-types@npm:^6.15.0, babel-types@npm:^6.16.0, babel-types@npm:^6.18.0, babel-types@npm:^6.19.0, babel-types@npm:^6.24.1, babel-types@npm:^6.26.0":
   version: 6.26.0
   resolution: "babel-types@npm:6.26.0"
   dependencies:
@@ -3851,6 +3867,17 @@ __metadata:
     babel-preset-babili: "npm:^0.1.4"
     webpack-sources: "npm:^1.0.1"
   checksum: 10c0/164bc19b45adb9e6a5794de27fe4c71a2b2872822b71448380f8794a882abccfa9080d4a7cc7f3ee3c0699aff7e4307aacee1ef97d4e26393cc6dd9c22449e43
+  languageName: node
+  linkType: hard
+
+"babylon-walk@npm:^1.0.2":
+  version: 1.0.2
+  resolution: "babylon-walk@npm:1.0.2"
+  dependencies:
+    babel-runtime: "npm:^6.11.6"
+    babel-types: "npm:^6.15.0"
+    lodash.clone: "npm:^4.5.0"
+  checksum: 10c0/652475f870f2260758db07eaff9c8cbf1d23ec2cfca5ff82050d66dc74da987c72a3c525f3bef251e1a630792be50db5246f87397e89bca3a43e7f49e86a477a
   languageName: node
   linkType: hard
 
@@ -5305,12 +5332,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"constantinople@npm:~3.0.1":
-  version: 3.0.2
-  resolution: "constantinople@npm:3.0.2"
+"constantinople@npm:3.1.1":
+  version: 3.1.1
+  resolution: "constantinople@npm:3.1.1"
   dependencies:
-    acorn: "npm:^2.1.0"
-  checksum: 10c0/0a32944c8e20adaddbc5c5550d8fb7a9b341190d3d7b314bf7a5ab5970bcf00cc7a174fbeede0750064aaba4c81a366b46b38e24693e081391b7ca9f7205005e
+    "@types/babylon": "npm:^6.16.2"
+    babel-types: "npm:^6.16.0"
+    babylon: "npm:^6.18.0"
+    babylon-walk: "npm:^1.0.2"
+  checksum: 10c0/3de865df115b3b349a48af1d26ba4ac44d51655de82095e47b6eb71b8a9ea2fc71153d08999b6a99ce8c4a3e26d0ef33638adb9b8684827c517f9054494b2999
   languageName: node
   linkType: hard
 
@@ -10990,6 +11020,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash.clone@npm:^4.5.0":
+  version: 4.5.0
+  resolution: "lodash.clone@npm:4.5.0"
+  checksum: 10c0/e9e84b8727a24b6bdc6292dc0ff53fbdd379a65c652d9ba7a2cc3c02fb1c135b8dcd2e154c8c4199d4be7410d6f7ce3298df312822bc0e68f00472ec07da7d6d
+  languageName: node
+  linkType: hard
+
 "lodash.clonedeep@npm:^3.0.2":
   version: 3.0.2
   resolution: "lodash.clonedeep@npm:3.0.2"
@@ -11628,14 +11665,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"minimist@npm:1.2.0":
-  version: 1.2.0
-  resolution: "minimist@npm:1.2.0"
-  checksum: 10c0/0c9e882a4d31d217e12223a2881a2cc76a4659c20893c82c92b9355bace60b4a4d52d5fb412755212674765c4dd471e19de85458a400029fdd5d96cb18054aee
-  languageName: node
-  linkType: hard
-
-"minimist@npm:^1.2.0, minimist@npm:^1.2.5, minimist@npm:^1.2.6":
+"minimist@npm:1.2.8, minimist@npm:^1.2.0, minimist@npm:^1.2.5, minimist@npm:^1.2.6":
   version: 1.2.8
   resolution: "minimist@npm:1.2.8"
   checksum: 10c0/19d3fcdca050087b84c2029841a093691a91259a47def2f18222f41e7645a0b7c44ef4b40e88a1e58a40c84d2ef0ee6047c55594d298146d0eb3f6b737c20ce6
@@ -12488,15 +12518,6 @@ __metadata:
     object-assign: "npm:^4.0.1"
     pinkie-promise: "npm:^2.0.0"
   checksum: 10c0/c0f56bb9a14ffcb6ef48f0a92c224b3e8156adf0ce87f461af1f4de920defe39afcafb4ef1f240ac278428a9af65172d65507c3ff356fe800e05038396be0b3c
-  languageName: node
-  linkType: hard
-
-"optimist@npm:~0.3.5":
-  version: 0.3.7
-  resolution: "optimist@npm:0.3.7"
-  dependencies:
-    wordwrap: "npm:~0.0.2"
-  checksum: 10c0/510175b89c4a2410ae0df38ce505a9a1bd4a3a4698006d976da208cd745f1fe9ac081a6f89202b4c99f9efd7a2efd84f356c28ef010921ec5f7416fef22a8a7e
   languageName: node
   linkType: hard
 
@@ -15111,6 +15132,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"source-map@npm:0.1.34":
+  version: 0.1.34
+  resolution: "source-map@npm:0.1.34"
+  dependencies:
+    amdefine: "npm:>=0.0.4"
+  checksum: 10c0/4d78fababf303219f125af4da3065072f4e6845c134f6b9b242c3606c5ed3eb1f27b29356ea72120a84c1e71c1344e92c66ad6993c08b9240dbe87bec5959817
+  languageName: node
+  linkType: hard
+
 "source-map@npm:0.4.x":
   version: 0.4.4
   resolution: "source-map@npm:0.4.4"
@@ -15131,15 +15161,6 @@ __metadata:
   version: 0.6.1
   resolution: "source-map@npm:0.6.1"
   checksum: 10c0/ab55398007c5e5532957cb0beee2368529618ac0ab372d789806f5718123cc4367d57de3904b4e6a4170eb5a0b0f41373066d02ca0735a0c4d75c7d328d3e011
-  languageName: node
-  linkType: hard
-
-"source-map@npm:~0.1.7":
-  version: 0.1.43
-  resolution: "source-map@npm:0.1.43"
-  dependencies:
-    amdefine: "npm:>=0.0.4"
-  checksum: 10c0/0cf092a91a0aadfad21ed7cb9ac78878b16242fcc9cd8f631e340b607f311d2f5391df574a29b9e243b35a7d1efd471f357b4b81da8e65145bcae242d46d0297
   languageName: node
   linkType: hard
 
@@ -16217,6 +16238,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"uglify-js@npm:2.4.24":
+  version: 2.4.24
+  resolution: "uglify-js@npm:2.4.24"
+  dependencies:
+    async: "npm:~0.2.6"
+    source-map: "npm:0.1.34"
+    uglify-to-browserify: "npm:~1.0.0"
+    yargs: "npm:~3.5.4"
+  bin:
+    uglifyjs: bin/uglifyjs
+  checksum: 10c0/8e7f31acfd64563dfc9ad2405172d9c0cd7c8c016c0d4e3d4a71ccc33db08b5c319cbd0d38ae7b4469c55ca805a52391348527c2b8835776cbf34eb45ca40f6e
+  languageName: node
+  linkType: hard
+
 "uglify-js@npm:2.6.x":
   version: 2.6.4
   resolution: "uglify-js@npm:2.6.4"
@@ -16244,18 +16279,6 @@ __metadata:
   bin:
     uglifyjs: bin/uglifyjs
   checksum: 10c0/e2e5d67a551975d70aef4b693d369934b4917b17dd2a36270cabd8df884eeb59cb517d9a0a52ca996f11f3b3e202f9563bf620089ffa73d804d08619e338f080
-  languageName: node
-  linkType: hard
-
-"uglify-js@npm:~2.2.5":
-  version: 2.2.5
-  resolution: "uglify-js@npm:2.2.5"
-  dependencies:
-    optimist: "npm:~0.3.5"
-    source-map: "npm:~0.1.7"
-  bin:
-    uglifyjs: bin/uglifyjs
-  checksum: 10c0/45284ee2403a5772991910db88d3d46c607797b990d0cdfbce625512cc53e7ead08c44ec3191083cf4b0d2554e737b90ea7cb3c33ed3a7214d8343db23555f9e
   languageName: node
   linkType: hard
 
@@ -17095,13 +17118,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"wordwrap@npm:~0.0.2":
-  version: 0.0.3
-  resolution: "wordwrap@npm:0.0.3"
-  checksum: 10c0/b3b212f8b2167091f59bc60929ada2166eb157abb6c8c82e2a705fe5aa5876440c3966ab39eb6c7bcb2ff0ac0c8d9fba726a9c2057b83bd65cdc1858f9d816ce
-  languageName: node
-  linkType: hard
-
 "workerpool@npm:^6.5.1":
   version: 6.5.1
   resolution: "workerpool@npm:6.5.1"
@@ -17315,6 +17331,18 @@ __metadata:
     decamelize: "npm:^1.0.0"
     window-size: "npm:0.1.0"
   checksum: 10c0/df727126b4e664987c5bb1f346fbde24d2d5e6bd435d081d816f1f5890811ceb82f90ac7e6eb849eae749dde6fe5a2eda2c6f2b22021824976399fb4362413c1
+  languageName: node
+  linkType: hard
+
+"yargs@npm:~3.5.4":
+  version: 3.5.4
+  resolution: "yargs@npm:3.5.4"
+  dependencies:
+    camelcase: "npm:^1.0.2"
+    decamelize: "npm:^1.0.0"
+    window-size: "npm:0.1.0"
+    wordwrap: "npm:0.0.2"
+  checksum: 10c0/c81f983ebad46e30934c8c78d4da0aa61cc6dc84fe8b22515d12d70422db42141f94eda6f5ecb3b8e5d5f4d22a9a98b96c026290fd7efaf9ad9e63645ebdfbc1
   languageName: node
   linkType: hard
 
