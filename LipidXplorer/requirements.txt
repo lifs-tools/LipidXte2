@@ -45,7 +45,7 @@ kiwisolver==1.4.5
 lazy-object-proxy==1.4.3
 libsodium==2.4.1
 llvmlite==0.42.0
-lxml==5.2.2
+lxml==6.1.0
 macholib==1.14
 MarkupSafe==1.1.1
 matplotlib==3.9.0
