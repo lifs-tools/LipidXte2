@@ -18,7 +18,6 @@
     "connect-busboy": "0.0.2",
     "express": "^4.12.3",
     "fs-extra": "^5.0.0",
-    "handlebars": "^3.0.1",
     "sqlite3": "~5.1.7"
   },
   "private": true,
