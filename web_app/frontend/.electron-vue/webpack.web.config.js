@@ -78,6 +78,9 @@ let webConfig = {
       },
       {
         test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
+        // url-loader emits a JS module; without this webpack 5 treats that
+        // output as an asset and writes the module source out as the file.
+        type: 'javascript/auto',
         use: {
           loader: 'url-loader',
           options: {
@@ -88,6 +91,7 @@ let webConfig = {
       },
       {
         test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
+        type: 'javascript/auto',
         use: {
           loader: 'url-loader',
           options: {
