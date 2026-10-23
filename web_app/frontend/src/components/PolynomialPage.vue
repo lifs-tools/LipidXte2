@@ -207,12 +207,12 @@ export default {
       const x = nce
 
       const layout = {
-        title: `Combined HCD FTMS2- spectra at NCE = ${x} %`,
+        title: { text: `Combined HCD FTMS2- spectra at NCE = ${x} %` },
         height: 700,
         margin: { b: 180 },
         uirevision: 'same',
-        xaxis: { title: 'm/z', range: [_.min(mzList) - 10, _.max(mzList) + 10] },
-        yaxis: { title: 'Relative Intensity, %' }
+        xaxis: { title: { text: 'm/z' }, range: [_.min(mzList) - 10, _.max(mzList) + 10] },
+        yaxis: { title: { text: 'Relative Intensity, %' } }
       }
 
       const data = vm.getPlotData(nce)
@@ -639,11 +639,11 @@ export default {
       }
 
       const layout = {
-        title: 'Fragment intensity curves',
+        title: { text: 'Fragment intensity curves' },
         height: 700,
         margin: { b: 180, r: 80 },
-        xaxis: { title: 'Normalized Collision Energy, %' },
-        yaxis: { title: 'Relative Intensity, %' }
+        xaxis: { title: { text: 'Normalized Collision Energy, %' } },
+        yaxis: { title: { text: 'Relative Intensity, %' } }
       }
 
       Plotly.newPlot(vm.$refs.plots, toRaw(vm.plotData), layout)
@@ -654,12 +654,12 @@ export default {
           const mzList = vm.getMzList()
 
           const layout = {
-            title: `Combined HCD FTMS2- spectra at NCE = ${vm.nceValue} %`,
+            title: { text: `Combined HCD FTMS2- spectra at NCE = ${vm.nceValue} %` },
             height: 700,
             margin: { b: 180 },
             uirevision: 'same',
-            xaxis: { title: 'm/z', range: [_.min(mzList) - 10, _.max(mzList) + 10] },
-            yaxis: { title: 'Relative Intensity, %' }
+            xaxis: { title: { text: 'm/z' }, range: [_.min(mzList) - 10, _.max(mzList) + 10] },
+            yaxis: { title: { text: 'Relative Intensity, %' } }
           }
 
           vm.mzPlot = await Plotly.newPlot(vm.$refs.mzplot, data, layout)
@@ -682,12 +682,12 @@ export default {
             const mzList = vm.getMzList()
 
             const layout = {
-              title: `Combined HCD FTMS2- spectra at NCE = ${10} %`,
+              title: { text: `Combined HCD FTMS2- spectra at NCE = ${10} %` },
               height: 700,
               margin: { b: 180 },
               uirevision: 'same',
-              xaxis: { title: 'm/z', range: [_.min(mzList) - 10, _.max(mzList) + 10] },
-              yaxis: { title: 'Relative Intensity, %' }
+              xaxis: { title: { text: 'm/z' }, range: [_.min(mzList) - 10, _.max(mzList) + 10] },
+              yaxis: { title: { text: 'Relative Intensity, %' } }
             }
 
             vm.mzPlot = await Plotly.newPlot(vm.$refs.mzplot, data, layout)
@@ -704,11 +704,11 @@ export default {
       vm.fragmentsSn2 = []
       vm.plotData = []
       let layout = {
-        title: 'Fragment intensity curves',
+        title: { text: 'Fragment intensity curves' },
         height: 700,
         margin: { b: 180, r: 80 },
-        xaxis: { title: 'Normalized Collision Energy, %' },
-        yaxis: { title: 'Relative Intensity, %' }
+        xaxis: { title: { text: 'Normalized Collision Energy, %' } },
+        yaxis: { title: { text: 'Relative Intensity, %' } }
       }
 
       Plotly.newPlot(vm.$refs.plots, toRaw(vm.plotData), layout)
@@ -716,11 +716,11 @@ export default {
       const data = []
 
       layout = {
-        title: 'Combined HCD FTMS2- spectra at NCE =',
+        title: { text: 'Combined HCD FTMS2- spectra at NCE =' },
         height: 700,
         margin: { b: 180 },
-        xaxis: { title: 'm/z' },
-        yaxis: { title: 'Relative Intensity, %' }
+        xaxis: { title: { text: 'm/z' } },
+        yaxis: { title: { text: 'Relative Intensity, %' } }
       }
 
       Plotly.newPlot(vm.$refs.mzplot, data, layout)

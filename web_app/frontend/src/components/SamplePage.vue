@@ -443,11 +443,11 @@ export default {
           }
 
           let layout = {
-            title: newTitle,
+            title: { text: newTitle },
             height: 700,
             margin: { b: 180 },
-            xaxis: { title: 'Molecular species' },
-            yaxis: { title: yTitle },
+            xaxis: { title: { text: 'Molecular species' } },
+            yaxis: { title: { text: yTitle } },
             boxmode: 'group'
           }
 
@@ -466,11 +466,11 @@ export default {
           ]
 
           layout = {
-            title: 'Lipid Species',
+            title: { text: 'Lipid Species' },
             height: 700,
             margin: { b: 180 },
-            xaxis: { title: 'Lipid species' },
-            yaxis: { title: 'Quantity, microM' }
+            xaxis: { title: { text: 'Lipid species' } },
+            yaxis: { title: { text: 'Quantity, microM' } }
           }
 
           Plotly.newPlot(vm.$refs.lspecies, data, layout)
@@ -580,9 +580,9 @@ export default {
 
           const layout = {
             // title: 'Validation Figure NCE:' + nceHeader,
-            title: 'Validation Plot',
-            xaxis: { title: 'Quantity, microM' },
-            yaxis: { title: 'Quantity, microM' }
+            title: { text: 'Validation Plot' },
+            xaxis: { title: { text: 'Quantity, microM' } },
+            yaxis: { title: { text: 'Quantity, microM' } }
           }
 
           Plotly.newPlot(vm.$refs.validation, [corrected, nocorrected, fitted], layout)

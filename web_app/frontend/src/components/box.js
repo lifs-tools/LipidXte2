@@ -5,4 +5,8 @@ import bar from 'plotly.js/lib/bar'
 
 Plotly.register([box, bar])
 
+// plotly.js 4 shows an "Upload to Cloud" modebar button (cloud.plotly.com) by default;
+// the plots stay on this server, so leave it out of the modebar.
+Plotly.setPlotConfig({ showSendToCloud: false })
+
 export default Plotly
