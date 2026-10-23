@@ -10,13 +10,13 @@ A chemist-oriented overview of the data processing is in [`core_app/doc/descript
 | --- | --- | --- |
 | [`core_app/`](./core_app) | Java 8 / JavaFX / Maven | Quantification & validation engine. Built as `LipidXte-1.0-SNAPSHOT-jfx.jar`. |
 | [`LipidXplorer/`](./LipidXplorer) | Python 3 | Pre-processing: `peakStrainer.py` (RAW → mzXML), `reorder.py`, `lipidXplorer2Lipidx.py`. |
-| [`web_app/backend/`](./web_app/backend) | Node.js + Express + SQLite | Original `LipidXteServer` source. |
-| [`web_app/frontend/`](./web_app/frontend) | Electron-Vue (Vue 2) | Desktop UI and web build. |
+| [`web_app/backend/`](./web_app/backend) | Node.js + Express + SQLite | Original `LipidXteServer` checkout; carries an identical copy of the server source in `docker-build/`. |
+| [`web_app/frontend/`](./web_app/frontend) | Vue 3 + Vite | Web UI; `yarn build:web` writes the bundle into `docker-build/web/`. |
 | [`docker-build/`](./docker-build) | Node + bundled jar + Python | The shipped artifact: orchestrator, prebuilt SQLite DB, deployed web bundle. |
 | [`web/`](./web) | Static (prebuilt) | Compiled frontend served by the Node server. |
 | [`minterpy/`](./minterpy) | Jupyter / numpy / scipy | Regression notebooks that derive the polynomials in `minterpy/polynomials/*.json` consumed by `core_app`. |
 
-> Production deployment runs from `docker-build/`; `web_app/backend/` is the historical source and has drifted from it. See [`CLAUDE.md`](./CLAUDE.md) for the full picture.
+> Production deployment runs from `docker-build/`. `web_app/backend/` carries the same server files (`index.js`, `lipidXte/`, `package.json`, `yarn.lock`, `tests/`, `www/`, jar, database); `docker-build/tests/backend-copy.test.js` fails as soon as the two copies differ, so after editing one directory copy the changed files to the other. See [`CLAUDE.md`](./CLAUDE.md) for the full picture.
 
 ## Pipeline at a glance
 
@@ -27,7 +27,7 @@ The Node server (`docker-build/index.js`) is the entry point. On `/process`, it 
 3. `python3 src/lipidXplorer2Lipidx.py <className> <folder>` — produces `merged.csv`.
 4. `java -jar LipidXte-1.0-SNAPSHOT-jfx.jar --op=quant …` — runs the JavaFX engine headless under `xvfb` and writes TSV results.
 
-Status is tracked in `docker-build/db.sqlite`; reference data (FA anions, etc.) lives in `docker-build/LipidXteSqlite.db`.
+Status is tracked in `docker-build/download/db.sqlite` (created on first start); reference data (FA anions, etc.) lives in `docker-build/LipidXteSqlite.db`.
 
 ## Build & run
 
@@ -39,6 +39,20 @@ docker compose up --watch
 ```
 
 `nginx` listens on `:80`/`:443`, the lipidserver container on `:8090`. The compose file mounts `./docker-build/download`, `./docker-build/sample`, and `./web` into the container — host-side edits are visible without rebuild.
+
+The Node.js runtime comes from the official `node:24.22.1-bookworm-slim` image (first `FROM` in `Dockerfile`), not from Debian's apt package, which is stuck on the end-of-life Node 18. When Node.js publishes a security release, bump that tag and rebuild. Server dependencies are installed from the committed `docker-build/yarn.lock` with `yarn workspaces focus --production` (runtime dependencies only; `enableImmutableInstalls` in `docker-build/.yarnrc.yml` makes the build fail if the lockfile is out of date). The Yarn version is pinned by `packageManager` in `docker-build/package.json`. After editing `docker-build/package.json`, regenerate the lockfile without installing anything locally:
+
+```bash
+cd docker-build && corepack yarn install --mode=update-lockfile
+```
+
+Server tests (jest + supertest, in `docker-build/tests/`) run on the host with Node 24 or newer; they need the dev dependencies, which stay out of the image:
+
+```bash
+cd docker-build && corepack yarn install && yarn test
+```
+
+The tests write their scratch batches and the status database to `docker-build/download/`, which is ignored by git and by the image build.
 
 To rebuild the image directly:
 
@@ -81,14 +95,18 @@ python3 src/lipidXplorer2Lipidx.py <className> <folder>
 
 On macOS, GUI scripts must be run with `pythonw`.
 
-### Frontend (Electron-Vue)
+### Frontend (Vue 3 + Vite)
 
 ```bash
 cd web_app/frontend
-npm run dev                # hot-reload electron at localhost:9080
-npm run build              # electron build
-npm run build:web          # web build, rsynced into the server's web/
+corepack enable            # Yarn 4, pinned by "packageManager"
+yarn install
+yarn dev                   # dev server at localhost:9080, API calls go to the Node server on :8090
+yarn build:web             # production bundle, rsynced into docker-build/web/
+yarn lint
 ```
+
+The Electron desktop build was removed in October 2026 (Vue 2 and Electron 30 were end-of-life); only the web build remains.
 
 ## Development
 
