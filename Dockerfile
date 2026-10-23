@@ -1,3 +1,7 @@
+# Node.js runtime: taken from the official image so a security release is a one-line tag bump.
+# (Debian bookworm's own `nodejs` package is Node 18, which is end-of-life and no longer patched.)
+FROM --platform=$TARGETPLATFORM node:24.22.1-bookworm-slim AS node
+
 FROM --platform=$TARGETPLATFORM python:3.12.3-slim as builder
 
 ARG TARGETARCH
@@ -27,11 +31,17 @@ RUN apt update && \
     apt install -y \
     build-essential  \
     python-dev-is-python3  \
-    nodejs \
-    npm  \
     mono-complete \
     xvfb
 
+
+# Node.js 24 LTS (node, npm, corepack) from the official image above
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
+    ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx && \
+    ln -s ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \
+    node --version && npm --version
 
 RUN wget https://cdn.azul.com/zulu/bin/zulu8.78.0.19-ca-fx-jdk8.0.412-linux_${TARGETARCH}.deb && \
     apt-get -yq install -f ./zulu8.78.0.19-ca-fx-jdk8.0.412-linux_${TARGETARCH}.deb && \
@@ -66,10 +76,16 @@ COPY docker-build/LipidXteSqlite.db /root/
 COPY docker-build/pref /root/.massSpec
 
 WORKDIR /app
-RUN npm install -g corepack
+# Batch uploads and the status database live here (bind-mounted by docker-compose in production).
+RUN mkdir -p /app/download
+# Yarn version is pinned by "packageManager" in package.json; corepack fetches exactly that version.
+# .yarnrc.yml sets enableImmutableInstalls, so the build fails if yarn.lock does not match package.json.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
-RUN yarn set version stable
-RUN yarn
+# Fail the build if yarn.lock does not match package.json ('focus' alone would silently resolve the difference).
+RUN yarn install --immutable --mode=skip-build
+# Then keep only runtime dependencies in the image (jest, eslint, supertest are removed again).
+RUN yarn workspaces focus --production
 RUN yarn cache clean --all
 
 # Development mode

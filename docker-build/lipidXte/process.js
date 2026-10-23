@@ -1,20 +1,40 @@
+// Wrappers around the LipidXplorer scripts and the LipidXte jar.
 //
-var fsext = require('fs-extra')       //File System - for file manipulation
+// Every tool is started with an argument vector (execFileSync, no shell), so
+// values that originate in request headers (class name, group names, options)
+// reach the program as single arguments and can never turn into commands.
+const fs = require('fs')
+const path = require('path')
+const fsext = require('fs-extra')
+const { execFileSync } = require('child_process')
 
-let exec = require('child_process').execSync
+const APP_DIR = path.join(__dirname, '..')              // /app inside the image
+const LIPIDXPLORER_DIR = path.join(APP_DIR, 'LipidXplorer')
+const JAR = 'LipidXte-1.0-SNAPSHOT-jfx.jar'
+
+function runPython (script, args) {
+  execFileSync('python3', [script, ...args], { cwd: LIPIDXPLORER_DIR })
+}
+
+// Runs the jar under a virtual X server; stdout goes to log.txt next to the jar.
+function runJar (args) {
+  const Xvfb = require('xvfb')
+  const xvfb = new Xvfb()
+  xvfb.startSync()
+  const log = fs.openSync(path.join(APP_DIR, 'log.txt'), 'w')
+  try {
+    execFileSync('java', ['-jar', JAR, ...args], { cwd: APP_DIR, stdio: ['ignore', log, 'inherit'] })
+  } finally {
+    fs.closeSync(log)
+    xvfb.stopSync()
+  }
+}
+
 exports.default = {
   processRawfiles: function (inputFolder) {
     console.log('rawfile process called')
     try {
-      exec('python3 src/peakStrainer.py ' + inputFolder, {
-        cwd: '/app/LipidXplorer'
-      }, function (error, stdout, stderr) {
-        console.log('stdout: ', stdout)
-        console.log('stderr: ', stderr)
-        if (error !== null) {
-          console.log('exec error: ', error)
-        }
-      })
+      runPython('src/peakStrainer.py', [inputFolder])
     } catch (e) {
       console.log(e)
       // sometimes RAW file conversion suddenly stopped after generating mzXML file
@@ -25,101 +45,54 @@ exports.default = {
   },
   reorder: function (inputFolder) {
     try {
-      exec('python3 src/reorder.py ' + inputFolder, {
-        cwd: '/app/LipidXplorer'
-      }, function (error, stdout, stderr) {
-        console.log('stdout: ', stdout)
-        console.log('stderr: ', stderr)
-        if (error !== null) {
-          console.log('exec error: ', error)
-        }
-      })
+      runPython('src/reorder.py', [inputFolder])
     } catch (e) {
-      // console.log(e)
       return false
     }
     return true
   },
   lipidXplorer: function (inputFolder, className) {
     try {
-      exec('python3 src/lipidXplorer2Lipidx.py ' + className + ' ' + inputFolder, {
-        cwd: '/app/LipidXplorer'
-      }, function (error, stdout, stderr) {
-        console.log('stdout: ', stdout)
-        console.log('stderr: ', stderr)
-        if (error !== null) {
-          console.log('exec error: ', error)
-        }
-      })
+      runPython('src/lipidXplorer2Lipidx.py', [className, inputFolder])
     } catch (e) {
-      // console.log(e)
       return false
     }
     return true
   },
   machinePerformance: function (mergedOut, inputFolder) {
     console.log('Machine performance check')
-    var Xvfb = require('xvfb');
-    var xvfb = new Xvfb();
-    xvfb.startSync();
-    console.log('java -jar LipidXte-1.0-SNAPSHOT-jfx.jar --op=valid --merged-file=' + mergedOut + ' --output-path=' + inputFolder)
     try {
-      exec('java -jar LipidXte-1.0-SNAPSHOT-jfx.jar --op=valid --merged-file=' + mergedOut + ' --output-path=' + inputFolder + ' > log.txt', {
-        cwd: '/app'
-      }, function (error, stdout, stderr) {
-        console.log('stdout: ', stdout)
-        console.log('stderr: ', stderr)
-        if (error !== null) {
-          console.log('exec error: ', error)
-        }
-      })
+      runJar(['--op=valid', '--merged-file=' + mergedOut, '--output-path=' + inputFolder])
     } catch (e) {
       console.log(e)
       return false
-    } finally {
-      xvfb.stopSync();
     }
     return true
   },
   lipidXte: function (baseDir, mergedOut, inputFolder, group1, group2, group3, quantOption = 'Quantity', outputOption = 'All', options = 'RemoveRef SummarizeNCE') {
-
     try {
-      var standard_list = inputFolder + '/standard_list.csv'
-      // checking the standard_list.csv
-      var Xvfb = require('xvfb');
-      var xvfb = new Xvfb();
-
-      if (fsext.existsSync(standard_list)) {
+      const userList = path.join(inputFolder, 'standard_list.csv')
+      let standardList
+      if (fsext.existsSync(userList)) {
         console.log('User given standard_list.csv used')
-
-        xvfb.startSync();
-
-        exec('java -jar LipidXte-1.0-SNAPSHOT-jfx.jar --op=quant --standard-list=' + standard_list + ' --merged-file=' + mergedOut + ' --output-path=' + inputFolder + ' --group1="' + group1 + '" --group2="' + group2 + '" --group3="' + group3 + '" --quant-option=' + quantOption + ' --output-option=' + outputOption + ' ' + options + ' > log.txt', {
-          cwd: '/app'
-        }, function (error, stdout, stderr) {
-          console.log('stdout: ', stdout)
-          console.log('stderr: ', stderr)
-          if (error !== null) {
-            console.log('exec error: ', error)
-          }
-          xvfb.stopSync();
-        })
+        standardList = userList
       } else {
         console.log('System standard_list.csv used')
-        xvfb.startSync();
-        exec('java -jar LipidXte-1.0-SNAPSHOT-jfx.jar --op=quant --standard-list=' + baseDir + '/standard_list.csv --merged-file=' + mergedOut + ' --output-path=' + inputFolder + ' --group1="' + group1 + '" --group2="' + group2 + '" --group3="' + group3 + '" --quant-option=' + quantOption + ' --output-option=' + outputOption + ' ' + options + ' > log.txt', {
-          cwd: '/app'
-        }, function (error, stdout, stderr) {
-          console.log('stdout: ', stdout)
-          console.log('stderr: ', stderr)
-          if (error !== null) {
-            console.log('exec error: ', error)
-          }
-          xvfb.stopSync();
-        })
+        standardList = path.join(baseDir, 'standard_list.csv')
       }
+      runJar([
+        '--op=quant',
+        '--standard-list=' + standardList,
+        '--merged-file=' + mergedOut,
+        '--output-path=' + inputFolder,
+        '--group1=' + group1,
+        '--group2=' + group2,
+        '--group3=' + group3,
+        '--quant-option=' + quantOption,
+        '--output-option=' + outputOption,
+        ...String(options).split(/\s+/).filter(Boolean)
+      ])
     } catch (e) {
-      // console.log(e)
       return false
     }
     return true

@@ -1,0 +1,7 @@
+# Only LipidXplorer/src and docker-build are COPYed into the image; keep host-side installs out of the build context
+.git
+**/node_modules
+docker-build/.yarn
+server/
+# Host-side batches / status DB (e.g. from running the server tests) never get baked into the image
+docker-build/download/*

@@ -1,0 +1,9 @@
+
+# Yarn state left behind by `corepack yarn install` in docker-build (the image installs its own)
+docker-build/node_modules/
+docker-build/.yarn/
+docker-build/download/
+web_app/backend/node_modules/
+web_app/backend/.yarn/
+web_app/backend/download/*
+!web_app/backend/download/.gitignore
