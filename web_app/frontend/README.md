@@ -1,28 +1,15 @@
-# my-project
+# LipidXte web frontend
 
-> An electron-vue project
+Vue 3 + Vite single-page application. The production bundle is served by the Node server in `../../docker-build/` (`express.static('web')`).
 
-#### Build Setup
-
-``` bash
-# install dependencies
-npm install
-
-# serve with hot reload at localhost:9080
-npm run dev
-
-# build electron application for production
-npm run build
-
-# run unit & end-to-end tests
-npm test
-
-
-# lint all JS/Vue component files in `src/`
-npm run lint
-
+```bash
+corepack enable      # Yarn 4, version pinned by "packageManager" in package.json
+yarn install
+yarn dev             # http://localhost:9080; API calls go to a server on :8090 (`yarn dev` in docker-build/)
+yarn build:web       # builds dist/web/ and syncs it into ../../docker-build/web/
+yarn lint
 ```
 
----
+Layout: `src/components/` holds the five pages (Data Import, Result View, Samples, MS2 calculator, Help) plus the modal and dropzone wrappers; `src/assets/` holds images, Bootstrap 3 CSS and its fonts; `static/dat/` holds the sample RAW archives linked from the Help page and is copied verbatim into the bundle.
 
-This project was generated with [electron-vue](https://github.com/SimulatedGREG/electron-vue)@[ef811ba](https://github.com/SimulatedGREG/electron-vue/tree/ef811ba974d696ee965da747315f20a034ebc590) using [vue-cli](https://github.com/vuejs/vue-cli). Documentation about the original structure can be found [here](https://simulatedgreg.gitbooks.io/electron-vue/content/index.html).
+Until October 2026 this directory was an electron-vue project (Vue 2 + Electron 30). The desktop build was dropped together with that toolchain; only the web build remains.
