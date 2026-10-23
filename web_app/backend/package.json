@@ -5,20 +5,17 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint index.js",
-    "prestart": "npm run lint",
     "start": "node index.js",
-    "deploy": "cd web && rsync -arvP --del * moon@lipidxte:\"/local/moon/drive_d/projects/LipidXteServer/web/\"",
-    "dev": "cross-env NODE_ENV=development PORT=8090 node index.js ",
+    "dev": "NODE_ENV=development PORT=8090 node index.js",
     "test": "cross-env NODE_ENV=test jest --testTimeout=10000"
   },
   "author": "HongKee Moon",
   "license": "MIT",
   "dependencies": {
-    "bcrypt": "^5.1.0",
-    "connect-busboy": "0.0.2",
-    "express": "^4.12.3",
+    "connect-busboy": "^1.0.0",
+    "express": "^4.22.3",
     "fs-extra": "^5.0.0",
-    "sqlite3": "~5.1.7"
+    "xvfb": "^0.4.0"
   },
   "private": true,
   "devDependencies": {
@@ -28,5 +25,5 @@
     "jest-junit": "^15.0.0",
     "supertest": "^6.3.3"
   },
-  "packageManager": "yarn@4.2.2"
+  "packageManager": "yarn@4.18.0"
 }

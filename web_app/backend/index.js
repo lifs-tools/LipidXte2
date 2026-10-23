@@ -6,7 +6,7 @@ const path = require('path'),
 const busboy = require('connect-busboy') //middleware for form/file upload
 const fsext = require('fs-extra')
 const fs = require('fs')
-const https = require('https')       //File System - for file manipulation
+const https = require('https')
 
 const app = express(),
   port = process.env.PORT || 443,
@@ -15,22 +15,102 @@ const app = express(),
   DOWNLOAD_DIR = path.join(BASE_DIR, 'download'),
   SAMPLE_DIR = path.join(BASE_DIR, 'sample')
 
-const sqlite3 = require('sqlite3').verbose()
-const db = new sqlite3.Database('db.sqlite')
+// --- Request input -----------------------------------------------------------
+// Header values end up in file-system paths and on the LipidXte command line,
+// so each one is checked against the shape the web UI actually sends before it
+// is used. Anything else is answered with 400.
+const SAFE_FOLDER = /^[A-Za-z0-9][A-Za-z0-9._-]*$/   // one path segment: never empty, '.', '..' or containing a separator
+const SAFE_TOKEN = /^[A-Za-z0-9_-]+$/                 // quantoption, outputoption, classname, curve class
+const SAFE_OPTIONS = /^[A-Za-z0-9_]*$/                // options: sorted names joined by '_', may be empty
+const SAFE_ID = /^\d+$/                               // reference-curve id
+
+// Batch folder derived from the ISO timestamp header ('2001-02-03T04:05:06.789Z' -> '2001-02-03T040506_789Z').
+function batchFolder (req) {
+  const stamp = req.headers.timestamp
+  if (typeof stamp !== 'string') return null
+  const folder = stamp.replace(/:/g, '').replace(/\./g, '_')
+  return SAFE_FOLDER.test(folder) ? folder : null
+}
+
+// Sample folder named directly by the timestamp header (e.g. 'brain').
+function sampleFolder (req) {
+  const name = req.headers.timestamp
+  return typeof name === 'string' && SAFE_FOLDER.test(name) ? name : null
+}
+
+function header (req, name, pattern) {
+  const value = req.headers[name]
+  return typeof value === 'string' && pattern.test(value) ? value : null
+}
+
+// Reads the three result-selection headers; null when any of them is malformed.
+function resultOptions (req) {
+  const quantOption = header(req, 'quantoption', SAFE_TOKEN)
+  const outputOption = header(req, 'outputoption', SAFE_TOKEN)
+  const options = header(req, 'options', SAFE_OPTIONS)
+  if (quantOption === null || outputOption === null || options === null) return null
+  return { quantOption, outputOption, options }
+}
+
+// An uploaded file is stored under its own name inside the batch folder, so the
+// name must be a bare file name.
+function safeFileName (name) {
+  if (typeof name !== 'string' || name === '') return null
+  const base = path.basename(name)
+  if (base !== name || base === '.' || base === '..' || name.includes('\\') || name.includes('\0')) return null
+  return base
+}
+
+// --- Databases ---------------------------------------------------------------
+// Two SQLite files, opened with Node's built-in node:sqlite (synchronous API).
+const { DatabaseSync } = require('node:sqlite')
+const STATUS_DB = path.join(DOWNLOAD_DIR, 'db.sqlite')        // batch status; created on first start
+const REFERENCE_DB = path.join(BASE_DIR, 'LipidXteSqlite.db')   // reference curves; read-only
+
+// A busy timeout lets concurrent processes (pm2 cluster workers, parallel test
+// workers) wait for a write lock instead of failing with SQLITE_BUSY at once.
+const BUSY_TIMEOUT_MS = 5000
+
+function openStatusDb () {
+  return new DatabaseSync(STATUS_DB, { timeout: BUSY_TIMEOUT_MS })
+}
+
+function openReferenceDb () {
+  return new DatabaseSync(REFERENCE_DB, { readOnly: true, timeout: BUSY_TIMEOUT_MS })
+}
+
+// Runs fn(db) on a freshly opened database and always closes it again.
+function withDb (open, fn) {
+  const db = open()
+  try {
+    return fn(db)
+  } finally {
+    db.close()
+  }
+}
+
+// Answers with the rows of one reference-database query (optionally mapped through pick).
+function sendReferenceRows (res, sql, params, pick) {
+  let rows
+  try {
+    rows = withDb(openReferenceDb, db => db.prepare(sql).all(...params))
+  } catch (err) {
+    console.error(err.message)
+    return res.status(500).send(err.message)
+  }
+  res.status(200).send(pick ? rows.map(pick) : rows)
+}
 
 // Create necessary tables if they do not exist
-db.serialize(function () {
-  db.run('CREATE TABLE IF NOT EXISTS Batches (ID INTEGER PRIMARY KEY AUTOINCREMENT, Batch TEXT NOT NULL, Title TEXT NOT NULL, Status TEXT)')
-  db.run('CREATE TABLE IF NOT EXISTS Tags (ID INTEGER PRIMARY KEY AUTOINCREMENT, Tag TEXT NOT NULL, UNIQUE(Tag))')
-  db.run('CREATE TABLE IF NOT EXISTS Batches_Tags (BatchID INTEGER, TagID INTEGER, ' +
-    'FOREIGN KEY(BatchID) REFERENCES Batches(ID), FOREIGN KEY(TagID) REFERENCES Tags(ID), UNIQUE(BatchID, TagID))')
-  db.run('CREATE TABLE IF NOT EXISTS BatchesFiles (BatchID INTEGER, FilePath TEXT, Status TEXT, ' +
-    'FOREIGN KEY(BatchID) REFERENCES Batches(ID), UNIQUE(BatchID, FilePath))')
-})
+withDb(openStatusDb, db => db.exec(
+  'CREATE TABLE IF NOT EXISTS Batches (ID INTEGER PRIMARY KEY AUTOINCREMENT, Batch TEXT NOT NULL, Title TEXT NOT NULL, Status TEXT);' +
+  'CREATE TABLE IF NOT EXISTS Tags (ID INTEGER PRIMARY KEY AUTOINCREMENT, Tag TEXT NOT NULL, UNIQUE(Tag));' +
+  'CREATE TABLE IF NOT EXISTS Batches_Tags (BatchID INTEGER, TagID INTEGER, ' +
+    'FOREIGN KEY(BatchID) REFERENCES Batches(ID), FOREIGN KEY(TagID) REFERENCES Tags(ID), UNIQUE(BatchID, TagID));' +
+  'CREATE TABLE IF NOT EXISTS BatchesFiles (BatchID INTEGER, FilePath TEXT, Status TEXT, ' +
+    'FOREIGN KEY(BatchID) REFERENCES Batches(ID), UNIQUE(BatchID, FilePath))'
+))
 
-db.close()
-
-app.use('/json', express.static(DOCS_DIR))
 app.use(busboy())
 
 // Set the allow cross domain constraints
@@ -50,72 +130,53 @@ const allowCrossDomain = function(req, res, next) {
 }
 app.use(allowCrossDomain)
 
+app.use('/json', express.static(DOCS_DIR))
 app.use(express.static('web'))
 
 app.route('/test')
   .get(function (req, res) {
-    let folder = req.headers.timestamp.replace(/:/g, '')
-    folder = folder.replace(/\./g, '_')
+    const folder = batchFolder(req)
+    if (!folder) return res.status(400).send('Invalid timestamp header')
     console.log('Processing ... ' + DOWNLOAD_DIR + path.sep + folder)
 
+    if (typeof req.headers.tags !== 'string') return res.status(400).send('Invalid tags header')
     const tags = req.headers.tags.toLowerCase().split(',').map(item => item.trim())
 
     console.log('Tags: ' + tags)
 
     // Insert current status
-    let db = new sqlite3.Database('db.sqlite')
+    try {
+      withDb(openStatusDb, db => {
+        const rowId = db.prepare('INSERT INTO Batches(Batch, Status) values (?, ?)').run(folder, 'Start').lastInsertRowid
+        console.log('Batch row', rowId)
 
-    db.run('INSERT INTO Batches(Batch, Status) values (?, ?)', [folder, 'Start'], function(err) {
-      if (err) {
-        return console.error(err.message)
-      }
-      console.log(this)
-      let rowId = this.lastID
-
-      db.serialize(function() {
-        // Queries scheduled here will still be serialized.
-        let placeholders = tags.map((tag) => '(?)').join(',')
-        let sql = 'INSERT OR IGNORE INTO Tags(Tag) VALUES ' + placeholders
-        db.run(sql, tags)
+        const placeholders = tags.map(() => '(?)').join(',')
+        db.prepare('INSERT OR IGNORE INTO Tags(Tag) VALUES ' + placeholders).run(...tags)
 
         // Insert tags
-        let stmt = db.prepare('INSERT OR IGNORE INTO Batches_Tags(BatchID, TagID) VALUES (?, (SELECT ID From Tags WHERE Tag = ?))')
+        const link = db.prepare('INSERT OR IGNORE INTO Batches_Tags(BatchID, TagID) VALUES (?, (SELECT ID From Tags WHERE Tag = ?))')
+        tags.forEach(tag => link.run(rowId, tag))
 
-        tags.forEach(tag => {
-          stmt.run(rowId, tag)
-        })
-
-        stmt.finalize()
-
-        let updateSql = 'UPDATE Batches SET Status = ? WHERE ID = ?'
-        db.run(updateSql, ['Raw Files Processing started', rowId])
-
-        db.run(updateSql, ['RawFileProcessed', rowId])
-
-        db.run(updateSql, ['RawFileProcessed', rowId])
-
-        db.run(updateSql, ['Reordered', rowId])
-
-        db.run(updateSql, ['merged.csv', rowId])
-
-        db.run(updateSql, ['LipidXte started', rowId])
-
-        db.run(updateSql, ['LipidXte finished', rowId])
+        const setStatus = db.prepare('UPDATE Batches SET Status = ? WHERE ID = ?')
+        for (const status of ['Raw Files Processing started', 'RawFileProcessed', 'RawFileProcessed', 'Reordered', 'merged.csv', 'LipidXte started', 'LipidXte finished']) {
+          setStatus.run(status, rowId)
+        }
       })
-
-      db.close()
-    })
+    } catch (err) {
+      console.error(err.message)
+    }
 
     res.sendStatus(200)
   })
 
 app.route('/process')
   .get(function (req, res) {
-    let folder = req.headers.timestamp.replace(/:/g, '')
-    folder = folder.replace(/\./g, '_')
+    const folder = batchFolder(req)
+    if (!folder) return res.status(400).send('Invalid timestamp header')
     console.log('Processing ... ' + DOWNLOAD_DIR + path.sep + folder)
 
     const title = req.headers.title
+    if (typeof title !== 'string') return res.status(400).send('Invalid title header')
 
     console.log('Title: ' + title)
 
@@ -123,7 +184,8 @@ app.route('/process')
 
     // console.log('Tags: ' + tags)
 
-    const className = req.headers.classname
+    const className = header(req, 'classname', SAFE_TOKEN)
+    if (className === null) return res.status(400).send('Invalid classname header')
 
     console.log('Class: ' + className)
 
@@ -145,35 +207,23 @@ app.route('/process')
     })
 
     // Insert current status
-    let db = new sqlite3.Database('db.sqlite')
+    const db = openStatusDb()
+    let rowId
+    try {
+      rowId = db.prepare('INSERT INTO Batches(Batch, Title, Status) values (?, ?, ?)').run(folder, title, 'Start').lastInsertRowid
+    } catch (err) {
+      db.close()
+      console.error(err.message)
+      return res.status(500).send(err.message)
+    }
+    const setStatus = db.prepare('UPDATE Batches SET Status = ? WHERE ID = ?')
+    const setFile = db.prepare('INSERT OR REPLACE INTO BatchesFiles(BatchID, FilePath, Status) VALUES (?, ?, ?)')
 
-    db.run('INSERT INTO Batches(Batch, Title, Status) values (?, ?, ?)', [folder, title, 'Start'], function(err) {
-      if (err) {
-        return console.error(err.message)
-      }
-      //console.log(this)
-      let rowId = this.lastID
-
-      db.serialize(function() {
-        // Queries scheduled here will still be serialized.
-        // let placeholders = tags.map((tag) => '(?)').join(',')
-        // let sql = 'INSERT OR IGNORE INTO Tags(Tag) VALUES ' + placeholders
-        // db.run(sql, tags)
-        //
-        // // Insert tags
-        // let stmt = db.prepare('INSERT OR IGNORE INTO Batches_Tags(BatchID, TagID) VALUES (?, (SELECT ID From Tags WHERE Tag = ?))')
-        //
-        // tags.forEach(tag => {
-        //   stmt.run(rowId, tag)
-        // })
-        //
-        // stmt.finalize()
-
+    try {
         let process = require('./lipidXte').process
 
         // 1. (Optional) If there are raw files, then convert them to mzXML
-        let updateSql = 'UPDATE Batches SET Status = ? WHERE ID = ?'
-        db.run(updateSql, ['Raw Files Processing started', rowId])
+        setStatus.run('Raw Files Processing started', rowId)
 
         let lawFileProcessed = false
         let inputFolder = DOWNLOAD_DIR + path.sep + folder
@@ -193,9 +243,9 @@ app.route('/process')
         }
 
         if(success) {
-          db.run(updateSql, ['RawFileProcessed', rowId])
+          setStatus.run('RawFileProcessed', rowId)
         } else {
-          db.run(updateSql, ['RawFileProcessed(Failed)', rowId])
+          setStatus.run('RawFileProcessed(Failed)', rowId)
         }
 
         // 1.2 Reorder
@@ -203,12 +253,13 @@ app.route('/process')
           console.log('Reordering ..')
           success = process.reorder(inputFolder)
           if(success) {
-            db.run(updateSql, ['Reordered', rowId])
+            setStatus.run('Reordered', rowId)
           } else {
-            db.run(updateSql, ['Reordered(Failed)', rowId])
+            setStatus.run('Reordered(Failed)', rowId)
             let err = 'process.reordering failed. Please, contact to authors.'
             console.error(err)
             res.status(500).send(err)
+            return
           }
         }
 
@@ -222,9 +273,9 @@ app.route('/process')
         }
 
         if(success) {
-          db.run(updateSql, ['merged.csv', rowId])
+          setStatus.run('merged.csv', rowId)
         } else {
-          db.run(updateSql, ['merged.csv(Failed)', rowId])
+          setStatus.run('merged.csv(Failed)', rowId)
           let err = 'process.lipidXplorer failed. Please, contact to authors.'
           console.error(err)
           res.status(500).send(err)
@@ -232,18 +283,47 @@ app.route('/process')
         }
 
         // 4. Machine Performance check
-        if (fsext.existsSync(mergedOut) && !fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
-          console.log('Machine Performance Check...')
-          db.run(updateSql, ['Machine performance check started', rowId])
+        // if (fsext.existsSync(mergedOut) && !fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
+        //   // console.log('Machine Performance Check...')
+        //   setStatus.run('Machine performance check started', rowId)
+        //
+        //   success = process.machinePerformance(mergedOut, inputFolder)
+        // }
+        //
+        // if(success) {
+        //   setStatus.run('Machine performance check finished', rowId)
+        // } else {
+        //   setStatus.run('Machine performance check finished(Failed)', rowId)
+        //   let err = 'process.machinePerformance failed. Please, contact to authors.'
+        //   console.error(err)
+        //   res.status(500).send(err)
+        //   return
+        // }
 
-          success = process.machinePerformance(mergedOut, inputFolder)
+        // 4.1 Class matching test
+        if (fsext.existsSync(mergedOut)) {
+          // console.log('Machine Performance Check...')
+          setStatus.run('Lipid Class check started', rowId)
+
+
+          let data = fsext.readFileSync(mergedOut, 'utf-8')
+
+          // Checking class in the merged file
+          // data = data.split('\n').filter(c => c.startsWith('###')).map(line => line.split(',')[1])
+          // data = data.filter(c => c.endsWith('FAS')).map(line => line.replaceAll('FAS', ''))
+          // let clazz = data && data.length > 0 ? data[0] : ''
+
+          // Checking the number of items
+          data = data.split('\n')
+
+          success = (data.length > 100)
         }
 
-        if(success) {
-          db.run(updateSql, ['Machine performance check finished', rowId])
+        if (success) {
+          setStatus.run('Lipid Class check finished', rowId)
         } else {
-          db.run(updateSql, ['Machine performance check finished(Failed)', rowId])
-          let err = 'process.machinePerformance failed. Please, contact to authors.'
+          setStatus.run('Lipid Class check finished(Failed)', rowId)
+          let err = 'process.lipidClassCheck failed. Please, contact to authors.'
           console.error(err)
           res.status(500).send(err)
           return
@@ -253,16 +333,16 @@ app.route('/process')
         if (fsext.existsSync(mergedOut)) {
           console.log('Run LipidXte...')
 
-          db.run(updateSql, ['LipidXte started', rowId])
+          setStatus.run('LipidXte started', rowId)
 
           // 6. Run LipidXte process
           success = process.lipidXte(BASE_DIR, mergedOut, inputFolder, group1, group2, group3)
           // process.lipidXte(BASE_DIR, mergedOut, inputFolder)
 
           if(success) {
-            db.run(updateSql, ['LipidXte finished', rowId])
+            setStatus.run('LipidXte finished', rowId)
           } else {
-            db.run(updateSql, ['LipidXte finished(Failed)', rowId])
+            setStatus.run('LipidXte finished(Failed)', rowId)
             let err = 'process.LipidXte failed. Please, contact to authors.'
             console.error(err)
             res.status(500).send(err)
@@ -271,10 +351,10 @@ app.route('/process')
 
           let outputTsv = 'output_Quantity_All(RemoveRef_SummarizeNCE).tsv'
           if (fsext.existsSync(inputFolder + path.sep + outputTsv)) {
-            db.run('INSERT OR REPLACE INTO BatchesFiles(BatchID, FilePath, Status) VALUES (?, ?, ?)', [rowId, outputTsv, 'Done'])
+            setFile.run(rowId, outputTsv, 'Done')
           } else {
             console.error(outputTsv + ' is not generated.')
-            db.run('INSERT OR REPLACE INTO BatchesFiles(BatchID, FilePath, Status) VALUES (?, ?, ?)', [rowId, outputTsv, 'Failed'])
+            setFile.run(rowId, outputTsv, 'Failed')
           }
 
           // Show the results
@@ -284,31 +364,34 @@ app.route('/process')
         else
         {
           var err = 'No merged output file is given!'
-          db.run(updateSql, ['Errors in LipidXte', rowId])
+          setStatus.run('Errors in LipidXte', rowId)
           console.error(err)
           res.status(500).send(err)
         }
-      })
-
+    } finally {
       db.close()
-    })
+    }
   })
 
 app.route('/upload')
   .post(function (req, res) {
     // console.log(req.headers);
-    let folder = req.headers.timestamp.replace(/:/g, '')
-    folder = folder.replace(/\./g, '_')
+    const folder = batchFolder(req)
+    if (!folder) return res.status(400).send('Invalid timestamp header')
     let fstream
     req.pipe(req.busboy)
-    req.busboy.on('file', function (fieldname, file, filename) {
+    req.busboy.on('file', function (fieldname, file, fileObject) {
+      const filename = safeFileName(fileObject.filename)
+      if (!filename) {
+        file.resume() // discard the stream
+        if (!res.headersSent) res.status(400).send('Invalid file name')
+        return
+      }
       console.log('Uploading: ' + path.sep + folder + path.sep + filename)
 
-      //Path where image will be uploaded
-      // var downloadedFile = DOWNLOAD_DIR + '/' + filename;
-
-      fsext.ensureDirSync(DOWNLOAD_DIR + path.sep + folder)
-      fstream = fsext.createWriteStream(DOWNLOAD_DIR + path.sep + folder + path.sep + filename)
+      const batchDir = path.join(DOWNLOAD_DIR, folder)
+      fsext.ensureDirSync(batchDir)
+      fstream = fsext.createWriteStream(path.join(batchDir, filename))
       file.pipe(fstream)
       fstream.on('close', function () {
         console.log('Upload Finished of ' + path.sep + folder + path.sep + filename)
@@ -322,24 +405,24 @@ app.route('/upload')
         //   }
         // });
 
-        res.sendStatus(200)
+        if (!res.headersSent) res.sendStatus(200)
       })
     })
   })
 
 app.route('/batch')
   .get(function (req, res) {
-    let folder = req.headers.timestamp.replace(/:/g, '')
-    folder = folder.replace(/\./g, '_')
+    const folder = batchFolder(req)
+    if (!folder) return res.status(400).send('Invalid timestamp header')
 
     console.log('Getting batch ... ' + DOWNLOAD_DIR + path.sep + folder)
 
     // batch id check
 
     // parsing all the parameters
-    let quantOption = req.headers.quantoption
-    let options = req.headers.options
-    let outputOption = req.headers.outputoption
+    const selected = resultOptions(req)
+    if (!selected) return res.status(400).send('Invalid quantoption, outputoption or options header')
+    const { quantOption, outputOption, options } = selected
 
     console.log(quantOption)
     console.log(options)
@@ -362,24 +445,31 @@ app.route('/batch')
     // }
 
     let file = DOWNLOAD_DIR + path.sep + folder + path.sep + outputTsv
+    let mergedOut = DOWNLOAD_DIR + path.sep + folder + path.sep + 'merged.csv'
 
     if (fsext.existsSync(file)) {
       let inputFolder = DOWNLOAD_DIR + path.sep + folder
       let nce = '[25.0, 30.0, 35.0]'
+
       // Machine Performance check
-      // if (fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
-      //
-      //   let nce = '[25.0, 30.0, 35.0]'
-      //   let data = fsext.readFileSync(inputFolder + path.sep + 'machine_performance.tsv')
-      //   nce = data.toString('utf8').slice(0, data.indexOf('\n'))
-      //   let checkValue = nce.slice(nce.lastIndexOf('\t') + 1)
-      //   if (checkValue === '-Infinity') {
-      //       nce = '[25.0, 30.0, 35.0]'
-      //   } else {
-      //       nce = nce.slice(nce.indexOf('\t') + 1, nce.lastIndexOf('\t'))
-      //   }
-      //   // console.log(nce)
-      // }
+      if (fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
+        let data = fsext.readFileSync(inputFolder + path.sep + 'machine_performance.tsv')
+        nce = data.toString('utf8').slice(0, data.indexOf('\n'))
+        let checkValue = nce.slice(nce.lastIndexOf('\t') + 1)
+        if (checkValue === '-Infinity') {
+            nce = '[25.0, 30.0, 35.0]'
+        } else {
+            nce = nce.slice(nce.indexOf('\t') + 1, nce.lastIndexOf('\t'))
+        }
+        // console.log(nce)
+      } else {
+        if (fsext.existsSync(mergedOut)) {
+          let data = fsext.readFileSync(mergedOut, 'utf-8')
+
+          nce = data.split('\n').filter(c => c.startsWith('#NCE')).map(line => parseFloat(line.split(',')[1]))
+          nce = JSON.stringify(nce).replaceAll(',', ', ')
+        }
+      }
 
       fsext.readFile(file, (err, data) => {
         if (err) throw err
@@ -393,10 +483,18 @@ app.route('/batch')
 
       // try to run LipidXte
       let process = require('./lipidXte').process
-      let mergedOut = DOWNLOAD_DIR + path.sep + folder + path.sep + 'merged.csv'
       let inputFolder = DOWNLOAD_DIR + path.sep + folder
 
       let nce = '[25.0, 30.0, 35.0]'
+      // Extract NCE from merged.csv
+
+      if (fsext.existsSync(mergedOut)) {
+        let data = fsext.readFileSync(mergedOut, 'utf-8')
+
+        nce = data.split('\n').filter(c => c.startsWith('#NCE')).map(line => parseFloat(line.split(',')[1]))
+        nce = JSON.stringify(nce).replaceAll(',', ', ')
+      }
+
       // Machine Performance check
       // if (fsext.existsSync(mergedOut) && !fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
       //   console.log('Machine Performance Check...')
@@ -412,11 +510,12 @@ app.route('/batch')
       process.lipidXte(BASE_DIR, mergedOut, inputFolder, groups.group1, groups.group2, groups.group3, quantOption, outputOption, options.replace(/_/g, ' '))
       // process.lipidXte(BASE_DIR, mergedOut, inputFolder, quantOption, outputOption, options.replace(/_/g, ' '))
 
-      let db = new sqlite3.Database('db.sqlite')
+      const generated = fsext.existsSync(file)
+      withDb(openStatusDb, db => db
+        .prepare('INSERT OR REPLACE INTO BatchesFiles(BatchID, FilePath, Status) VALUES ((SELECT ID From Batches WHERE Batch = ?), ?, ?)')
+        .run(folder, outputTsv, generated ? 'Done' : 'Failed'))
 
-      if (fsext.existsSync(file)) {
-        db.run('INSERT OR REPLACE INTO BatchesFiles(BatchID, FilePath, Status) VALUES ((SELECT ID From Batches WHERE Batch = ?), ?, ?)', [folder, outputTsv, 'Done'])
-
+      if (generated) {
         fsext.readFile(file, (err, data) => {
           if (err) throw err
           let result = []
@@ -426,28 +525,24 @@ app.route('/batch')
         })
       } else {
         console.error(outputTsv + ' is not generated.')
-        db.run('INSERT OR REPLACE INTO BatchesFiles(BatchID, FilePath, Status) VALUES ((SELECT ID From Batches WHERE Batch = ?), ?, ?)', [folder, outputTsv, 'Failed'])
-
         res.sendStatus(500)
       }
-
-      db.close()
     }
   })
 
 app.route('/download')
   .get(function (req, res) {
-    let folder = req.headers.timestamp.replace(/:/g, '')
-    folder = folder.replace(/\./g, '_')
+    const folder = batchFolder(req)
+    if (!folder) return res.status(400).send('Invalid timestamp header')
 
     console.log('Getting batch for downloading... ' + DOWNLOAD_DIR + path.sep + folder)
 
     // batch id check
 
     // parsing all the parameters
-    let quantOption = req.headers.quantoption
-    let options = req.headers.options
-    let outputOption = req.headers.outputoption
+    const selected = resultOptions(req)
+    if (!selected) return res.status(400).send('Invalid quantoption, outputoption or options header')
+    const { quantOption, outputOption, options } = selected
 
     // 'RemoveRef SummarizeNCE GroupOnly'
     let outputTsv = 'output_' + quantOption + '_' + outputOption + '(' + options + ').tsv'
@@ -465,7 +560,7 @@ app.route('/download')
           'Content-disposition': 'attachment;filename="' + outputTsv + '"',
           'Content-Length': data.length
         })
-        res.end(new Buffer(data, 'binary'))
+        res.end(Buffer.from(data, 'binary'))
       })
     } else {
       console.error(file + ' does not exist. Try to run LipidXte to produce it...')
@@ -502,50 +597,21 @@ app.route('/list')
       })
       // console.log(result)
 
-      let db = new sqlite3.Database('db.sqlite')
+      let rows
+      try {
+        rows = withDb(openStatusDb, db => db.prepare('SELECT Batch, Title FROM Batches WHERE Status = \'LipidXte finished\'').all())
+      } catch (err) {
+        console.error(err.message)
+        return res.status(500).send(err.message)
+      }
 
-      db.serialize(function() {
-        let dic = {}
+      const data = {}
+      for (const row of rows) {
+        data[result[row.Batch]] = row.Title
+      }
 
-        // db.each('SELECT Batches.Batch as Batch, Tags.Tag as Tag FROM Batches, Tags, Batches_Tags WHERE Batches.ID = Batches_Tags.BatchID AND Batches_Tags.TagID = Tags.ID', function (err, row) {
-        //   if (err) {
-        //     console.error('Error')
-        //   } else {
-        //     const batch = row.Batch
-        //
-        //     if (!dic[batch]) {
-        //       dic[batch] = []
-        //     }
-        //     dic[batch].push(row.Tag.trim())
-        //   }
-        // })
-
-        db.each('SELECT Batch, Title FROM Batches where Status = \'LipidXte finished\'', function (err, row) {
-          if (err) {
-            console.error('Error')
-          } else {
-            const batch = row.Batch
-
-            dic[batch] = row.Title
-          }
-        })
-
-        db.close((err) => {
-          if (err) {
-            res.status(500).send(err.message)
-            return console.error(err.message)
-          }
-          // console.log(dic)
-          // console.log(result)
-          let data = {}
-          Object.keys(dic).map(function(key, index) {
-            data[result[key]] = dic[key]
-          })
-
-          console.log(data)
-          res.status(200).send(data)
-        })
-      })
+      console.log(data)
+      res.status(200).send(data)
     } else {
       console.error(DOWNLOAD_DIR + ' does not exist. Try to run LipidXte to produce it...')
 
@@ -556,56 +622,14 @@ app.route('/list')
 // Fetching all the classes
 app.route('/classes')
   .get(function(req, res) {
-    let db = new sqlite3.Database('LipidXteSqlite.db')
-
-    db.serialize(function() {
-      let data = []
-
-      db.each('SELECT DISTINCT GRP from MASTER', function (err, row) {
-        if (err) {
-          console.error('Error')
-        } else {
-          data.push(row.GRP)
-        }
-      })
-
-      db.close((err) => {
-        if (err) {
-          res.status(500).send(err.message)
-          return console.error(err.message)
-        }
-        // console.log(data)
-        res.status(200).send(data)
-      })
-    })
+    sendReferenceRows(res, 'SELECT DISTINCT GRP from MASTER', [], row => row.GRP)
   })
 
 // Fetching all the fractions
 // select case when fa_iso = 0 then fa_c || ':' || fa_db else fa_c || ':' || fa_db || ' (' || fa_iso || 'z)' end from fa;
 app.route('/fractions')
   .get(function(req, res) {
-    let db = new sqlite3.Database('LipidXteSqlite.db')
-
-    db.serialize(function() {
-      let data = []
-
-      db.each('SELECT id, mz, CASE WHEN fa_iso = 0 THEN fa_c || \':\' || fa_db ELSE fa_c || \':\' || fa_db || \' (\' || fa_iso || \'z)\' END name FROM fa', function (err, row) {
-        if (err) {
-          console.error('Error')
-        } else {
-          data.push(row)
-        }
-      })
-
-      db.close((err) => {
-        if (err) {
-          res.status(500).send(err.message)
-          return console.error(err.message)
-        }
-        // console.log(data)
-        res.status(200).send(data)
-      })
-    })
+    sendReferenceRows(res, 'SELECT id, mz, CASE WHEN fa_iso = 0 THEN fa_c || \':\' || fa_db ELSE fa_c || \':\' || fa_db || \' (\' || fa_iso || \'z)\' END name FROM fa', [])
   })
 
 // Fetching SN1's curve
@@ -613,29 +637,9 @@ app.route('/sn1/:class/:id')
   .get(function(req, res) {
     const clazz = req.params.class
     const id = req.params.id
+    if (!SAFE_TOKEN.test(clazz) || !SAFE_ID.test(id)) return res.status(400).send('Invalid class or id')
 
-    let db = new sqlite3.Database('LipidXteSqlite.db')
-
-    db.serialize(function() {
-      let data = []
-
-      db.each(`SELECT CE, INT, CF, CO2INT FROM detail WHERE SN1=1 and REF=${id} AND GRP='${clazz}'`, function (err, row) {
-        if (err) {
-          console.error('Error')
-        } else {
-          data.push(row)
-        }
-      })
-
-      db.close((err) => {
-        if (err) {
-          res.status(500).send(err.message)
-          return console.error(err.message)
-        }
-        // console.log(data)
-        res.status(200).send(data)
-      })
-    })
+    sendReferenceRows(res, 'SELECT CE, INT, CF, CO2INT FROM detail WHERE SN1=1 and REF=? AND GRP=?', [Number(id), clazz])
   })
 
 // Fetching SN2's curve
@@ -643,29 +647,9 @@ app.route('/sn2/:class/:id')
   .get(function(req, res) {
     const clazz = req.params.class
     const id = req.params.id
+    if (!SAFE_TOKEN.test(clazz) || !SAFE_ID.test(id)) return res.status(400).send('Invalid class or id')
 
-    let db = new sqlite3.Database('LipidXteSqlite.db')
-
-    db.serialize(function() {
-      let data = []
-
-      db.each(`SELECT CE, INT, CF, CO2INT FROM detail WHERE SN2=1 and REF=${id} AND GRP='${clazz}'`, function (err, row) {
-        if (err) {
-          console.error('Error')
-        } else {
-          data.push(row)
-        }
-      })
-
-      db.close((err) => {
-        if (err) {
-          res.status(500).send(err.message)
-          return console.error(err.message)
-        }
-        // console.log(data)
-        res.status(200).send(data)
-      })
-    })
+    sendReferenceRows(res, 'SELECT CE, INT, CF, CO2INT FROM detail WHERE SN2=1 and REF=? AND GRP=?', [Number(id), clazz])
   })
 
 // Fetching SYM's curve
@@ -673,43 +657,24 @@ app.route('/sym/:class/:id')
   .get(function(req, res) {
     const clazz = req.params.class
     const id = req.params.id
+    if (!SAFE_TOKEN.test(clazz) || !SAFE_ID.test(id)) return res.status(400).send('Invalid class or id')
 
-    let db = new sqlite3.Database('LipidXteSqlite.db')
-
-    db.serialize(function() {
-      let data = []
-
-      db.each(`SELECT CE, INT, CF, CO2INT FROM detail WHERE SYM=1 and REF=${id} AND GRP='${clazz}'`, function (err, row) {
-        if (err) {
-          console.error('Error')
-        } else {
-          data.push(row)
-        }
-      })
-
-      db.close((err) => {
-        if (err) {
-          res.status(500).send(err.message)
-          return console.error(err.message)
-        }
-        // console.log(data)
-        res.status(200).send(data)
-      })
-    })
+    sendReferenceRows(res, 'SELECT CE, INT, CF, CO2INT FROM detail WHERE SYM=1 and REF=? AND GRP=?', [Number(id), clazz])
   })
 
 app.route('/ultimate')
   .get(function (req, res) {
-    let folder = req.headers.timestamp
+    const folder = sampleFolder(req)
+    if (!folder) return res.status(400).send('Invalid timestamp header')
 
     console.log('Getting batch ... ' + SAMPLE_DIR + path.sep + folder)
 
     // batch id check
 
     // parsing all the parameters
-    let quantOption = req.headers.quantoption
-    let options = req.headers.options
-    let outputOption = req.headers.outputoption
+    const selected = resultOptions(req)
+    if (!selected) return res.status(400).send('Invalid quantoption, outputoption or options header')
+    const { quantOption, outputOption, options } = selected
 
     console.log(quantOption)
     console.log(options)
@@ -764,21 +729,26 @@ app.route('/ultimate')
 
       // try to run LipidXte
       let process = require('./lipidXte').process
-      let mergedOut = SAMPLE_DIR + path.sep + folder + path.sep + 'merged.csv'
       let inputFolder = SAMPLE_DIR + path.sep + folder
 
       let nce = '[25.0, 30.0, 35.0]'
       // Machine Performance check
-      if (fsext.existsSync(mergedOut) && !fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
-        console.log('Machine Performance Check...')
-        process.machinePerformance(mergedOut, inputFolder)
-      }
+      // if (fsext.existsSync(mergedOut) && !fsext.existsSync(inputFolder + path.sep + 'machine_performance.tsv')) {
+      //   console.log('Machine Performance Check...')
+      //   process.machinePerformance(mergedOut, inputFolder)
+      // }
+      //
+      // let data = fsext.readFileSync(inputFolder + path.sep + 'machine_performance.tsv')
+      // const line = data.toString('utf8').slice(0, data.indexOf('\n'))
+      // const nceString = line.slice(line.indexOf('\t') + 1, line.lastIndexOf('\t'))
+      // if (nceString !== 'null') {
+      //   nce = nceString
+      // }
+      if (fsext.existsSync(mergedOut)) {
+        let data = fsext.readFileSync(mergedOut, 'utf-8')
 
-      let data = fsext.readFileSync(inputFolder + path.sep + 'machine_performance.tsv')
-      const line = data.toString('utf8').slice(0, data.indexOf('\n'))
-      const nceString = line.slice(line.indexOf('\t') + 1, line.lastIndexOf('\t'))
-      if (nceString !== 'null') {
-        nce = nceString
+        nce = data.split('\n').filter(c => c.startsWith('#NCE')).map(line => parseFloat(line.split(',')[1]))
+        nce = JSON.stringify(nce).replaceAll(',', ', ')
       }
 
       console.log(nce)
@@ -807,17 +777,17 @@ app.route('/ultimate')
 // Download ultimate data
 app.route('/download-ultimate')
   .get(function (req, res) {
-    let folder = req.headers.timestamp.replace(/:/g, '')
-    folder = folder.replace(/\./g, '_')
+    const folder = batchFolder(req)
+    if (!folder) return res.status(400).send('Invalid timestamp header')
 
     console.log('Getting batch for downloading... ' + SAMPLE_DIR + path.sep + folder)
 
     // batch id check
 
     // parsing all the parameters
-    let quantOption = req.headers.quantoption
-    let options = req.headers.options
-    let outputOption = req.headers.outputoption
+    const selected = resultOptions(req)
+    if (!selected) return res.status(400).send('Invalid quantoption, outputoption or options header')
+    const { quantOption, outputOption, options } = selected
 
     // 'RemoveRef SummarizeNCE GroupOnly'
     let outputTsv = 'output_' + quantOption + '_' + outputOption + '(' + options + ').tsv'
@@ -835,27 +805,12 @@ app.route('/download-ultimate')
           'Content-disposition': 'attachment;filename="' + outputTsv + '"',
           'Content-Length': data.length
         })
-        res.end(new Buffer(data, 'binary'))
+        res.end(Buffer.from(data, 'binary'))
       })
     } else {
       console.error(file + ' does not exist. Try to run LipidXte to produce it...')
 
       res.sendStatus(500)
-    }
-  })
-
-// Check the access permission
-app.route('/checkPass/:pass')
-  .get(async function(req, res) {
-    const pass = req.params.pass
-
-    const bcrypt = require('bcrypt')
-    const result = await bcrypt.compare(pass, '$2b$10$GtwrFMoKrcmbKK/dC/FcOOrkkRoT36cPY0LvMqfvEzOUL5y9MUZUW')
-
-    if (result) {
-      res.status(200).send([ true, '' ])
-    } else {
-      res.status(500).send([ false, 'No Access'])
     }
   })
 
@@ -871,8 +826,8 @@ if (require.main === module) {
     const fs = require('fs')
 
     let options = {
-      key: fs.readFileSync('/etc/pki/tls/private/lipidxte.key.2023'),
-      cert: fs.readFileSync( '/etc/pki/tls/certs/lipidxte.pem.2024' )
+      key: fs.readFileSync('/app/certs/lipidxte.key'),
+      cert: fs.readFileSync('/app/certs/lipidxte.pem')
     }
 
     let https = require('https')

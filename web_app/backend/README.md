@@ -1,5 +1,7 @@
 # LipidXte Web Installation guide
 
+> **This directory mirrors [`docker-build/`](../../docker-build).** The server source here (`index.js`, `lipidXte/`, `package.json`, `yarn.lock`, `tests/`, `www/`, the jar and `LipidXteSqlite.db`) is kept byte-identical to the copy the Docker image ships; `tests/backend-copy.test.js` fails as soon as the two differ. Edit one directory and copy the changed files to the other. The PM2 and `/etc/pki` notes below describe the original stand-alone installation and predate the Docker setup in the repository root.
+
 ## 📝 Table of Contents
 
 - [Installation](#-installation)
@@ -59,14 +61,14 @@ sudo pm2 start index.js --watch
 We use SSL certificates for https connection. Please update the certificate lines in `index.js` when the certificate is renewed.
 
 ```js
-814:   } else {
-815:     // Run the server in production mode
-816:     const fs = require('fs')
-817:
-818:     let options = {
-819:       key: fs.readFileSync('/etc/pki/tls/private/lipidxte.key.2023'),  // Private keyfile
-820:       cert: fs.readFileSync( '/etc/pki/tls/certs/lipidxte.pem.2024' )  // Certificate
-821:     }
+  } else {
+    // Run the server in production mode
+    const fs = require('fs')
+
+    let options = {
+      key: fs.readFileSync('/app/certs/lipidxte.key'),
+      cert: fs.readFileSync('/app/certs/lipidxte.pem')
+    }
 ```
 
 After updating `index.js`, if the app is not restarted, please use the following commands:
