@@ -638,11 +638,11 @@ export default {
           }
 
           let layout = {
-            title: newTitle,
+            title: { text: newTitle },
             height: 700,
             margin: { b: 180 },
-            xaxis: { title: 'Molecular species' },
-            yaxis: { title: yTitle, rangemode: 'tozero' },
+            xaxis: { title: { text: 'Molecular species' } },
+            yaxis: { title: { text: yTitle }, rangemode: 'tozero' },
             boxmode: 'group'
           }
 
@@ -661,11 +661,11 @@ export default {
           ]
 
           layout = {
-            title: 'Lipid Species',
+            title: { text: 'Lipid Species' },
             height: 700,
             margin: { b: 180 },
-            xaxis: { title: 'Lipid species' },
-            yaxis: { title: isStandardListPresent ? 'Concentration, microM' : 'Concentration, percent(%)' }
+            xaxis: { title: { text: 'Lipid species' } },
+            yaxis: { title: { text: isStandardListPresent ? 'Concentration, microM' : 'Concentration, percent(%)' } }
           }
 
           Plotly.newPlot(vm.$refs.lspecies, data, layout)
@@ -859,18 +859,18 @@ export default {
 
           if (vm.isLog) {
             const logLayout = {
-              title: 'Quantification via FTMS vs FTMSMS (log)',
-              xaxis: { type: 'log', rangemode: 'tozero', zeroline: true, title: 'Specified concentration via FTMS1/precursor, microM' },
-              yaxis: { type: 'log', rangemode: 'tozero', zeroline: true, title: 'Specified concentration via FTMS2/fragment, microM' }
+              title: { text: 'Quantification via FTMS vs FTMSMS (log)' },
+              xaxis: { type: 'log', rangemode: 'tozero', zeroline: true, title: { text: 'Specified concentration via FTMS1/precursor, microM' } },
+              yaxis: { type: 'log', rangemode: 'tozero', zeroline: true, title: { text: 'Specified concentration via FTMS2/fragment, microM' } }
             }
 
             Plotly.newPlot(vm.$refs.validation1, [corrected, nocorrected, fitted, orientation], logLayout)
           } else {
             const layout = {
               // title: 'Validation Figure NCE:' + nceHeader,
-              title: 'Quantification via FTMS vs FTMSMS',
-              xaxis: { range: [0, 200], rangemode: 'tozero', zeroline: true, title: 'Specified concentration via FTMS1/precursor, microM' },
-              yaxis: { range: [0, 200], rangemode: 'tozero', zeroline: true, title: 'Specified concentration via FTMS2/fragment, microM' }
+              title: { text: 'Quantification via FTMS vs FTMSMS' },
+              xaxis: { range: [0, 200], rangemode: 'tozero', zeroline: true, title: { text: 'Specified concentration via FTMS1/precursor, microM' } },
+              yaxis: { range: [0, 200], rangemode: 'tozero', zeroline: true, title: { text: 'Specified concentration via FTMS2/fragment, microM' } }
             }
 
             Plotly.newPlot(vm.$refs.validation1, [corrected, nocorrected, fitted, orientation], layout)
@@ -904,9 +904,9 @@ export default {
 
           const layout2 = {
             // title: 'Validation Figure NCE:' + nceHeader,
-            title: 'Target vs specified concentration',
-            xaxis: { rangemode: 'tozero', zeroline: true, range: [0, 200], title: 'Target concentration, microM' },
-            yaxis: { rangemode: 'tozero', zeroline: true, range: [0, 200], title: 'Specified concentration, microM' }
+            title: { text: 'Target vs specified concentration' },
+            xaxis: { rangemode: 'tozero', zeroline: true, range: [0, 200], title: { text: 'Target concentration, microM' } },
+            yaxis: { rangemode: 'tozero', zeroline: true, range: [0, 200], title: { text: 'Specified concentration, microM' } }
           }
           Plotly.newPlot(vm.$refs.validation2, [standardConcentration, targetWithSpecies, targetWithMolecularSpecies, fitted2, orientation], layout2)
 
@@ -965,9 +965,9 @@ export default {
                 }
             const errorLayout = {
               // title: 'Validation Figure NCE:' + nceHeader,
-              title: 'Error over the number of double bonds',
-              xaxis: { range: [-0.5, 3], title: 'Number of double bonds' },
-              yaxis: { rangemode: 'tozero', zeroline: true, title: 'Error, %' },
+              title: { text: 'Error over the number of double bonds' },
+              xaxis: { range: [-0.5, 3], title: { text: 'Number of double bonds' } },
+              yaxis: { rangemode: 'tozero', zeroline: true, title: { text: 'Error, %' } },
               boxmode: 'group'
             }
             Plotly.newPlot(vm.$refs.validation1Error, [c1, c3], errorLayout)
