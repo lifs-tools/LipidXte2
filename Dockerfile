@@ -1,6 +1,6 @@
 # Node.js runtime: taken from the official image so a security release is a one-line tag bump.
 # (Debian bookworm's own `nodejs` package is Node 18, which is end-of-life and no longer patched.)
-FROM --platform=$TARGETPLATFORM node:24.22.1-bookworm-slim AS node
+FROM --platform=$TARGETPLATFORM node:26.12.0-bookworm-slim AS node
 
 FROM --platform=$TARGETPLATFORM python:3.12.3-slim as builder
 
