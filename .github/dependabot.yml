@@ -1,0 +1,34 @@
+# Dependabot configuration.
+#
+# Security updates were already running with GitHub's defaults; this file exists mainly to
+# keep the two copies of the Express server in step. The image ships docker-build/, and
+# web_app/backend/ must stay a byte-identical mirror of it (docker-build/tests/backend-copy.test.js
+# fails otherwise), so both lockfiles have to change in the same pull request.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directories:
+      - "/docker-build"
+      - "/web_app/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      # One pull request per ecosystem for all security fixes, across both directories.
+      server-security:
+        applies-to: "security-updates"
+        patterns: ["*"]
+      # At most one routine bump pull request per week, again across both directories.
+      server-dependencies:
+        applies-to: "version-updates"
+        patterns: ["*"]
+    labels: ["dependencies", "server"]
+
+  # The Node.js runtime comes from the node:<version>-bookworm-slim image in the Dockerfile,
+  # so a Node.js security release shows up here as a one-line tag bump.
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels: ["dependencies", "docker"]
