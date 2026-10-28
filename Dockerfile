@@ -2,7 +2,7 @@
 # (Debian bookworm's own `nodejs` package is Node 18, which is end-of-life and no longer patched.)
 FROM --platform=$TARGETPLATFORM node:24.22.1-bookworm-slim AS node
 
-FROM --platform=$TARGETPLATFORM python:3.12.3-slim as builder
+FROM --platform=$TARGETPLATFORM python:3.12.15-slim as builder
 
 ARG TARGETARCH
 
